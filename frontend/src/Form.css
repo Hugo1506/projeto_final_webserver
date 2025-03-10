@@ -1,0 +1,68 @@
+/* src/Form.css */
+.form-container {
+  width: 500px;
+  margin: 0 auto;
+  font-family: Arial, sans-serif;
+  overflow: hidden;
+}
+
+body{
+  background-color:#aaaaaa;
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 15px;
+}
+
+label {
+  margin-bottom: 5px; /* Space between label and input */
+}
+
+input {
+  padding: 5px;
+  width: 100%; /* Make inputs take the full width of their container */
+}
+
+.button-group {
+  display: flex;
+  justify-content: space-between;
+}
+
+button {
+  padding: 10px 20px;
+  cursor: pointer;
+  border: none;
+  background-color: #007BFF;
+  color: white;
+  font-size: 16px;
+  border-radius: 5px;
+  margin-top: 10px;
+  margin-right: 10px;
+  margin-left: 10px;
+  transition: background-color 0.3s ease;
+}
+
+button:hover {
+  background-color: #0056b3;
+}
+
+.message-container {
+  width: 300px;
+  overflow: hidden;
+  margin-top: 10px;
+}
+
+.message-container p {
+  background-color: #f8d7da;
+  color: #721c24;
+  padding: 10px;
+  border: 1px solid #f5c6cb;
+  border-radius: 5px;
+}

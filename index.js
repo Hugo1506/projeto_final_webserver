@@ -20,7 +20,7 @@ app.use(bodyParser.json());
 // Set up the MySQL connection pool
 const pool = mysql.createPool({
   connectionLimit: 10,
-  host: 'localhost',
+  host: '127.0.0.1',
   user: 'hugo',
   password: 'hugo',
   database: 'projeto_final'

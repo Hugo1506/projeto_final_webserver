@@ -1,5 +1,7 @@
 #!/bin/bash
 
-mysqld
+#corre o mysql em background
+mysqld &
 
-/bin/bash
+#corre o bash
+bash 

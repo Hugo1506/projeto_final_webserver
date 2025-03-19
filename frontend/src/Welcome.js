@@ -9,6 +9,9 @@ const Welcome = ({ username, onLogout }) => {
   const [files, setFiles] = useState({ cadFiles: null, windFiles: null });
   const [simulationNumber, setSimulationNumber] = useState(null);
   const [fadeOut, setFadeOut] = useState(false);
+  const [GadenChoiseVisible, setGadenChoiseVisible] = useState(false);
+  const [isNewSimulation, setIsNewSimulation] = useState(false);
+	
   const navigate = useNavigate();
 
   const fetchSimulationNumber = async () => {
@@ -44,9 +47,15 @@ const Welcome = ({ username, onLogout }) => {
   const handleGadenClick = () => {
     setFadeOut(true);
     setTimeout(() => {
-      setFileInputVisible(true);
-      setFadeOut(false); // Reset fade-out state
-    }, 500); // Match this duration with the CSS animation duration
+      setGadenChoiseVisible(true);
+      setFadeOut(false);
+    }, 500);
+  };
+
+
+  const handleNewSimulationClick = () => {
+    setIsNewSimulation(true);
+    setGadenChoiseVisible(false); 
   };
 
   const handleFileChange = (e) => {
@@ -97,6 +106,13 @@ const Welcome = ({ username, onLogout }) => {
 
   const handleGoBack = () => {
     setFileInputVisible(false);
+    setGadenChoiseVisible(false);
+    setIsNewSimulation(false);
+  };
+
+  const handleGoBackGadenChoise = () => {
+    setGadenChoiseVisible(false);
+    setIsNewSimulation(false);
   };
 
   return (
@@ -112,22 +128,38 @@ const Welcome = ({ username, onLogout }) => {
             <button onClick={onLogout}>Logout</button>
           </div>
         )}
-        {/* Use the imported logo */}
-        <img 
-          src={logo} 
-          alt="FlyRobotics Logo" 
-          className="flyrobotics-logo" 
+        <img
+          src={logo}
+          alt="FlyRobotics Logo"
+          className="flyrobotics-logo"
         />
       </div>
       <div className="main-content">
-        {!fileInputVisible ? (
+        {!fileInputVisible && !GadenChoiseVisible && !isNewSimulation ? (
           <button
             className={`gaden-button ${fadeOut ? 'fade-out' : ''}`}
             onClick={handleGadenClick}
           >
             Gaden
           </button>
-        ) : (
+        ) : null}
+
+        {GadenChoiseVisible && (
+          <div className="gaden-choice-buttons">
+            <button className="new-simulation-button" onClick={handleNewSimulationClick}>
+              New Simulation
+            </button>
+            <button className="saved-simulations-button">
+              Saved Simulations
+            </button>
+	    <br />
+	    <button className="go-back-gaden-choise" onClick= {handleGoBackGadenChoise}>
+		Go Back
+	    </button>
+          </div>
+        )}
+
+        {isNewSimulation && (
           <form onSubmit={handleFileSubmit} className="file-upload-form">
             <div>
               <label htmlFor="cadFiles">CAD Files:</label>
@@ -149,7 +181,7 @@ const Welcome = ({ username, onLogout }) => {
                 onChange={handleFileChange}
               />
             </div>
-            <button type="submit">Submit</button>
+            <button type="submit" ClassName="submit-button" >Submit</button>
             <button type="button" onClick={handleGoBack} className="go-back-button">
               Go Back
             </button>

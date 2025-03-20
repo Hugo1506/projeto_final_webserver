@@ -54,9 +54,14 @@ const Welcome = ({ username, onLogout }) => {
 
 
   const handleNewSimulationClick = () => {
-    setIsNewSimulation(true);
-    setGadenChoiseVisible(false); 
+    setFadeOut(true); 
+    setTimeout(() => {
+      setGadenChoiseVisible(false);
+      setIsNewSimulation(true);
+      setFadeOut(false); 
+    }, 500);
   };
+
 
   const handleFileChange = (e) => {
     const { name, files } = e.target;
@@ -111,9 +116,15 @@ const Welcome = ({ username, onLogout }) => {
   };
 
   const handleGoBackGadenChoise = () => {
-    setGadenChoiseVisible(false);
-    setIsNewSimulation(false);
+    setFadeOut(true); 
+    setTimeout(() => {
+      setGadenChoiseVisible(false);
+      setIsNewSimulation(false);
+      setFadeOut(false); 
+    }, 500);
+ 
   };
+
 
   return (
     <div className="welcome-container">
@@ -143,22 +154,28 @@ const Welcome = ({ username, onLogout }) => {
             Gaden
           </button>
         ) : null}
-
-        {GadenChoiseVisible && (
-          <div className="gaden-choice-buttons">
-            <button className="new-simulation-button" onClick={handleNewSimulationClick}>
-              New Simulation
-            </button>
-            <button className="saved-simulations-button">
+       {GadenChoiseVisible && (
+         <div className="gaden-choice-buttons">
+          <button
+           className={`new-simulation-button ${fadeOut ? 'fade-out' : ''}`}
+           onClick={handleNewSimulationClick}
+          >
+            New Simulation
+          </button>
+          <button
+             className={`saved-simulations-button ${fadeOut ? 'fade-out' : ''}`}
+          >
               Saved Simulations
-            </button>
-	    <br />
-	    <button className="go-back-gaden-choise" onClick= {handleGoBackGadenChoise}>
-		Go Back
-	    </button>
-          </div>
-        )}
-
+           </button>
+           <br />
+           <button
+            className={`go-back-gaden-choise ${fadeOut ? 'fade-out' : ''}`}
+            onClick={handleGoBackGadenChoise}
+           >
+            Go Back
+    	  </button>
+  	 </div>
+	)}
         {isNewSimulation && (
           <form onSubmit={handleFileSubmit} className="file-upload-form">
             <div>

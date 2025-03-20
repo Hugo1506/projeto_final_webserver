@@ -83,7 +83,7 @@
   text-align: center;
 }
 
-.gaden-button.fade-out {
+button.fade-out{
   opacity: 0;
 }
 

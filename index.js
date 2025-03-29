@@ -63,52 +63,8 @@ const storage = multer.diskStorage({
 const upload = multer({ storage: storage });
 
 // Function to dynamically create a ROS launch file based on the uploaded data
-function createLaunchFile(username, simulationNumber, cadFilePaths, windFilePath) {
-  const simulationDir = path.join(__dirname, 'simulations', username, `${username}_${simulationNumber}`);
-  const launchFileName = `${username}_${simulationNumber}_gaden_launch.py`;
-  const launchFilePath = path.join(simulationDir, launchFileName);
-
-  // Ensure the simulation directory exists
-  if (!fs.existsSync(simulationDir)) {
-    fs.mkdirSync(simulationDir, { recursive: true });
-  }
-
-  // Convert CAD file paths to a format compatible with the launch file
-  const cadFilesPythonList = cadFilePaths
-    .map(filePath => `"${path.relative(simulationDir, filePath)}"`)
-    .join(', ');
-
-const freePointValue = '1.0,2.0,3.0';
-
-const windFileName = path.basename(windFilePath, path.extname(windFilePath)).replace(/_\d+$/, '');
-
-
-const launchFileContent = `
-from launch import LaunchDescription
-from launch_ros.actions import Node
-import os
-
-dir  = os.path.dirname(os.path.realpath(__file__))
-
-def generate_launch_description():
-    return LaunchDescription([
-        Node(
-            package='gaden_preprocessing',
-            executable='preprocessing',
-            name='gaden_preprocessing_node',
-            parameters=[
-                {'models': [${cadFilesPythonList}]},
-                {'wind_files': 'windsim/${windFileName}'},
-                {'free_point': '${freePointValue}'},
-                {'cell_size': 0.1},
-                {'output_directory': dir}
-            ],
-            output='log'
-        ),
-    ])`
-
-fs.writeFileSync(launchFilePath, launchFileContent, 'utf8');
-  return launchFilePath;
+function sendToVolume(username, simulationNumber, cadFilePaths, windFilePath) {
+ 
 }
 
 // File upload route
@@ -126,8 +82,8 @@ app.post('/uploadFiles', upload.fields([{ name: 'cadFiles' }, { name: 'windFiles
   const cadFilePaths = req.files.cadFiles.map(file => file.path);
   const windFilePath = req.files.windFiles[0].path;
 
-  // Create the ROS launch file dynamically
-  const launchFilePath = createLaunchFile(username, simulationNumber, cadFilePaths, windFilePath);
+  // envia os dados da simulação para o volume
+  const sentToVolume = sendToVolume(username, simulationNumber, cadFilePaths, windFilePath);
 
   // Insert the simulation data into the database
   pool.query(queryInsertSimulation, [username, simulationNumber, simulationField], (error, results) => {

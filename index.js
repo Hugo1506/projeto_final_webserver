@@ -26,7 +26,6 @@ const pool = mysql.createPool({
   database: 'projeto_final'
 });
 
-// Configure Multer storage settings for file uploads
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     const username = req.body.username;
@@ -40,8 +39,10 @@ const storage = multer.diskStorage({
     }
 
     fs.mkdirSync(baseDir, { recursive: true });
+
     cb(null, baseDir);
   },
+
   filename: function (req, file, cb) {
     const username = req.body.username;
     const simulationNumber = req.body.simulationNumber;
@@ -50,9 +51,10 @@ const storage = multer.diskStorage({
     let filename;
 
     if (file.fieldname === 'windFiles') {
-      // Generate the filename with an index `_0`, `_1`, etc.
-      const windFileIndex = req.body.windFileIndex || 0; // Assuming windFileIndex is sent in the request
-      filename = `${username}_${simulationNumber}_${randomString}_${windFileIndex}.csv`;
+      const windFileIndex = req.body.windFileIndex || 0; 
+      filename = `${username}_${simulationNumber}_${randomString}_${windFileIndex}${ext}`;
+
+      req.body.windFileIndex = (req.body.windFileIndex || 0) + 1;
     } else {
       filename = `${username}_${simulationNumber}_${randomString}${ext}`;
     }
@@ -62,13 +64,40 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage: storage });
 
-// Function to dynamically create a ROS launch file based on the uploaded data
-function sendToVolume(username, simulationNumber, cadFilePaths, windFilePath) {
- 
+// Função que envia os dados para o volume que os dois containers partilham
+function sendToVolume(username, simulationNumber, cadFilePaths, windFilePaths) {
+  const baseDir = path.join('/simulation_data', username, `sim_${simulationNumber}`);
+    
+    // define os subdiretórios
+    const cadDir = path.join(baseDir, 'cad_models');
+    const windDir = path.join(baseDir, 'wind_simulations');
+
+    // cria os diretórios caso eles não existam
+    [cadDir, windDir].forEach(dir => {
+        if (!fs.existsSync(dir)) {
+            fs.mkdirSync(dir, { recursive: true });
+        }
+    });
+
+    // copia os ficheiros CAD para o local onde o gaden vai ler
+    cadFilePaths.forEach((cadFilePath) => {
+        const fileName = path.basename(cadFilePath);
+        const destPath = path.join(cadDir, fileName);
+        fs.copyFileSync(cadFilePath, destPath);
+    });
+
+    // copia a simulação de vento para o local onde o gaden vai ler
+    windFilePaths.forEach((windFilePath) => {
+      const fileName = path.basename(windFilePath); 
+      const windDestPath = path.join(windDir, fileName); 
+      fs.copyFileSync(windFilePath, windDestPath);
+      console.log(`Copied ${windFilePath} to ${windDestPath}`);
+    });
+
 }
 
 // File upload route
-app.post('/uploadFiles', upload.fields([{ name: 'cadFiles' }, { name: 'windFiles' }]), (req, res) => {
+app.post('/uploadFiles', upload.fields([{ name: 'cadFiles' }, { name: 'windFiles', maxCount: 50 }]), (req, res) => {
   if (!req.files || (!req.files.cadFiles || req.files.cadFiles.length === 0) || (!req.files.windFiles || req.files.windFiles.length === 0)) {
     return res.status(400).send('No files were uploaded.');
   }
@@ -80,10 +109,10 @@ app.post('/uploadFiles', upload.fields([{ name: 'cadFiles' }, { name: 'windFiles
 
   // Get the file paths
   const cadFilePaths = req.files.cadFiles.map(file => file.path);
-  const windFilePath = req.files.windFiles[0].path;
+  const windFilePaths = req.files.windFiles.map(file => file.path);
 
   // envia os dados da simulação para o volume
-  const sentToVolume = sendToVolume(username, simulationNumber, cadFilePaths, windFilePath);
+  const sentToVolume = sendToVolume(username, simulationNumber, cadFilePaths, windFilePaths);
 
   // Insert the simulation data into the database
   pool.query(queryInsertSimulation, [username, simulationNumber, simulationField], (error, results) => {

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './Welcome.css';
-import logo from './flyrobotics_logo.png'; // Import the logo
+import logo from './flyrobotics_logo.png'; 
 
 const Welcome = ({ username, onLogout }) => {
   const [dropdownVisible, setDropdownVisible] = useState(false);
@@ -190,12 +190,11 @@ const Welcome = ({ username, onLogout }) => {
             </div>
             <div>
               <label htmlFor="windFiles">Wind Files:</label>
-              <input
-                type="file"
-                id="windFiles"
-                name="windFiles"
-                multiple
-                onChange={handleFileChange}
+              <input 
+              type="file" 
+              multiple webkitdirectory="true" 
+              directory="" 
+              onChange={(e) => setFiles({ ...files, windFiles: e.target.files })} 
               />
             </div>
             <button type="submit" ClassName="submit-button" >Submit</button>

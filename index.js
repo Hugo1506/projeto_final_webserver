@@ -91,12 +91,11 @@ function sendToVolume(username, simulationNumber, cadFilePaths, windFilePaths) {
       const fileName = path.basename(windFilePath); 
       const windDestPath = path.join(windDir, fileName); 
       fs.copyFileSync(windFilePath, windDestPath);
-      console.log(`Copied ${windFilePath} to ${windDestPath}`);
     });
 
 }
 
-// File upload route
+// rota de upload de ficheiros
 app.post('/uploadFiles', upload.fields([{ name: 'cadFiles' }, { name: 'windFiles', maxCount: 50 }]), (req, res) => {
   if (!req.files || (!req.files.cadFiles || req.files.cadFiles.length === 0) || (!req.files.windFiles || req.files.windFiles.length === 0)) {
     return res.status(400).send('No files were uploaded.');
@@ -104,18 +103,18 @@ app.post('/uploadFiles', upload.fields([{ name: 'cadFiles' }, { name: 'windFiles
 
   const username = req.body.username;
   const simulationNumber = req.body.simulationNumber;
+  const simulationName = req.body.simulationName || `Simulation_${simulationNumber}`; 
   const simulationField = `${username}_${simulationNumber}`;
-  const queryInsertSimulation = 'INSERT INTO simulation_queue (username, simulationNumber, simulation) VALUES (?, ?, ?)';
+  const queryInsertSimulation = 'INSERT INTO simulation_queue (username, simulationNumber, simulation, simulationName) VALUES (?, ?, ?, ?)';
 
-  // Get the file paths
   const cadFilePaths = req.files.cadFiles.map(file => file.path);
   const windFilePaths = req.files.windFiles.map(file => file.path);
 
   // envia os dados da simulação para o volume
   const sentToVolume = sendToVolume(username, simulationNumber, cadFilePaths, windFilePaths);
 
-  // Insert the simulation data into the database
-  pool.query(queryInsertSimulation, [username, simulationNumber, simulationField], (error, results) => {
+  // insere os dados da simulação para a base de dados
+  pool.query(queryInsertSimulation, [username, simulationNumber, simulationField, simulationName], (error, results) => {
     if (error) {
       console.error(error);
       return res.status(500).send('Internal Server Error');
@@ -124,7 +123,8 @@ app.post('/uploadFiles', upload.fields([{ name: 'cadFiles' }, { name: 'windFiles
     res.status(200).send('Files uploaded and launch file created successfully.');
   });
 });
-// Route to get the next simulation number for a user
+
+// rota que dá o novo número de simulação 
 app.get('/getSimulationNumber', (req, res) => {
   const username = req.query.username;
 

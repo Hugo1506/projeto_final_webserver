@@ -11,7 +11,8 @@ const Welcome = ({ username, onLogout }) => {
   const [fadeOut, setFadeOut] = useState(false);
   const [GadenChoiseVisible, setGadenChoiseVisible] = useState(false);
   const [isNewSimulation, setIsNewSimulation] = useState(false);
-	
+	const [simulationName, setSimulationName] = useState('');
+
   const navigate = useNavigate();
 
   const fetchSimulationNumber = async () => {
@@ -77,6 +78,7 @@ const Welcome = ({ username, onLogout }) => {
     const formData = new FormData();
     formData.append('username', username);
     formData.append('simulationNumber', simulationNumber);
+    formData.append('simulationName', simulationName);
 
     if (files.cadFiles) {
       Array.from(files.cadFiles).forEach((file) =>
@@ -97,7 +99,7 @@ const Welcome = ({ username, onLogout }) => {
 
       if (response.ok) {
         alert('Files uploaded successfully.');
-        await fetchSimulationNumber(); // Fetch new simulation number after successful upload
+        await fetchSimulationNumber(); 
       } else {
         alert('Failed to upload files.');
       }
@@ -179,6 +181,17 @@ const Welcome = ({ username, onLogout }) => {
         {isNewSimulation && (
           <form onSubmit={handleFileSubmit} className="file-upload-form">
             <div>
+              <label htmlFor="simulationName">Name of the simulation (optional):</label>
+              <input
+                type="text"
+                id="simulationName"
+                name="simulationName"
+                value={simulationName}
+                onChange={(e) => setSimulationName(e.target.value)}
+                placeholder="Enter simulation name"
+              />
+            </div>
+            <div>
               <label htmlFor="cadFiles">CAD Files:</label>
               <input
                 type="file"
@@ -197,11 +210,11 @@ const Welcome = ({ username, onLogout }) => {
               onChange={(e) => setFiles({ ...files, windFiles: e.target.files })} 
               />
             </div>
-            <button type="submit" ClassName="submit-button" >Submit</button>
+            <button type="submit" className="submit-button" >Submit</button>
             <button type="button" onClick={handleGoBack} className="go-back-button">
               Go Back
             </button>
-          </form>
+          </form> 
         )}
       </div>
     </div>

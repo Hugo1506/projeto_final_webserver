@@ -22,12 +22,12 @@ form {
 }
 
 label {
-  margin-bottom: 5px; /* Space between label and input */
+  margin-bottom: 5px; 
 }
 
 input {
   padding: 5px;
-  width: 100%; /* Make inputs take the full width of their container */
+  width: 100%; 
 }
 
 .button-group {

@@ -95,6 +95,34 @@ function sendToVolume(username, simulationNumber, cadFilePaths, windFilePaths) {
 
 }
 
+app.get('/getSimulations', (req, res) => {
+  const username = req.query.username;
+
+  if (!username) {
+    return res.status(400).json({ error: 'Username is required' });
+  }
+
+  const queryGetSimulations = 'SELECT simulationName, simulation FROM simulation_queue WHERE username = ?';
+
+  pool.query(queryGetSimulations, [username], (error, results) => {
+    if (error) {
+      console.error(error);
+      return res.status(500).json({ error: 'Internal Server Error' });
+    }
+
+    if (results.length === 0) {
+      return res.status(404).json({ message: 'No simulations found for this username' });
+    }
+
+    const simulations = results.map(result => ({
+      simulationName: result.simulationName,
+      simulation: result.simulation
+    }));
+
+    res.status(200).json({ simulations });
+  });
+});
+
 // rota de upload de ficheiros
 app.post('/uploadFiles', upload.fields([{ name: 'cadFiles' }, { name: 'windFiles', maxCount: 50 }]), (req, res) => {
   if (!req.files || (!req.files.cadFiles || req.files.cadFiles.length === 0) || (!req.files.windFiles || req.files.windFiles.length === 0)) {

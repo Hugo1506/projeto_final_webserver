@@ -145,6 +145,25 @@ app.get('/getSimulationNumber', (req, res) => {
   });
 });
 
+// rota que dá o id da próxima simulação
+app.get('/getFirstInQueue', (req, res) => {
+  const queryGetFirstInQueue = 'SELECT * FROM simulation_queue WHERE status = "IN QUEUE" ORDER BY id ASC LIMIT 1';
+
+  pool.query(queryGetFirstInQueue, (error, results) => {
+    if (error) {
+      console.error(error);
+      return res.status(500).send('Internal Server Error');
+    }
+
+    if (results.length === 0) {
+      return res.status(404).send('No simulations in queue');
+    }
+
+    // Return the first record with status "IN QUEUE"
+    res.status(200).json({ simulation: results[0].simulation });
+  });
+});
+
 // User login route
 app.post('/login', async (req, res) => {
   const { username, password } = req.body;

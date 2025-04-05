@@ -8,6 +8,7 @@ const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const cors = require('cors');
 const fs = require('fs');
+const yaml = require('js-yaml');
 
 const app = express();
 const port =3000;
@@ -71,9 +72,10 @@ function sendToVolume(username, simulationNumber, cadFilePaths, windFilePaths) {
     // define os subdiretórios
     const cadDir = path.join(baseDir, 'cad_models');
     const windDir = path.join(baseDir, 'wind_simulations');
+    const paramsDir = path.join(baseDir, 'params');
 
     // cria os diretórios caso eles não existam
-    [cadDir, windDir].forEach(dir => {
+    [cadDir, windDir, paramsDir].forEach(dir => {
         if (!fs.existsSync(dir)) {
             fs.mkdirSync(dir, { recursive: true });
         }
@@ -93,7 +95,68 @@ function sendToVolume(username, simulationNumber, cadFilePaths, windFilePaths) {
       fs.copyFileSync(windFilePath, windDestPath);
     });
 
+    const params = {
+      gaden_preprocessing:{
+        ros__parameters: {
+          cell_size: 0.1,
+          models: cadFilePaths.map(filePath => {
+            return `$(var pkg_dir)/scenarios/$(var scenario)/cad_models/${path.basename(filePath)}`;
+          }),
+          outlets_models: cadFilePaths.map(filePath => {
+            return `$(var pkg_dir)/scenarios/$(var scenario)/cad_models/${path.basename(filePath)}`;
+          }),
+          empty_point_x: (1.0).toFixed(1),
+          empty_point_y: (1.0).toFixed(1),
+          empty_point_z: (0.5).toFixed(1),
+          uniformWind: false,
+          wind_files: `$(var pkg_dir)/scenarios/$(var scenario)/wind_simulations/$(var wind_sim_path)`,
+          output_path: `$(var pkg_dir)/scenarios/$(var scenario)`
+        }
+      }
+    };
+  
+
+    // Guardar o YAML gerado em um arquivo
+    const yamlFilePath = path.join(paramsDir, 'preproc_params.yaml');
+
+    
+
+    const yamlContent = yaml.dump(params, {
+      lineWidth: 1000, // Evitar que o YAML seja quebrado em várias linhas
+      noRefs: true,    // Garante que as referências não sejam geradas
+    });
+
+    fs.writeFileSync(yamlFilePath, yamlContent, 'utf8');
+
 }
+
+app.get('/getSimulations', (req, res) => {
+  const username = req.query.username;
+
+  if (!username) {
+    return res.status(400).json({ error: 'Username is required' });
+  }
+
+  const queryGetSimulations = 'SELECT simulationName, simulation FROM simulation_queue WHERE username = ?';
+
+  pool.query(queryGetSimulations, [username], (error, results) => {
+    if (error) {
+      console.error(error);
+      return res.status(500).json({ error: 'Internal Server Error' });
+    }
+
+    if (results.length === 0) {
+      return res.status(404).json({ message: 'No simulations found for this username' });
+    }
+
+    const simulations = results.map(result => ({
+      simulationName: result.simulationName,
+      simulation: result.simulation
+    }));
+
+    res.status(200).json({ simulations });
+  });
+});
 
 // rota de upload de ficheiros
 app.post('/uploadFiles', upload.fields([{ name: 'cadFiles' }, { name: 'windFiles', maxCount: 50 }]), (req, res) => {

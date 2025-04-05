@@ -12,6 +12,7 @@ const Welcome = ({ username, onLogout }) => {
   const [GadenChoiseVisible, setGadenChoiseVisible] = useState(false);
   const [isNewSimulation, setIsNewSimulation] = useState(false);
 	const [simulationName, setSimulationName] = useState('');
+  const [savedSimulations, setSavedSimulations] = useState([]);
 
   const navigate = useNavigate();
 
@@ -29,6 +30,19 @@ const Welcome = ({ username, onLogout }) => {
     }
   };
 
+  const fetchSavedSimulations = async () => {
+    try {
+      const response = await fetch(`http://localhost:3000/getSimulations?username=${username}`);
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+      const data = await response.json();
+      console.log('Saved simulations:', data.simulations);
+      setSavedSimulations(data.simulations); // Set the state with the fetched simulations
+    } catch (error) {
+      console.error('Error fetching saved simulations:', error);
+    }
+  };
   useEffect(() => {
     fetchSimulationNumber();
   }, [username]);
@@ -127,7 +141,9 @@ const Welcome = ({ username, onLogout }) => {
  
   };
 
-
+  const handleSavedSimulationsClick = () => {
+    fetchSavedSimulations(); 
+  };
   return (
     <div className="welcome-container">
       <div className="welcome-banner">
@@ -166,6 +182,7 @@ const Welcome = ({ username, onLogout }) => {
           </button>
           <button
              className={`saved-simulations-button ${fadeOut ? 'fade-out' : ''}`}
+             onClick={handleSavedSimulationsClick} 
           >
               Saved Simulations
            </button>
@@ -215,6 +232,19 @@ const Welcome = ({ username, onLogout }) => {
               Go Back
             </button>
           </form> 
+        )}
+        {savedSimulations.length > 0 && (
+          <div className="saved-simulations-list">
+            <h3>Saved Simulations</h3>
+            <ul>
+              {savedSimulations.map((simulation, index) => (
+                <li key={index}>
+                  <strong>Simulation Name:</strong> {simulation.simulationName} <br />
+                  <strong>Simulation:</strong> {simulation.simulation}
+                </li>
+              ))}
+            </ul>
+          </div>
         )}
       </div>
     </div>

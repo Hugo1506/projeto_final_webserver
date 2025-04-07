@@ -211,7 +211,7 @@ app.get('/getSimulationNumber', (req, res) => {
 // rota que dá o id da próxima simulação
 app.get('/getFirstInQueue', (req, res) => {
   const queryGetFirstInQueue = 'SELECT * FROM simulation_queue WHERE status = "IN QUEUE" ORDER BY id ASC LIMIT 1';
-
+  
   pool.query(queryGetFirstInQueue, (error, results) => {
     if (error) {
       console.error(error);
@@ -224,6 +224,43 @@ app.get('/getFirstInQueue', (req, res) => {
 
     // Return the first record with status "IN QUEUE"
     res.status(200).json({ simulation: results[0].simulation });
+  });
+});
+
+
+app.post('/setStatusToInSimulation', (req, res) => {
+  const simulation = req.body.simulation;
+
+  const querySetStatus = 'UPDATE simulation_queue SET status = "IN SIMULATION" WHERE simulation = ?';
+
+  pool.query(querySetStatus, [simulation], async(error, results) => {
+    if (error) {
+      console.error(error);
+      return res.status(500).send('Internal Server Error');
+    }
+
+    if (results.length === 0) {
+      return res.status(404).send('Simulation not found');
+    }
+    res.status(200).send('Status updated successfully');
+  });
+});
+
+app.post('/setStatusToDone', (req, res) => {
+  const simulation = req.body.simulation;
+  console.log(req.body);
+  const querySetStatus = 'UPDATE simulation_queue SET status = "DONE" WHERE simulation = ?';
+
+  pool.query(querySetStatus, [simulation], async(error, results) => {
+    if (error) {
+      console.error(error);
+      return res.status(500).send('Internal Server Error');
+    }
+
+    if (results.length === 0) {
+      return res.status(404).send('Simulation not found');
+    }
+    res.status(200).send('Status updated successfully');
   });
 });
 

@@ -6,7 +6,7 @@ import logo from './flyrobotics_logo.png';
 const Welcome = ({ username, onLogout }) => {
   const [dropdownVisible, setDropdownVisible] = useState(false);
   const [fileInputVisible, setFileInputVisible] = useState(false);
-  const [files, setFiles] = useState({ cadFiles: null, windFiles: null });
+  const [files, setFiles] = useState({ innerCadFiles: null, outerCadFiles: null, windFiles: null });
   const [simulationNumber, setSimulationNumber] = useState(null);
   const [fadeOut, setFadeOut] = useState(false);
   const [GadenChoiseVisible, setGadenChoiseVisible] = useState(false);
@@ -94,11 +94,18 @@ const Welcome = ({ username, onLogout }) => {
     formData.append('simulationNumber', simulationNumber);
     formData.append('simulationName', simulationName);
 
-    if (files.cadFiles) {
-      Array.from(files.cadFiles).forEach((file) =>
-        formData.append('cadFiles', file)
-      );
+    if (files.innerCadFiles) {
+      Array.from(files.innerCadFiles).forEach((file) => {
+        formData.append('innerCadFiles', file);
+      });
     }
+  
+    if (files.outerCadFiles) {
+      Array.from(files.outerCadFiles).forEach((file) => {
+        formData.append('outerCadFiles', file);
+      });
+    }
+
     if (files.windFiles) {
       Array.from(files.windFiles).forEach((file) =>
         formData.append('windFiles', file)
@@ -209,11 +216,21 @@ const Welcome = ({ username, onLogout }) => {
               />
             </div>
             <div>
-              <label htmlFor="cadFiles">CAD Files:</label>
+              <label htmlFor="innerCadFiles">Inner CAD Files:</label>
               <input
                 type="file"
-                id="cadFiles"
-                name="cadFiles"
+                id="innerCadFiles"
+                name="innerCadFiles"
+                multiple
+                onChange={handleFileChange}
+              />
+            </div>
+            <div>
+              <label htmlFor="outerCadFiles">Outer CAD Files:</label>
+              <input
+                type="file"
+                id="outerCadFiles"
+                name="outerCadFiles"
                 multiple
                 onChange={handleFileChange}
               />

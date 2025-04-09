@@ -33,7 +33,7 @@ const storage = multer.diskStorage({
     const simulationNumber = req.body.simulationNumber;
     let baseDir = `simulations/${username}/${username}_${simulationNumber}`;
 
-    if (file.fieldname === 'cadFiles') {
+    if (file.fieldname === 'innerCadFiles' || file.fieldname === 'outerCadFiles') {
       baseDir = `${baseDir}/CADs`;
     } else if (file.fieldname === 'windFiles') {
       baseDir = `${baseDir}/windsim`;
@@ -66,7 +66,7 @@ const storage = multer.diskStorage({
 const upload = multer({ storage: storage });
 
 // Função que envia os dados para o volume que os dois containers partilham
-function sendToVolume(username, simulationNumber, cadFilePaths, windFilePaths) {
+function sendToVolume(username, simulationNumber, innerCadFilePaths, outerCadFilePaths, windFilePaths) {
   const baseDir = path.join('/simulation_data', username, `sim_${simulationNumber}`);
     
     // define os subdiretórios
@@ -82,10 +82,16 @@ function sendToVolume(username, simulationNumber, cadFilePaths, windFilePaths) {
     });
 
     // copia os ficheiros CAD para o local onde o gaden vai ler
-    cadFilePaths.forEach((cadFilePath) => {
-        const fileName = path.basename(cadFilePath);
-        const destPath = path.join(cadDir, fileName);
-        fs.copyFileSync(cadFilePath, destPath);
+    innerCadFilePaths.forEach((cadFilePath) => {
+      const fileName = path.basename(cadFilePath);
+      const destPath = path.join(cadDir, fileName);
+      fs.copyFileSync(cadFilePath, destPath);
+    });
+  
+    outerCadFilePaths.forEach((cadFilePath) => {
+      const fileName = path.basename(cadFilePath);
+      const destPath = path.join(cadDir,fileName); 
+      fs.copyFileSync(cadFilePath, destPath);
     });
 
     // copia a simulação de vento para o local onde o gaden vai ler
@@ -99,10 +105,10 @@ function sendToVolume(username, simulationNumber, cadFilePaths, windFilePaths) {
       gaden_preprocessing:{
         ros__parameters: {
           cell_size: 0.1,
-          models: cadFilePaths.map(filePath => {
+          models: innerCadFilePaths.filter(filePath => filePath.endsWith('.stl')).map(filePath => {
             return `$(var pkg_dir)/scenarios/$(var scenario)/cad_models/${path.basename(filePath)}`;
           }),
-          outlets_models: cadFilePaths.map(filePath => {
+          outlets_models: outerCadFilePaths.filter(filePath => filePath.endsWith('.stl')).map(filePath => {
             return `$(var pkg_dir)/scenarios/$(var scenario)/cad_models/${path.basename(filePath)}`;
           }),
           empty_point_x: (1.0).toFixed(1),
@@ -159,9 +165,17 @@ app.get('/getSimulations', (req, res) => {
 });
 
 // rota de upload de ficheiros
-app.post('/uploadFiles', upload.fields([{ name: 'cadFiles' }, { name: 'windFiles', maxCount: 50 }]), (req, res) => {
-  if (!req.files || (!req.files.cadFiles || req.files.cadFiles.length === 0) || (!req.files.windFiles || req.files.windFiles.length === 0)) {
-    return res.status(400).send('No files were uploaded.');
+app.post('/uploadFiles', upload.fields([
+  { name: 'innerCadFiles', maxCount: 10 },  
+  { name: 'outerCadFiles', maxCount: 10 },  
+  { name: 'windFiles', maxCount: 50 }   
+]), (req, res) => {
+
+  if (!req.files || 
+      (!req.files.innerCadFiles || req.files.innerCadFiles.length === 0) || 
+      (!req.files.outerCadFiles || req.files.outerCadFiles.length === 0) || 
+      (!req.files.windFiles || req.files.windFiles.length === 0)) {
+    return res.status(400).send('No files were uploaded. Please upload both CAD and wind files.');
   }
 
   const username = req.body.username;
@@ -170,12 +184,13 @@ app.post('/uploadFiles', upload.fields([{ name: 'cadFiles' }, { name: 'windFiles
   const simulationField = `${username}_${simulationNumber}`;
   const queryInsertSimulation = 'INSERT INTO simulation_queue (username, simulationNumber, simulation, simulationName) VALUES (?, ?, ?, ?)';
 
-  const cadFilePaths = req.files.cadFiles.map(file => file.path);
+   const innerCadFilePaths = req.files.innerCadFiles.map(file => file.path);
+  const outerCadFilePaths = req.files.outerCadFiles.map(file => file.path);
   const windFilePaths = req.files.windFiles.map(file => file.path);
 
   // envia os dados da simulação para o volume
-  const sentToVolume = sendToVolume(username, simulationNumber, cadFilePaths, windFilePaths);
-
+  const sentToVolume = sendToVolume(username, simulationNumber, innerCadFilePaths, outerCadFilePaths, windFilePaths);
+  
   // insere os dados da simulação para a base de dados
   pool.query(queryInsertSimulation, [username, simulationNumber, simulationField, simulationName], (error, results) => {
     if (error) {

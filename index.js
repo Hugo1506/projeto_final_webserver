@@ -121,18 +121,116 @@ function sendToVolume(username, simulationNumber, innerCadFilePaths, outerCadFil
       }
     };
   
+    const gaden_params ={ 
+      gaden_environment: {
+        ros__parameters: {
+          verbose: false,
+          wait_preprocessing: false, // aguarda confirmação do gaden_preprocessing antes de executar
+          fixed_frame: "map",
+        }
+      },
+      gaden_filament_simulator: {
+        ros__parameters: {
+          verbose: false,
+          wait_preprocessing: false,
+          sim_time: "$(var sim_time)", // [seg] Tempo total da simulação de dispersão do gás
+          time_step: "$(var time_step)", // [seg] Incremento de tempo entre snapshots
+          num_filaments_sec: "$(var num_filaments_sec)", // Número de filamentos liberados por segundo
+          variable_rate: "$(var variable_rate)", // Se true, o número de filamentos liberados seria aleatório
+          filament_stop_steps: "$(var filament_stop_steps)",
+          ppm_filament_center: "$(var ppm_filament_center)", // [ppm] Concentração de gás no centro da 3D gaussiana
+          filament_initial_std: "$(var filament_initial_std)", // [cm] Sigma do filamento no tempo t=0
+          filament_growth_gamma: "$(var filament_growth_gamma)", // [cm²/s] Taxa de crescimento do filamento
+          filament_noise_std: "$(var filament_noise_std)", // [m] Faixa de ruído branco adicionado a cada iteração
+          gas_type: "$(var gas_type)", // 0=Etanol, 1=Metano, 2=Hidrogênio, 6=Acetona
+          temperature: "$(var temperature)", // [Kelvins]
+          pressure: "1.0", // [Atm]
+          concentration_unit_choice: 1, // 0=moleculas/cm³, 1=ppm (quando ppm é usado, ajustar temp e pressão)
+          occupancy3D_data: "$(var pkg_dir)/scenarios/$(var scenario)/OccupancyGrid3D.csv",
+          fixed_frame: "map",
+
+          // WindFlow data (from CFD)
+          wind_data: "$(var pkg_dir)/scenarios/$(var scenario)/wind_simulations/$(var wind_sim_path)",
+          wind_time_step: "1.0", // [seg] Incremento de tempo entre snapshots de vento
+
+          // Loop options
+          allow_looping: true,
+          loop_from_step: 0,
+          loop_to_step: 24,
+
+          // Local do ponto de liberação!
+          source_position_x: "$(var source_x)", // (m)
+          source_position_y: "$(var source_y)", // (m)
+          source_position_z: "$(var source_z)", // (m)
+
+          save_results: 1, // 1=true, 0=false
+          results_time_step: 0.5, // (seg) Incremento de tempo entre salvar estado no arquivo
+          results_min_time: "0.0", // (seg) Tempo para começar a salvar resultados no arquivo
+          results_location: "$(var pkg_dir)/scenarios/$(var scenario)/gas_simulations/$(var simulation)"
+        }
+      },
+      gaden_player: {
+        ros__parameters: {
+          verbose: false,
+          player_freq: "2.0", // (Hz) Freq para carregar os arquivos de log da simulação
+          initial_iteration: 0,
+          num_simulators: 1, // Número de simulações para carregar [1-inf] (útil para múltiplas fontes e gases)
+
+          // Dados do pacote "filament_simulator"
+          simulation_data_0: "$(var pkg_dir)/scenarios/$(var scenario)/gas_simulations/$(var simulation)",
+          occupancyFile: "$(var pkg_dir)/scenarios/$(var scenario)/OccupancyGrid3D.csv",
+
+          // Loop options
+          allow_looping: false,
+          loop_from_iteration: 15,
+          loop_to_iteration: 24
+        }
+      }
+    };
+    
+    const innerDaeFiles = innerCadFilePaths.filter(filePath => filePath.endsWith('.dae'));
+    const outerDaeFiles = outerCadFilePaths.filter(filePath => filePath.endsWith('.dae'));
+
+    innerDaeFiles.forEach((cadFilePath, index) => {
+      const key = `CAD_${index}`;
+      gaden_params.gaden_environment.ros__parameters[key] = `$(var pkg_dir)/scenarios/$(var scenario)/cad_models/${path.basename(cadFilePath)}`;
+      
+      // Set color for .dae files (change as needed)
+      gaden_params.gaden_environment.ros__parameters[`${key}_color`] = [0.92, 0.96, 0.96]; 
+    });
+    
+    // Process the filtered outer .dae files
+    outerDaeFiles.forEach((cadFilePath, index) => {
+      const key = `CAD_${innerDaeFiles.length + index}`;
+      gaden_params.gaden_environment.ros__parameters[key] = `$(var pkg_dir)/scenarios/$(var scenario)/cad_models/${path.basename(cadFilePath)}`;
+      
+      // Set color for .dae files (change as needed)
+      gaden_params.gaden_environment.ros__parameters[`${key}_color`] = [0.96, 0.17, 0.3]; 
+    });
+
+    const yamlSimFilePath = path.join(paramsDir, 'gaden_params.yaml');
+
+    const yamlSimContent = yaml.dump(gaden_params, {
+      lineWidth: 1000, // Evitar que o YAML seja quebrado em várias linhas
+      noRefs: true, // Garante que as referências não sejam geradas
+      pretty: true,    // Optional: Ensures a readable format, but still inline arrays
+      flowLevel: 1 
+    });
+
+    fs.writeFileSync(yamlSimFilePath, yamlSimContent, 'utf8');
 
     // Guardar o YAML gerado em um arquivo
-    const yamlFilePath = path.join(paramsDir, 'preproc_params.yaml');
+    const yamlPreprocFilePath = path.join(paramsDir, 'preproc_params.yaml');
 
     
 
-    const yamlContent = yaml.dump(params, {
+    const yamlPreprocContent = yaml.dump(params, {
       lineWidth: 1000, // Evitar que o YAML seja quebrado em várias linhas
       noRefs: true,    // Garante que as referências não sejam geradas
     });
 
-    fs.writeFileSync(yamlFilePath, yamlContent, 'utf8');
+    fs.writeFileSync(yamlPreprocFilePath, yamlPreprocContent, 'utf8');
+
 
 }
 

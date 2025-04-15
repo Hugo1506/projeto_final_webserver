@@ -9,6 +9,7 @@ const jwt = require('jsonwebtoken');
 const cors = require('cors');
 const fs = require('fs');
 const yaml = require('js-yaml');
+const zlib = require('zlib');
 
 const app = express();
 const port =3000;
@@ -16,7 +17,8 @@ const saltRounds = 10;
 const secretKey = '8711aff2c33a868742a1122a185e1ecb6b17beb1a4c4097a9cc37092b8fddb20fb5049c81b07dcbf979e678312c039d1939824efbefebdacf94bac0ba1421f5';
 
 app.use(cors());
-app.use(bodyParser.json());
+app.use(bodyParser.json({ limit: '50mb' }));
+app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
 
 // Set up the MySQL connection pool
 const pool = mysql.createPool({
@@ -259,6 +261,55 @@ app.get('/getSimulations', (req, res) => {
     }));
 
     res.status(200).json({ simulations });
+  });
+});
+
+app.post('/uploadSimulationResults', (req, res) => {
+  const simulation = req.body.simulation;
+  const simulationResultType = req.body.simulationResultType;
+  const height = req.body.height;
+  const compressedGif = req.body.gif;
+  
+  const queryInsertSimulationResult = 'INSERT INTO simulation_results (simulation,type,gif,height) VALUES (?, ?, ?,?)';
+
+  pool.query(queryInsertSimulationResult, [simulation, simulationResultType, compressedGif,height], (error, results) => {
+    if (error) {
+      console.error(error);
+      return res.status(500).send('Internal Server Error');
+    }
+
+    res.status(200).send('Results uploaded successfully');
+  });
+
+});
+
+app.get('/getSimulationResultGif', (req, res) => {
+  const simulation = req.query.simulation;  
+  const queryGetSimulationResult = 'SELECT gif FROM simulation_results WHERE simulation = ?';
+
+  pool.query(queryGetSimulationResult, [simulation], (error, results) => {
+      if (error) {
+          console.error(error);
+          return res.status(500).send('Internal Server Error');
+      }
+
+      if (results.length === 0) {
+          return res.status(404).send('Simulation not found');
+      }
+
+      const compressedGifBase64 = results[0].gif;  
+      const compressedGifBuffer = Buffer.from(compressedGifBase64, 'base64'); 
+
+      zlib.unzip(compressedGifBuffer, (err, decompressedBuffer) => {
+        if (err) {
+          console.error('Error decompressing GIF:', err);
+          return res.status(500).send('Failed to decompress GIF');
+        }
+        console.log('Decompressed GIF Buffer:', decompressedBuffer);
+
+        res.set('Content-Type', 'image/gif');
+        res.send(decompressedBuffer);
+      });
   });
 });
 

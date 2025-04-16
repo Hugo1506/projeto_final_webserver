@@ -283,35 +283,50 @@ app.post('/uploadSimulationResults', (req, res) => {
 
 });
 
-app.get('/getSimulationResultGif', (req, res) => {
-  const simulation = req.query.simulation;  
-  const queryGetSimulationResult = 'SELECT gif FROM simulation_results WHERE simulation = ?';
+app.get('/getSimulationResultsGifs', (req, res) => {
+  const simulation = req.query.simulation;
+  const queryGetSimulationResults = 'SELECT gif FROM simulation_results WHERE simulation = ?';
 
-  pool.query(queryGetSimulationResult, [simulation], (error, results) => {
-      if (error) {
-          console.error(error);
-          return res.status(500).send('Internal Server Error');
-      }
+  pool.query(queryGetSimulationResults, [simulation], (error, results) => {
+    if (error) {
+      console.error(error);
+      return res.status(500).send('Internal Server Error');
+    }
 
-      if (results.length === 0) {
-          return res.status(404).send('Simulation not found');
-      }
+    if (results.length === 0) {
+      return res.status(404).send('Simulation not found');
+    }
 
-      const compressedGifBase64 = results[0].gif;  
-      const compressedGifBuffer = Buffer.from(compressedGifBase64, 'base64'); 
+    // Array to hold all the decompressed GIFs (base64 strings)
+    const gifs = [];
+    let processedCount = 0;
 
+    results.forEach((result, index) => {
+      const compressedGifBase64 = result.gif;
+      const compressedGifBuffer = Buffer.from(compressedGifBase64, 'base64');
+
+      // Decompress the GIF
       zlib.unzip(compressedGifBuffer, (err, decompressedBuffer) => {
         if (err) {
-          console.error('Error decompressing GIF:', err);
+          console.error(`Error decompressing GIF at index ${index}:`, err);
           return res.status(500).send('Failed to decompress GIF');
         }
-        console.log('Decompressed GIF Buffer:', decompressedBuffer);
 
-        res.set('Content-Type', 'image/gif');
-        res.send(decompressedBuffer);
+        // Convert decompressed GIF to base64 and add to array
+        gifs.push(decompressedBuffer.toString('base64'));
+
+        processedCount++;
+
+        // Once all GIFs are processed, send the array of base64 GIFs as JSON
+        if (processedCount === results.length) {
+          res.set('Content-Type', 'application/json'); // Ensure it's JSON
+          res.json(gifs); // Send the array of base64 strings
+        }
       });
+    });
   });
 });
+
 
 // rota de upload de ficheiros
 app.post('/uploadFiles', upload.fields([

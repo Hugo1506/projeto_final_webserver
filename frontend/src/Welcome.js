@@ -10,9 +10,13 @@ const Welcome = ({ username, onLogout }) => {
   const [simulationNumber, setSimulationNumber] = useState(null);
   const [fadeOut, setFadeOut] = useState(false);
   const [GadenChoiseVisible, setGadenChoiseVisible] = useState(false);
+  const [SavedSimulationsVisible, setSavedSimulationsVisible] = useState(false);
   const [isNewSimulation, setIsNewSimulation] = useState(false);
 	const [simulationName, setSimulationName] = useState('');
   const [savedSimulations, setSavedSimulations] = useState([]);
+  const [gifs, setGifs] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filteredSimulations, setFilteredSimulations] = useState(savedSimulations);
 
   const navigate = useNavigate();
 
@@ -37,12 +41,47 @@ const Welcome = ({ username, onLogout }) => {
         throw new Error('Network response was not ok');
       }
       const data = await response.json();
-      console.log('Saved simulations:', data.simulations);
-      setSavedSimulations(data.simulations); // Set the state with the fetched simulations
+      setSavedSimulations(data.simulations);
+      setFilteredSimulations(data.simulations);
     } catch (error) {
       console.error('Error fetching saved simulations:', error);
     }
   };
+
+  const fetchGifsFromResults = async () => {
+    try {
+      const response = await fetch('http://localhost:3000/getSimulationResultsGifs?simulation=new_129');
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch GIFs');
+      }
+  
+      const gifsData = await response.json();
+      
+      const gifs = gifsData.map(base64Gif => {
+        const byteCharacters = atob(base64Gif);  
+        const byteArrays = [];
+  
+        for (let offset = 0; offset < byteCharacters.length; offset += 1024) {
+          const byteArray = new Uint8Array(Math.min(byteCharacters.length - offset, 1024));
+          for (let i = 0; i < byteArray.length; i++) {
+            byteArray[i] = byteCharacters.charCodeAt(offset + i);
+          }
+          byteArrays.push(byteArray);
+        }
+  
+        const blob = new Blob(byteArrays, { type: 'image/gif' });
+  
+        return URL.createObjectURL(blob);
+      });
+  
+      setGifs(gifs);
+    } catch (error) {
+      console.error('Error fetching GIFs:', error);
+    }
+  };
+
+
   useEffect(() => {
     fetchSimulationNumber();
   }, [username]);
@@ -133,24 +172,60 @@ const Welcome = ({ username, onLogout }) => {
   };
 
   const handleGoBack = () => {
-    setFileInputVisible(false);
-    setGadenChoiseVisible(false);
-    setIsNewSimulation(false);
+    setFadeOut(true); 
+    setTimeout(() => {
+      setFileInputVisible(false);
+      setGadenChoiseVisible(false);
+      setIsNewSimulation(false);
+      setSavedSimulationsVisible(false);
+      setFadeOut(false); 
+    }, 500);
   };
 
   const handleGoBackGadenChoise = () => {
     setFadeOut(true); 
     setTimeout(() => {
-      setGadenChoiseVisible(false);
+      setGadenChoiseVisible(true);
       setIsNewSimulation(false);
+      setSavedSimulationsVisible(false);
       setFadeOut(false); 
     }, 500);
  
   };
 
-  const handleSavedSimulationsClick = () => {
-    fetchSavedSimulations(); 
+  const handleSavedSimulationsClick = async () => {
+    await fetchSavedSimulations();
+    setFadeOut(true); 
+    setTimeout(() => {
+      setGadenChoiseVisible(false); 
+      setIsNewSimulation(false); 
+      setSavedSimulationsVisible(true);
+      setFadeOut(false)
+    }, 500);
   };
+
+  const handleSearch = (event) => {
+    const query = event.target.value.toLowerCase();
+    setSearchQuery(query);
+  
+    if (query === '') {
+      setFilteredSimulations(savedSimulations); 
+      return;
+    }
+  
+    const filtered = savedSimulations.filter((simulation) => {
+      const simulationName = simulation.simulationName ? simulation.simulationName.toLowerCase() : '';
+      const simulationDescription = simulation.simulation ? simulation.simulation.toLowerCase() : '';
+  
+      return (
+        simulationName.includes(query) || 
+        simulationDescription.includes(query)
+      );
+    });
+  
+    setFilteredSimulations(filtered);
+  };
+
   return (
     <div className="welcome-container">
       <div className="welcome-banner">
@@ -171,7 +246,7 @@ const Welcome = ({ username, onLogout }) => {
         />
       </div>
       <div className="main-content">
-        {!fileInputVisible && !GadenChoiseVisible && !isNewSimulation ? (
+        {!fileInputVisible && !GadenChoiseVisible && !isNewSimulation && !SavedSimulationsVisible ? (
           <button
             className={`gaden-button ${fadeOut ? 'fade-out' : ''}`}
             onClick={handleGadenClick}
@@ -193,74 +268,106 @@ const Welcome = ({ username, onLogout }) => {
           >
               Saved Simulations
            </button>
-           <br />
            <button
-            className={`go-back-gaden-choise ${fadeOut ? 'fade-out' : ''}`}
-            onClick={handleGoBackGadenChoise}
-           >
-            Go Back
-    	  </button>
+                className={`go-back-button ${fadeOut ? 'fade-out' : ''}`}
+                onClick={handleGoBack}
+              >
+                Go Back
+            </button>
+           <br />
   	 </div>
-	)}
-        {isNewSimulation && (
-          <form onSubmit={handleFileSubmit} className="file-upload-form">
-            <div>
-              <label htmlFor="simulationName">Name of the simulation (optional):</label>
+    )}
+      {isNewSimulation && (
+        <form onSubmit={handleFileSubmit} className="file-upload-form">
+          <div>
+            <label htmlFor="simulationName">Name of the simulation (optional):</label>
+            <input
+              type="text"
+              id="simulationName"
+              name="simulationName"
+              value={simulationName}
+              onChange={(e) => setSimulationName(e.target.value)}
+              placeholder="Enter simulation name"
+            />
+          </div>
+          <div>
+            <label htmlFor="innerCadFiles">Inner CAD Files:</label>
+            <input
+              type="file"
+              id="innerCadFiles"
+              name="innerCadFiles"
+              multiple
+              onChange={handleFileChange}
+            />
+          </div>
+          <div>
+            <label htmlFor="outerCadFiles">Outer CAD Files:</label>
+            <input
+              type="file"
+              id="outerCadFiles"
+              name="outerCadFiles"
+              multiple
+              onChange={handleFileChange}
+            />
+          </div>
+          <div>
+            <label htmlFor="windFiles">Wind Files:</label>
+            <input 
+            type="file" 
+            multiple webkitdirectory="true" 
+            directory="" 
+            onChange={(e) => setFiles({ ...files, windFiles: e.target.files })} 
+            />
+          </div>
+          <button type="submit" className={`submit-button ${fadeOut ? 'fade-out' : ''}`} >Submit</button>
+          <button type="button" onClick={handleGoBackGadenChoise} className={`go-back-button ${fadeOut ? 'fade-out' : ''}`}>
+            Go Back
+          </button>
+        </form> 
+      )}
+        {gifs.length > 0 && (
+          <div className="gif-container">
+            {gifs.map((gifUrl, index) => (
+              <img
+                key={index}
+                src={gifUrl}  
+                alt={`Simulation GIF ${index + 1}`}
+                className="gif-image"
+              />
+            ))}
+          </div>
+        )}
+        {SavedSimulationsVisible && (
+          <div className="saved-simulations-list">
+            <div className="saved-simulations-header">
+              <h3>Saved Simulations</h3>
               <input
                 type="text"
-                id="simulationName"
-                name="simulationName"
-                value={simulationName}
-                onChange={(e) => setSimulationName(e.target.value)}
-                placeholder="Enter simulation name"
+                className="search-bar"
+                placeholder="Search by name or simulation"
+                onChange={handleSearch}
               />
-            </div>
-            <div>
-              <label htmlFor="innerCadFiles">Inner CAD Files:</label>
-              <input
-                type="file"
-                id="innerCadFiles"
-                name="innerCadFiles"
-                multiple
-                onChange={handleFileChange}
-              />
-            </div>
-            <div>
-              <label htmlFor="outerCadFiles">Outer CAD Files:</label>
-              <input
-                type="file"
-                id="outerCadFiles"
-                name="outerCadFiles"
-                multiple
-                onChange={handleFileChange}
-              />
-            </div>
-            <div>
-              <label htmlFor="windFiles">Wind Files:</label>
-              <input 
-              type="file" 
-              multiple webkitdirectory="true" 
-              directory="" 
-              onChange={(e) => setFiles({ ...files, windFiles: e.target.files })} 
-              />
-            </div>
-            <button type="submit" className="submit-button" >Submit</button>
-            <button type="button" onClick={handleGoBack} className="go-back-button">
-              Go Back
+              <button
+                className={`go-back-saved-simulations ${fadeOut ? 'fade-out' : ''}`}
+                onClick={handleGoBackGadenChoise}
+              >
+                Go Back
             </button>
-          </form> 
-        )}
-        {savedSimulations.length > 0 && (
-          <div className="saved-simulations-list">
-            <h3>Saved Simulations</h3>
-            <ul>
-              {savedSimulations.map((simulation, index) => (
-                <li key={index}>
-                  <strong>Simulation Name:</strong> {simulation.simulationName} <br />
-                  <strong>Simulation:</strong> {simulation.simulation}
-                </li>
-              ))}
-            </ul>
+            </div>
+            <div className="saved-simulations-list">
+              {filteredSimulations.length > 0 ? (
+                <ul>
+                  {filteredSimulations.map((simulation, index) => (
+                    <li key={index}>
+                      <strong>Simulation Name:</strong> {simulation.simulationName || 'Unnamed Simulation'} <br />
+                      <strong>Simulation:</strong> {simulation.simulation || 'No simulation description'}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p>No simulations found</p>
+              )}
+            </div>
           </div>
         )}
       </div>

@@ -285,7 +285,7 @@ app.post('/uploadSimulationResults', (req, res) => {
 
 app.get('/getSimulationResultsGifs', (req, res) => {
   const simulation = req.query.simulation;
-  const queryGetSimulationResults = 'SELECT gif FROM simulation_results WHERE simulation = ?';
+  const queryGetSimulationResults = 'SELECT gif, height FROM simulation_results WHERE simulation = ?';
 
   pool.query(queryGetSimulationResults, [simulation], (error, results) => {
     if (error) {
@@ -297,7 +297,6 @@ app.get('/getSimulationResultsGifs', (req, res) => {
       return res.status(404).send('Simulation not found');
     }
 
-    // Array to hold all the decompressed GIFs (base64 strings)
     const gifs = [];
     let processedCount = 0;
 
@@ -305,22 +304,24 @@ app.get('/getSimulationResultsGifs', (req, res) => {
       const compressedGifBase64 = result.gif;
       const compressedGifBuffer = Buffer.from(compressedGifBase64, 'base64');
 
-      // Decompress the GIF
+
       zlib.unzip(compressedGifBuffer, (err, decompressedBuffer) => {
         if (err) {
           console.error(`Error decompressing GIF at index ${index}:`, err);
           return res.status(500).send('Failed to decompress GIF');
         }
 
-        // Convert decompressed GIF to base64 and add to array
-        gifs.push(decompressedBuffer.toString('base64'));
+       
+        gifs.push({
+          gif: decompressedBuffer.toString('base64'),
+          height: result.height
+        });
 
         processedCount++;
 
-        // Once all GIFs are processed, send the array of base64 GIFs as JSON
         if (processedCount === results.length) {
-          res.set('Content-Type', 'application/json'); // Ensure it's JSON
-          res.json(gifs); // Send the array of base64 strings
+          res.set('Content-Type', 'application/json'); 
+          res.json(gifs); 
         }
       });
     });

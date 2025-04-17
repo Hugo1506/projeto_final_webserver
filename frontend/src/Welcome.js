@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './Welcome.css';
 import logo from './flyrobotics_logo.png'; 
@@ -17,8 +17,17 @@ const Welcome = ({ username, onLogout }) => {
   const [gifs, setGifs] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredSimulations, setFilteredSimulations] = useState(savedSimulations);
+  const [simulationDetail, setSimulationDetail] = useState(false);
 
   const navigate = useNavigate();
+  const searchInputRef = useRef(null);
+
+  const [checkedOptions, setCheckedOptions] = useState({
+    all: false,
+    heatmap: false,
+    wind: false,
+    contour: false,
+  });
 
   const fetchSimulationNumber = async () => {
     try {
@@ -48,9 +57,9 @@ const Welcome = ({ username, onLogout }) => {
     }
   };
 
-  const fetchGifsFromResults = async () => {
+  const fetchGifsFromResults = async (simulation) => {
     try {
-      const response = await fetch('http://localhost:3000/getSimulationResultsGifs?simulation=new_129');
+      const response = await fetch(`http://localhost:3000/getSimulationResultsGifs?simulation=${simulation}`);
       
       if (!response.ok) {
         throw new Error('Failed to fetch GIFs');
@@ -58,8 +67,8 @@ const Welcome = ({ username, onLogout }) => {
   
       const gifsData = await response.json();
       
-      const gifs = gifsData.map(base64Gif => {
-        const byteCharacters = atob(base64Gif);  
+      const gifs = gifsData.map(({ gif, height }) => {
+        const byteCharacters = atob(gif);  
         const byteArrays = [];
   
         for (let offset = 0; offset < byteCharacters.length; offset += 1024) {
@@ -71,8 +80,12 @@ const Welcome = ({ username, onLogout }) => {
         }
   
         const blob = new Blob(byteArrays, { type: 'image/gif' });
-  
-        return URL.createObjectURL(blob);
+        const url = URL.createObjectURL(blob);
+
+        return {
+          url,
+          height
+        };
       });
   
       setGifs(gifs);
@@ -85,6 +98,21 @@ const Welcome = ({ username, onLogout }) => {
   useEffect(() => {
     fetchSimulationNumber();
   }, [username]);
+
+  // foca a search box 
+  useEffect(() => {
+    if (SavedSimulationsVisible && searchInputRef.current) {
+      searchInputRef.current.focus();
+    }
+  }, [SavedSimulationsVisible]);
+
+  const handleCheckboxChange = (event) => {
+    const { name, checked } = event.target;
+    setCheckedOptions((prevState) => ({
+      ...prevState,
+      [name]: checked,
+    }));
+  };
 
   const handleDropdownToggle = () => {
     setDropdownVisible(!dropdownVisible);
@@ -204,6 +232,27 @@ const Welcome = ({ username, onLogout }) => {
     }, 500);
   };
 
+  const handleSimulationClick = async (simulation) => {
+    await fetchGifsFromResults(simulation);
+    setFadeOut(true);
+    setTimeout(() => {
+      setSavedSimulationsVisible(false);
+      setSimulationDetail(true);
+      setFadeOut(false)
+    }, 500);
+  }
+
+  const handleGoBackSavedSimulations = () => {
+    setFadeOut(true);
+    setTimeout(() => {  
+      setSavedSimulationsVisible(true);
+      setSimulationDetail(false);
+      setFadeOut(false)
+      setSearchQuery('');
+      setFilteredSimulations(savedSimulations);
+    }, 500);
+  } 
+
   const handleSearch = (event) => {
     const query = event.target.value.toLowerCase();
     setSearchQuery(query);
@@ -246,7 +295,7 @@ const Welcome = ({ username, onLogout }) => {
         />
       </div>
       <div className="main-content">
-        {!fileInputVisible && !GadenChoiseVisible && !isNewSimulation && !SavedSimulationsVisible ? (
+        {!fileInputVisible && !GadenChoiseVisible && !isNewSimulation && !SavedSimulationsVisible && !simulationDetail? (
           <button
             className={`gaden-button ${fadeOut ? 'fade-out' : ''}`}
             onClick={handleGadenClick}
@@ -325,23 +374,12 @@ const Welcome = ({ username, onLogout }) => {
           </button>
         </form> 
       )}
-        {gifs.length > 0 && (
-          <div className="gif-container">
-            {gifs.map((gifUrl, index) => (
-              <img
-                key={index}
-                src={gifUrl}  
-                alt={`Simulation GIF ${index + 1}`}
-                className="gif-image"
-              />
-            ))}
-          </div>
-        )}
         {SavedSimulationsVisible && (
-          <div className="saved-simulations-list">
+          <div className="saved-simulations-list" >
             <div className="saved-simulations-header">
               <h3>Saved Simulations</h3>
               <input
+                ref={searchInputRef}
                 type="text"
                 className="search-bar"
                 placeholder="Search by name or simulation"
@@ -358,7 +396,9 @@ const Welcome = ({ username, onLogout }) => {
               {filteredSimulations.length > 0 ? (
                 <ul>
                   {filteredSimulations.map((simulation, index) => (
-                    <li key={index}>
+                    <li key={index} onClick={() => handleSimulationClick(simulation.simulation)}
+                      className={`simulation-item ${fadeOut ? 'fade-out' : ''}`}	                   
+                    >
                       <strong>Simulation Name:</strong> {simulation.simulationName || 'Unnamed Simulation'} <br />
                       <strong>Simulation:</strong> {simulation.simulation || 'No simulation description'}
                     </li>
@@ -370,6 +410,75 @@ const Welcome = ({ username, onLogout }) => {
             </div>
           </div>
         )}
+        {simulationDetail && (
+        <>
+          <div className="control-simulation-details">
+            <button
+              className={`go-back-simulation-details`}
+              onClick={() => console.log('Go Back')}
+            >
+              Go Back
+            </button>
+
+            <div className="checkbox-filters">
+              <label>
+                <input
+                  type="checkbox"
+                  name="all"
+                  checked={checkedOptions.all}
+                  onChange={handleCheckboxChange}
+                />
+                Show all the simulations
+              </label>
+
+              <label>
+                <input
+                  type="checkbox"
+                  name="heatmap"
+                  checked={checkedOptions.heatmap}
+                  onChange={handleCheckboxChange}
+                />
+                Show heatmap
+              </label>
+
+              <label>
+                <input
+                  type="checkbox"
+                  name="wind"
+                  checked={checkedOptions.wind}
+                  onChange={handleCheckboxChange}
+                />
+                Show wind vectors
+              </label>
+
+              <label>
+                <input
+                  type="checkbox"
+                  name="contour"
+                  checked={checkedOptions.contour}
+                  onChange={handleCheckboxChange}
+                />
+                Show contour
+              </label>
+            </div>
+          </div>
+        <div className="gif-container">
+        {gifs
+          .slice()
+          .sort((a, b) => a.height - b.height)
+          .map((gifObj, index) => (
+            <div key={index} className="gif-description">
+              <h3>Height: {gifObj.height ?? 'Unknown'}</h3>
+              <img
+                src={gifObj.url}
+                alt={`Simulation GIF ${index + 1}`}
+                className="gif-image"
+              />
+            </div>
+          ))}
+      </div>
+      </>
+      )}
       </div>
     </div>
   );

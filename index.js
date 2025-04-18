@@ -127,7 +127,7 @@ function sendToVolume(username, simulationNumber, innerCadFilePaths, outerCadFil
       gaden_environment: {
         ros__parameters: {
           verbose: false,
-          wait_preprocessing: false, // aguarda confirmação do gaden_preprocessing antes de executar
+          wait_preprocessing: false,
           fixed_frame: "map",
         }
       },
@@ -135,27 +135,25 @@ function sendToVolume(username, simulationNumber, innerCadFilePaths, outerCadFil
         ros__parameters: {
           verbose: false,
           wait_preprocessing: false,
-          sim_time: "$(var sim_time)", // [seg] Tempo total da simulação de dispersão do gás
-          time_step: "$(var time_step)", // [seg] Incremento de tempo entre snapshots
-          num_filaments_sec: "$(var num_filaments_sec)", // Número de filamentos liberados por segundo
-          variable_rate: "$(var variable_rate)", // Se true, o número de filamentos liberados seria aleatório
+          sim_time: "$(var sim_time)", 
+          time_step: "$(var time_step)", 
+          num_filaments_sec: "$(var num_filaments_sec)",
+          variable_rate: "$(var variable_rate)", 
           filament_stop_steps: "$(var filament_stop_steps)",
-          ppm_filament_center: "$(var ppm_filament_center)", // [ppm] Concentração de gás no centro da 3D gaussiana
-          filament_initial_std: "$(var filament_initial_std)", // [cm] Sigma do filamento no tempo t=0
-          filament_growth_gamma: "$(var filament_growth_gamma)", // [cm²/s] Taxa de crescimento do filamento
-          filament_noise_std: "$(var filament_noise_std)", // [m] Faixa de ruído branco adicionado a cada iteração
-          gas_type: "$(var gas_type)", // 0=Etanol, 1=Metano, 2=Hidrogênio, 6=Acetona
-          temperature: "$(var temperature)", // [Kelvins]
-          pressure: "1.0", // [Atm]
-          concentration_unit_choice: 1, // 0=moleculas/cm³, 1=ppm (quando ppm é usado, ajustar temp e pressão)
+          ppm_filament_center: "$(var ppm_filament_center)", 
+          filament_initial_std: "$(var filament_initial_std)", 
+          filament_growth_gamma: "$(var filament_growth_gamma)", 
+          filament_noise_std: "$(var filament_noise_std)", 
+          gas_type: "$(var gas_type)", 
+          temperature: "$(var temperature)",
+          pressure: "1.0", 
+          concentration_unit_choice: 1, 
           occupancy3D_data: "$(var pkg_dir)/scenarios/$(var scenario)/OccupancyGrid3D.csv",
           fixed_frame: "map",
 
-          // WindFlow data (from CFD)
           wind_data: "$(var pkg_dir)/scenarios/$(var scenario)/wind_simulations/$(var wind_sim_path)",
-          wind_time_step: "1.0", // [seg] Incremento de tempo entre snapshots de vento
+          wind_time_step: "1.0", 
 
-          // Loop options
           allow_looping: true,
           loop_from_step: 0,
           loop_to_step: 24,
@@ -266,7 +264,7 @@ app.get('/getSimulations', (req, res) => {
 
 app.post('/uploadSimulationResults', (req, res) => {
   const simulation = req.body.simulation;
-  const simulationResultType = req.body.simulationResultType;
+  const simulationResultType = req.body.type;
   const height = req.body.height;
   const compressedGif = req.body.gif;
   
@@ -285,7 +283,7 @@ app.post('/uploadSimulationResults', (req, res) => {
 
 app.get('/getSimulationResultsGifs', (req, res) => {
   const simulation = req.query.simulation;
-  const queryGetSimulationResults = 'SELECT gif, height FROM simulation_results WHERE simulation = ?';
+  const queryGetSimulationResults = 'SELECT gif, height, type FROM simulation_results WHERE simulation = ?';
 
   pool.query(queryGetSimulationResults, [simulation], (error, results) => {
     if (error) {
@@ -314,7 +312,8 @@ app.get('/getSimulationResultsGifs', (req, res) => {
        
         gifs.push({
           gif: decompressedBuffer.toString('base64'),
-          height: result.height
+          height: result.height,
+          type: result.type
         });
 
         processedCount++;
@@ -364,6 +363,31 @@ app.post('/uploadFiles', upload.fields([
     }
 
     res.status(200).send('Files uploaded and launch file created successfully.');
+  });
+});
+
+
+app.get('/getSimulationStatus', (req, res) => {
+  const simulation = req.query.simulation;
+
+  if (!simulation) {
+    return res.status(400).json({ error: 'Simulation is required' });
+  }
+
+  const queryGetSimulationStatus = 'SELECT status FROM simulation_queue WHERE simulation = ?';
+
+  pool.query(queryGetSimulationStatus, [simulation], (error, results) => {
+    if (error) {
+      console.error(error);
+      return res.status(500).json({ error: 'Internal Server Error' });
+    }
+
+    if (results.length === 0) {
+      return res.status(404).json({ message: 'Simulation not found' });
+    }
+
+    const status = results[0].status;
+    res.status(200).json({ status });
   });
 });
 

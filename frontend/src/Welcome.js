@@ -15,9 +15,11 @@ const Welcome = ({ username, onLogout }) => {
 	const [simulationName, setSimulationName] = useState('');
   const [savedSimulations, setSavedSimulations] = useState([]);
   const [gifs, setGifs] = useState([]);
+  const [loadingGifs, setLoadingGifs] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredSimulations, setFilteredSimulations] = useState(savedSimulations);
   const [simulationDetail, setSimulationDetail] = useState(false);
+  const [simulationStatus, setSimulationStatus] = useState(null);
 
   const navigate = useNavigate();
   const searchInputRef = useRef(null);
@@ -28,6 +30,26 @@ const Welcome = ({ username, onLogout }) => {
     wind: false,
     contour: false,
   });
+
+  const filteredGifs = checkedOptions.all
+        ? gifs
+        : gifs.filter((gif) => checkedOptions[gif.type]);
+
+
+  const fetchSimulationStatus = async (simulation) => {
+    try {
+      const response = await fetch(`http://localhost:3000/getSimulationStatus?simulation=${simulation}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch simulation status');
+      }
+      const data = await response.json();
+      return data.status; 
+    } catch (error) {
+      console.error('Error fetching simulation status:', error);
+      return null;
+    }
+  };
+  
 
   const fetchSimulationNumber = async () => {
     try {
@@ -59,6 +81,7 @@ const Welcome = ({ username, onLogout }) => {
 
   const fetchGifsFromResults = async (simulation) => {
     try {
+      setLoadingGifs(true);
       const response = await fetch(`http://localhost:3000/getSimulationResultsGifs?simulation=${simulation}`);
       
       if (!response.ok) {
@@ -67,7 +90,7 @@ const Welcome = ({ username, onLogout }) => {
   
       const gifsData = await response.json();
       
-      const gifs = gifsData.map(({ gif, height }) => {
+      const gifs = gifsData.map(({ gif, height,type }) => {
         const byteCharacters = atob(gif);  
         const byteArrays = [];
   
@@ -84,13 +107,25 @@ const Welcome = ({ username, onLogout }) => {
 
         return {
           url,
-          height
+          height,
+          type
         };
       });
-  
+      
+      const gifTypes = gifs.map(g => g.type);
+
+      setCheckedOptions({
+        all: true,
+        heatmap: gifTypes.includes('heatmap'),
+        wind: gifTypes.includes('wind'),
+        contour: gifTypes.includes('contour'),
+      });
+
       setGifs(gifs);
     } catch (error) {
       console.error('Error fetching GIFs:', error);
+    } finally {
+      setLoadingGifs(false); 
     }
   };
 
@@ -108,11 +143,30 @@ const Welcome = ({ username, onLogout }) => {
 
   const handleCheckboxChange = (event) => {
     const { name, checked } = event.target;
-    setCheckedOptions((prevState) => ({
-      ...prevState,
-      [name]: checked,
-    }));
+  
+    setCheckedOptions((prevState) => {
+      if (name === 'all') {
+        return {
+          all: checked,
+          heatmap: checked,
+          wind: checked,
+          contour: checked,
+        };
+      } else {
+        const newState = {
+          ...prevState,
+          [name]: checked,
+        };
+  
+        const allSelected = newState.heatmap && newState.wind && newState.contour;
+        return {
+          ...newState,
+          all: allSelected,
+        };
+      }
+    });
   };
+  
 
   const handleDropdownToggle = () => {
     setDropdownVisible(!dropdownVisible);
@@ -233,14 +287,39 @@ const Welcome = ({ username, onLogout }) => {
   };
 
   const handleSimulationClick = async (simulation) => {
-    await fetchGifsFromResults(simulation);
+    await fetchGifsFromResults(simulation); 
+    
     setFadeOut(true);
     setTimeout(() => {
       setSavedSimulationsVisible(false);
       setSimulationDetail(true);
-      setFadeOut(false)
+      setFadeOut(false);
+      
+      const previousGifs = [...gifs];
+  
+      const intervalId = setInterval(async () => {
+        try {
+          const status = await fetchSimulationStatus(simulation);
+          
+          if (status === 'DONE') {
+            clearInterval(intervalId);
+          }
+          
+          await fetchGifsFromResults(simulation);
+  
+          if (JSON.stringify(gifs) !== JSON.stringify(previousGifs)) {
+            previousGifs.length = 0;
+            previousGifs.push(...gifs);
+          }
+        } catch (error) {
+          console.error('Error fetching simulation status or GIFs:', error);
+        }
+      }, 10000);
+  
+      return () => clearInterval(intervalId);
     }, 500);
-  }
+  };
+  
 
   const handleGoBackSavedSimulations = () => {
     setFadeOut(true);
@@ -415,7 +494,7 @@ const Welcome = ({ username, onLogout }) => {
           <div className="control-simulation-details">
             <button
               className={`go-back-simulation-details`}
-              onClick={() => console.log('Go Back')}
+              onClick={handleGoBackSavedSimulations}
             >
               Go Back
             </button>
@@ -462,21 +541,27 @@ const Welcome = ({ username, onLogout }) => {
               </label>
             </div>
           </div>
-        <div className="gif-container">
-        {gifs
-          .slice()
-          .sort((a, b) => a.height - b.height)
-          .map((gifObj, index) => (
-            <div key={index} className="gif-description">
-              <h3>Height: {gifObj.height ?? 'Unknown'}</h3>
-              <img
-                src={gifObj.url}
-                alt={`Simulation GIF ${index + 1}`}
-                className="gif-image"
-              />
-            </div>
-          ))}
-      </div>
+          <div className="gif-container">
+            {loadingGifs ? (
+              <p>Waiting for simulation to finish...</p>
+            ) : filteredGifs.length === 0 ? (
+              <p>No GIFs available for the selected options.</p>
+            ) : (
+              filteredGifs
+                .slice()
+                .sort((a, b) => a.height - b.height)
+                .map((gifObj, index) => (
+                  <div key={index} className="gif-description">
+                    <h3>Height: {gifObj.height ?? 'Unknown'}</h3>
+                    <img
+                      src={gifObj.url}
+                      alt={`Simulation GIF ${index + 1}`}
+                      className="gif-image"
+                    />
+                  </div>
+                ))
+            )}
+          </div>
       </>
       )}
       </div>

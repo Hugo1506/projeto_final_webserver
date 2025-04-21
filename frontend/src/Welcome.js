@@ -286,31 +286,38 @@ const Welcome = ({ username, onLogout }) => {
     }, 500);
   };
 
+
   const handleSimulationClick = async (simulation) => {
-    await fetchGifsFromResults(simulation); 
-    
+    setGifs([]);
+    await fetchGifsFromResults(simulation);
+  
     setFadeOut(true);
+  
     setTimeout(() => {
       setSavedSimulationsVisible(false);
       setSimulationDetail(true);
       setFadeOut(false);
-      
-      const previousGifs = [...gifs];
+  
+      let previousGifs = [];
   
       const intervalId = setInterval(async () => {
         try {
           const status = await fetchSimulationStatus(simulation);
           
-          if (status === 'DONE') {
+          if (status === "DONE") {
+            simulationStatus = "DONE";
             clearInterval(intervalId);
+          } else {
+            simulationStatus = "Simulation still running";
+          }
+    
+          const newGifs = await fetchGifsFromResults(simulation);
+  
+          if (JSON.stringify(newGifs) !== JSON.stringify(previousGifs)) {
+            previousGifs = [...newGifs];
+            setGifs(newGifs);
           }
           
-          await fetchGifsFromResults(simulation);
-  
-          if (JSON.stringify(gifs) !== JSON.stringify(previousGifs)) {
-            previousGifs.length = 0;
-            previousGifs.push(...gifs);
-          }
         } catch (error) {
           console.error('Error fetching simulation status or GIFs:', error);
         }
@@ -319,6 +326,7 @@ const Welcome = ({ username, onLogout }) => {
       return () => clearInterval(intervalId);
     }, 500);
   };
+  
   
 
   const handleGoBackSavedSimulations = () => {
@@ -542,11 +550,11 @@ const Welcome = ({ username, onLogout }) => {
             </div>
           </div>
           <div className="gif-container">
-            {loadingGifs ? (
-              <p>Waiting for simulation to finish...</p>
-            ) : filteredGifs.length === 0 ? (
+            {!loadingGifs && filteredGifs.length === 0 && (
               <p>No GIFs available for the selected options.</p>
-            ) : (
+            )}
+
+            {filteredGifs.length > 0 && (
               filteredGifs
                 .slice()
                 .sort((a, b) => a.height - b.height)
@@ -562,6 +570,7 @@ const Welcome = ({ username, onLogout }) => {
                 ))
             )}
           </div>
+
       </>
       )}
       </div>

@@ -158,14 +158,14 @@ function sendToVolume(username, simulationNumber, innerCadFilePaths, outerCadFil
           loop_from_step: 0,
           loop_to_step: 24,
 
-          // Local do ponto de liberação!
-          source_position_x: "$(var source_x)", // (m)
-          source_position_y: "$(var source_y)", // (m)
-          source_position_z: "$(var source_z)", // (m)
+        
+          source_position_x: "100000.0", // (m)
+          source_position_y: "100000.0", // (m)
+          source_position_z: "100000.0", // (m)
 
-          save_results: 1, // 1=true, 0=false
-          results_time_step: 0.5, // (seg) Incremento de tempo entre salvar estado no arquivo
-          results_min_time: "0.0", // (seg) Tempo para começar a salvar resultados no arquivo
+          save_results: 1, 
+          results_time_step: 0.5, 
+          results_min_time: "0.0", 
           results_location: "$(var pkg_dir)/scenarios/$(var scenario)/gas_simulations/$(var simulation)"
         }
       },
@@ -279,6 +279,39 @@ app.post('/uploadSimulationResults', (req, res) => {
     res.status(200).send('Results uploaded successfully');
   });
 
+});
+
+app.post('/plumeLocationOutOfBounds', (req, res) => {
+  const simulation = req.body.simulation;
+
+  // extrai o nome de utilizador e o número da simulação 
+  const [name, number] = simulation.split('_');
+
+  // Define o caminho para a pasta da simulação
+  const simulationDirPath = path.join('/simulation_data', name, `sim_${number}`);
+
+  const queryUpdateSimulationStatus = 'UPDATE simulation_queue SET status = ? WHERE simulation = ?';
+
+  pool.query(queryUpdateSimulationStatus, ['DELETED', simulation], (error, results) => {
+    if (error) {
+      console.error(error);
+      return res.status(500).send('Internal Server Error');
+    }
+
+    if (results.affectedRows === 0) {
+      return res.status(404).send('Simulation not found');
+    }
+  
+    // remove a pasta da simulação recursivamente 
+    fs.rm(simulationDirPath, { recursive: true, force: true }, (err) => {
+      if (err) {
+        console.error('Error deleting simulation directory:', err);
+        return res.status(500).send('Failed to delete simulation directory');
+      }
+
+      res.status(200).send('Simulation removed successfully');
+    });
+  });
 });
 
 app.get('/getSimulationResultsGifs', (req, res) => {

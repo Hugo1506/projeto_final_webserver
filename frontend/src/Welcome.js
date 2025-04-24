@@ -13,6 +13,9 @@ const Welcome = ({ username, onLogout }) => {
   const [SavedSimulationsVisible, setSavedSimulationsVisible] = useState(false);
   const [isNewSimulation, setIsNewSimulation] = useState(false);
 	const [simulationName, setSimulationName] = useState('');
+  const [plumeXLocation, setPlumeXLocation] = useState('');
+  const [plumeYLocation, setPlumeYLocation] = useState('');
+  const [plumeZLocation, setPlumeZLocation] = useState('');
   const [savedSimulations, setSavedSimulations] = useState([]);
   const [gifs, setGifs] = useState([]);
   const [loadingGifs, setLoadingGifs] = useState(true);
@@ -194,7 +197,11 @@ const Welcome = ({ username, onLogout }) => {
     setTimeout(() => {
       setGadenChoiseVisible(false);
       setIsNewSimulation(true);
-      setFadeOut(false); 
+      setFadeOut(false);
+      setSimulationName('');
+      setPlumeXLocation('');
+      setPlumeYLocation('');
+      setPlumeZLocation(''); 
     }, 500);
   };
 
@@ -214,7 +221,10 @@ const Welcome = ({ username, onLogout }) => {
     formData.append('username', username);
     formData.append('simulationNumber', simulationNumber);
     formData.append('simulationName', simulationName);
-
+    formData.append('plumeXLocation', plumeXLocation);
+    formData.append('plumeYLocation', plumeYLocation);
+    formData.append('plumeZLocation', plumeZLocation);
+    console.log(plumeXLocation, plumeYLocation, plumeZLocation);
     if (files.innerCadFiles) {
       Array.from(files.innerCadFiles).forEach((file) => {
         formData.append('innerCadFiles', file);
@@ -424,6 +434,31 @@ const Welcome = ({ username, onLogout }) => {
               value={simulationName}
               onChange={(e) => setSimulationName(e.target.value)}
               placeholder="Enter simulation name"
+            />
+            <label htmlFor="plumeXLocation">Plume location </label>
+            <input
+              type="float"
+              id="plumeXLocation"
+              name="plumeXLocation"
+              value={plumeXLocation}
+              onChange={(e) => setPlumeXLocation(e.target.value)}
+              placeholder="Enter plume location x value X.X"
+            />
+            <input
+              type="float"
+              id="plumeYLocation"
+              name="plumeYLocation"
+              value={plumeYLocation}
+              onChange={(e) => setPlumeYLocation(e.target.value)}
+              placeholder="Enter plume location y value X.X"
+            />
+            <input
+              type="float"
+              id="plumeZLocation"
+              name="plumeZLocation"
+              value={plumeZLocation}
+              onChange={(e) => setPlumeZLocation(e.target.value)}
+              placeholder="Enter plume location z value X.X"
             />
           </div>
           <div>

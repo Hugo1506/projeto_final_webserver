@@ -68,9 +68,9 @@ const storage = multer.diskStorage({
 const upload = multer({ storage: storage });
 
 // Função que envia os dados para o volume que os dois containers partilham
-function sendToVolume(username, simulationNumber, innerCadFilePaths, outerCadFilePaths, windFilePaths) {
+function sendToVolume(username, simulationNumber, innerCadFilePaths, outerCadFilePaths, windFilePaths, plumeXLocation, plumeYLocation, plumeZLocation) {
   const baseDir = path.join('/simulation_data', username, `sim_${simulationNumber}`);
-    
+
     // define os subdiretórios
     const cadDir = path.join(baseDir, 'cad_models');
     const windDir = path.join(baseDir, 'wind_simulations');
@@ -159,9 +159,9 @@ function sendToVolume(username, simulationNumber, innerCadFilePaths, outerCadFil
           loop_to_step: 24,
 
         
-          source_position_x: "100000.0", // (m)
-          source_position_y: "100000.0", // (m)
-          source_position_z: "100000.0", // (m)
+          source_position_x: plumeXLocation, // (m)
+          source_position_y: plumeYLocation, // (m)
+          source_position_z: plumeZLocation, // (m)
 
           save_results: 1, 
           results_time_step: 0.5, 
@@ -241,7 +241,7 @@ app.get('/getSimulations', (req, res) => {
     return res.status(400).json({ error: 'Username is required' });
   }
 
-  const queryGetSimulations = 'SELECT simulationName, simulation FROM simulation_queue WHERE username = ?';
+  const queryGetSimulations = 'SELECT simulationName, simulation FROM simulation_queue WHERE username = ? AND status != \'DELETED\'';
 
   pool.query(queryGetSimulations, [username], (error, results) => {
     if (error) {
@@ -380,13 +380,16 @@ app.post('/uploadFiles', upload.fields([
   const simulationName = req.body.simulationName || `Simulation_${simulationNumber}`; 
   const simulationField = `${username}_${simulationNumber}`;
   const queryInsertSimulation = 'INSERT INTO simulation_queue (username, simulationNumber, simulation, simulationName) VALUES (?, ?, ?, ?)';
+  const plumeXLocation = req.body.plumeXLocation;
+  const plumeYLocation = req.body.plumeYLocation;
+  const plumeZLocation = req.body.plumeZLocation;
 
-   const innerCadFilePaths = req.files.innerCadFiles.map(file => file.path);
+  const innerCadFilePaths = req.files.innerCadFiles.map(file => file.path);
   const outerCadFilePaths = req.files.outerCadFiles.map(file => file.path);
   const windFilePaths = req.files.windFiles.map(file => file.path);
 
   // envia os dados da simulação para o volume
-  const sentToVolume = sendToVolume(username, simulationNumber, innerCadFilePaths, outerCadFilePaths, windFilePaths);
+  const sentToVolume = sendToVolume(username, simulationNumber, innerCadFilePaths, outerCadFilePaths, windFilePaths, plumeXLocation, plumeYLocation, plumeZLocation);
   
   // insere os dados da simulação para a base de dados
   pool.query(queryInsertSimulation, [username, simulationNumber, simulationField, simulationName], (error, results) => {

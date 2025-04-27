@@ -23,6 +23,8 @@ const Welcome = ({ username, onLogout }) => {
   const [filteredSimulations, setFilteredSimulations] = useState(savedSimulations);
   const [simulationDetail, setSimulationDetail] = useState(false);
   const [simulationStatus, setSimulationStatus] = useState(null);
+  const [showModal, setShowModal] = useState(false);
+  const [simulationToDelete, setSimulationToDelete] = useState(null);
 
   const navigate = useNavigate();
   const searchInputRef = useRef(null);
@@ -33,6 +35,22 @@ const Welcome = ({ username, onLogout }) => {
     wind: false,
     contour: false,
   });
+    
+
+  // modal que para confirmar algo
+  const ConfirmationModal = ({ message, onConfirm, onCancel }) => {
+    return (
+      <div className="modal-overlay">
+        <div className="modal">
+          <p>{message}</p>
+          <div className="modal-buttons">
+            <button onClick={onConfirm}>YES</button>
+            <button onClick={onCancel}>NO</button>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   const filteredGifs = checkedOptions.all
         ? gifs
@@ -372,6 +390,35 @@ const Welcome = ({ username, onLogout }) => {
     setFilteredSimulations(filtered);
   };
 
+  const openDeleteModal = (simulation) => {
+    setSimulationToDelete(simulation);
+    setShowModal(true);
+  };
+
+  const closeModal = () => {
+    setShowModal(false);
+    setSimulationToDelete(null);
+  };
+
+  const confirmDelete = async () => {
+    try {
+      const response = await fetch(`http://localhost:3000/deleteSimulation?simulation=${simulationToDelete.simulation}`, {
+        method: 'POST',
+      });
+
+      if (!response.ok) {
+        const errorMessage = await response.text();
+        alert(`Error: ${errorMessage}`);
+      }
+      closeModal();
+      await fetchSavedSimulations();
+    } catch (error) {
+      console.error('Error deleting simulation:', error);
+      alert('Failed to delete simulation');
+    }   
+  };
+
+
   return (
     <div className="welcome-container">
       <div className="welcome-banner">
@@ -517,17 +564,42 @@ const Welcome = ({ username, onLogout }) => {
             <div className="saved-simulations-list">
               {filteredSimulations.length > 0 ? (
                 <ul>
-                  {filteredSimulations.map((simulation, index) => (
-                    <li key={index} onClick={() => handleSimulationClick(simulation.simulation)}
-                      className={`simulation-item ${fadeOut ? 'fade-out' : ''}`}	                   
-                    >
-                      <strong>Simulation Name:</strong> {simulation.simulationName || 'Unnamed Simulation'} <br />
-                      <strong>Simulation:</strong> {simulation.simulation || 'No simulation description'}
-                    </li>
-                  ))}
-                </ul>
+                {filteredSimulations.map((simulation, index) => (
+                  <li
+                    key={index}
+                    className={`simulation-item ${fadeOut ? 'fade-out' : ''}`}
+                  >
+                    <div className="simulation-content">
+                      <div
+                        className="simulation-details"
+                        onClick={() => handleSimulationClick(simulation.simulation)}
+                      >
+                        <strong>Simulation Name:</strong> {simulation.simulationName || 'Unnamed Simulation'} <br />
+                        <strong>Simulation:</strong> {simulation.simulation || 'No simulation description'}
+                      </div>
+                      <div
+                        className="trash-icon"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openDeleteModal(simulation);
+                        }}
+                      >
+                        🗑️
+                      </div>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+              
               ) : (
                 <p>No simulations found</p>
+              )}
+              {showModal && (
+                <ConfirmationModal
+                  message="Are you sure you want to delete this simulation?"
+                  onConfirm={confirmDelete}
+                  onCancel={closeModal}
+                />
               )}
             </div>
           </div>

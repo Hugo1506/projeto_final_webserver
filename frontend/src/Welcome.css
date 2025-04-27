@@ -145,11 +145,6 @@ body {
   transition: transform 0.3s ease;
 }
 
-.saved-simulations-list li:hover {
-  transform: scale(1.05);
-  cursor: pointer;
-}
-
 .main-content {
   display: flex;
   flex-direction: column;
@@ -219,22 +214,97 @@ body {
   margin-top: 20px;
   display: flex;
   flex-direction: row;
-  gap: 30px;  /* Space between each checkbox */
+  gap: 30px;  
   align-items: center;
 }
 
 .checkbox-filters label {
-  font-size: 22px;  /* Make labels larger */
+  font-size: 22px; 
   display: flex;
   align-items: center;
-  gap: 10px;  /* Space between checkbox and label */
-  cursor: pointer;  /* Make it clickable */
-  white-space: nowrap;  /* Prevent text from wrapping */
+  gap: 10px;  
+  cursor: pointer;
+  white-space: nowrap; 
 }
 
 .checkbox-filters input[type="checkbox"] {
-  transform: scale(1.5);  /* Make checkboxes larger */
-  accent-color: black;  /* Change checkbox color */
-  margin-right: 10px;  /* Space between checkbox and label */
+  transform: scale(1.5);  
+  accent-color: black;  
+  margin-right: 10px;  
 }
 
+.simulation-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.simulation-details:hover{
+  transform: scale(1.05);
+  cursor: pointer;
+}
+
+.trash-icon {
+  margin-left: 1rem;
+  cursor: pointer;
+  border-left: 1px solid #000;
+}
+
+.trash-icon:hover {
+  transform: scale(1.05);
+  cursor: pointer;
+}
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+/* Modal content */
+.modal {
+  background-color: white;
+  padding: 20px;
+  border-radius: 5px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  width: 300px;
+}
+.modal-buttons {
+  display: flex;
+  gap: 10px; 
+}
+.modal button {
+  padding: 10px;
+  font-size: 16px;
+  cursor: pointer;
+  border: none;
+  border-radius: 5px;
+}
+
+.modal button:first-child {
+  background-color: green;
+  color: white;
+}
+
+.modal button:first-child:hover {
+  background-color: darkgreen;
+}
+
+.modal button:last-child {
+  background-color: red;
+  color: white;
+}
+
+.modal button:last-child:hover {
+  background-color: darkred;
+}

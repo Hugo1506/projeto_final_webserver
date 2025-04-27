@@ -314,6 +314,40 @@ app.post('/plumeLocationOutOfBounds', (req, res) => {
   });
 });
 
+
+// rota que apaga a simulação
+app.post('/deleteSimulation', (req, res) => {
+  const simulation = req.query.simulation;
+  // extrai o nome de utilizador e o número da simulação 
+  const [name, number] = simulation.split('_');
+
+  // Define o caminho para a pasta da simulação
+  const simulationDirPath = path.join('/simulation_data', name, `sim_${number}`);
+
+  const queryUpdateSimulationStatus = 'UPDATE simulation_queue SET status = ? WHERE simulation = ?';
+  
+  pool.query(queryUpdateSimulationStatus, ['DELETED', simulation], (error, results) => {
+    if (error) {
+      console.error(error);
+      return res.status(500).send('Internal Server Error');
+    }
+
+    if (results.affectedRows === 0) {
+      return res.status(404).send('Simulation not found');
+    }
+  
+    // remove a pasta da simulação recursivamente 
+    fs.rm(simulationDirPath, { recursive: true, force: true }, (err) => {
+      if (err) {
+        console.error('Error deleting simulation directory:', err);
+        return res.status(500).send('Failed to delete simulation directory');
+      }
+
+      res.status(200).send('Simulation removed successfully');
+    });
+  });
+});
+
 app.get('/getSimulationResultsGifs', (req, res) => {
   const simulation = req.query.simulation;
   const queryGetSimulationResults = 'SELECT gif, height, type FROM simulation_results WHERE simulation = ?';

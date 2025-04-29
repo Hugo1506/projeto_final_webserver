@@ -241,7 +241,7 @@ app.get('/getSimulations', (req, res) => {
     return res.status(400).json({ error: 'Username is required' });
   }
 
-  const queryGetSimulations = 'SELECT simulationName, simulation FROM simulation_queue WHERE username = ? AND status != \'DELETED\'';
+  const queryGetSimulations = 'SELECT simulationName, simulation FROM simulation_queue WHERE username = ? AND status != \'DELETED\' AND status != \'OUT OF BOUNDS\'';
 
   pool.query(queryGetSimulations, [username], (error, results) => {
     if (error) {
@@ -283,6 +283,12 @@ app.post('/uploadSimulationResults', (req, res) => {
 
 app.post('/plumeLocationOutOfBounds', (req, res) => {
   const simulation = req.body.simulation;
+  const xMin = req.body.x_min;
+  const xMax = req.body.x_max;
+  const yMin = req.body.y_min;
+  const yMax = req.body.y_max;
+  const zMin = req.body.z_min;
+  const zMax = req.body.z_max;
 
   // extrai o nome de utilizador e o número da simulação 
   const [name, number] = simulation.split('_');
@@ -290,10 +296,15 @@ app.post('/plumeLocationOutOfBounds', (req, res) => {
   // Define o caminho para a pasta da simulação
   const simulationDirPath = path.join('/simulation_data', name, `sim_${number}`);
 
-  const queryUpdateSimulationStatus = 'UPDATE simulation_queue SET status = ? WHERE simulation = ?';
 
-  pool.query(queryUpdateSimulationStatus, ['DELETED', simulation], (error, results) => {
-    if (error) {
+  const bounds = JSON.stringify({ xMin, xMax, yMin, yMax, zMin, zMax });
+
+  const queryUpdateSimulationStatus = `
+      UPDATE simulation_queue 
+      SET status = ?, simulation_bounds = ? 
+      WHERE simulation = ?
+    `;
+    pool.query(queryUpdateSimulationStatus, ['OUT OF BOUNDS', bounds, simulation], (error, results) => {    if (error) {
       console.error(error);
       return res.status(500).send('Internal Server Error');
     }
@@ -314,6 +325,35 @@ app.post('/plumeLocationOutOfBounds', (req, res) => {
   });
 });
 
+app.get('/getBoundsValues', (req, res) => {
+  const simulation = req.query.simulation;
+  const queryGetBounds = 'SELECT simulation_bounds FROM simulation_queue WHERE simulation = ?';
+
+  pool.query(queryGetBounds, [simulation], (error, results) => {
+    if (error) {
+      console.error(error);
+      return res.status(500).json({ error: 'Internal Server Error' });
+    }
+
+    if (results.length === 0) {
+      return res.status(404).json({ message: 'Simulation not found' });
+    }
+
+    const boundsString = results[0].simulation_bounds;
+    let bounds;
+
+    try {
+      bounds = JSON.parse(boundsString);
+    } catch (err) {
+      console.error('Failed to parse simulation_bounds JSON:', err);
+      return res.status(500).json({ error: 'Invalid bounds data' });
+    }
+
+    const { xMin, xMax, yMin, yMax, zMin, zMax } = bounds;
+    res.status(200).json({ xMin, xMax, yMin, yMax, zMin, zMax });
+  });
+
+});
 
 // rota que apaga a simulação
 app.post('/deleteSimulation', (req, res) => {

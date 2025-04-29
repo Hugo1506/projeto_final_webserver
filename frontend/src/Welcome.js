@@ -100,6 +100,26 @@ const Welcome = ({ username, onLogout }) => {
     }
   };
 
+  const fetchBoundsStatus = async (simulation) => {
+    try {
+      const response = await fetch(`http://localhost:3000/getBoundsValues?simulation=${(simulation)}`);
+      
+      if (!response.ok) {
+        if (response.status === 404) {
+          console.warn('Simulation not found');
+          return null;
+        }
+        throw new Error('Failed to fetch simulation bounds');
+      }
+  
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error('Error fetching bounds status:', error);
+      return null;
+    }
+  };
+
   const fetchGifsFromResults = async (simulation) => {
     try {
       setLoadingGifs(true);
@@ -268,8 +288,33 @@ const Welcome = ({ username, onLogout }) => {
       });
 
       if (response.ok) {
-        alert('Files uploaded successfully.');
-        await fetchSimulationNumber(); 
+        const simulation = username + "_" + simulationNumber;
+  
+        let status = "";
+        while (true) {
+          status = await fetchSimulationStatus(simulation);
+  
+          if (status === "IN_QUEUE") {
+            alert("Simulation is in queue...");
+          } else if (status === "OUT OF BOUNDS") {
+            const boundsData = await fetchBoundsStatus(simulation);
+            if (boundsData) {
+              const { xMin, xMax, yMin, yMax, zMin, zMax } = boundsData;
+              alert(`Simulation is out of bounds.\nBounds:\nX: ${xMin} - ${xMax}\nY: ${yMin} - ${yMax}\nZ: ${zMin} - ${zMax}`);
+              break;
+            } else {
+              alert("Simulation is out of bounds, but bounds could not be retrieved.");
+            }
+            break;
+          } else if (status === "IN SIMULATION") {
+            alert("Simulation has started.");
+            break;
+          }
+  
+          await new Promise(resolve => setTimeout(resolve, 3000));
+        }
+  
+        await fetchSimulationNumber();
       } else {
         alert('Failed to upload files.');
       }

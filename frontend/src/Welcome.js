@@ -17,14 +17,16 @@ const Welcome = ({ username, onLogout }) => {
   const [plumeYLocation, setPlumeYLocation] = useState('');
   const [plumeZLocation, setPlumeZLocation] = useState('');
   const [savedSimulations, setSavedSimulations] = useState([]);
+  const [gadenSimulationClickVisible, setGadenSimulationClickVisible] = useState(false);
   const [gifs, setGifs] = useState([]);
   const [loadingGifs, setLoadingGifs] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredSimulations, setFilteredSimulations] = useState(savedSimulations);
   const [simulationDetail, setSimulationDetail] = useState(false);
-  const [simulationStatus, setSimulationStatus] = useState(null);
+  const [simulationStatus, setSimulationStatus] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [simulationToDelete, setSimulationToDelete] = useState(null);
+  const [clickedGif, setClickedGif] = useState(null);
 
   const navigate = useNavigate();
   const searchInputRef = useRef(null);
@@ -378,10 +380,10 @@ const Welcome = ({ username, onLogout }) => {
           const status = await fetchSimulationStatus(simulation);
           
           if (status === "DONE") {
-            simulationStatus = "DONE";
+            setSimulationStatus("Done");
             clearInterval(intervalId);
           } else {
-            simulationStatus = "Simulation still running";
+            setSimulationStatus("Simulation still running");
           }
     
           const newGifs = await fetchGifsFromResults(simulation);
@@ -412,6 +414,13 @@ const Welcome = ({ username, onLogout }) => {
       setFilteredSimulations(savedSimulations);
     }, 500);
   } 
+
+  const handleGifClick = (gifObj) => {
+    setSimulationDetail(false);
+    setGadenSimulationClickVisible(true);
+    setClickedGif(gifObj);
+
+  }
 
   const handleSearch = (event) => {
     const query = event.target.value.toLowerCase();
@@ -463,7 +472,14 @@ const Welcome = ({ username, onLogout }) => {
     }   
   };
 
-
+  const handleGoBackSimulationDetails = () => {
+    setFadeOut(true);
+    setTimeout(() => {
+      setGadenSimulationClickVisible(false);
+      setSimulationDetail(true);
+      setFadeOut(false);
+    }, 500);
+  }
   return (
     <div className="welcome-container">
       <div className="welcome-banner">
@@ -484,7 +500,7 @@ const Welcome = ({ username, onLogout }) => {
         />
       </div>
       <div className="main-content">
-        {!fileInputVisible && !GadenChoiseVisible && !isNewSimulation && !SavedSimulationsVisible && !simulationDetail? (
+        {!gadenSimulationClickVisible && !fileInputVisible && !GadenChoiseVisible && !isNewSimulation && !SavedSimulationsVisible && !simulationDetail? (
           <button
             className={`gaden-button ${fadeOut ? 'fade-out' : ''}`}
             onClick={handleGadenClick}
@@ -653,7 +669,7 @@ const Welcome = ({ username, onLogout }) => {
         <>
           <div className="control-simulation-details">
             <button
-              className={`go-back-simulation-details`}
+              className={`go-back-simulation-details ${fadeOut ? 'fade-out' : ''}`}
               onClick={handleGoBackSavedSimulations}
             >
               Go Back
@@ -702,6 +718,7 @@ const Welcome = ({ username, onLogout }) => {
             </div>
           </div>
           <div className="gif-container">
+            <></>
             {!loadingGifs && filteredGifs.length === 0 && (
               <p>No GIFs available for the selected options.</p>
             )}
@@ -717,6 +734,8 @@ const Welcome = ({ username, onLogout }) => {
                       src={gifObj.url}
                       alt={`Simulation GIF ${index + 1}`}
                       className="gif-image"
+                      onClick={() => {handleGifClick(gifObj)}}
+                      style={{ cursor: 'pointer' }}
                     />
                   </div>
                 ))
@@ -726,7 +745,26 @@ const Welcome = ({ username, onLogout }) => {
       </>
       )}
       </div>
+      {gadenSimulationClickVisible && clickedGif && (
+        <div className="gaden-simulation-click">
+          <button
+            className={`go-back-simulation-details ${fadeOut ? 'fade-out' : ''}`}
+            onClick={handleGoBackSimulationDetails}
+          >
+            Go Back
+          </button>
+          <div className="gif-description">
+            <h3>Height: { clickedGif.height ?? 'Unknown'}</h3>
+            <img
+              src={clickedGif.url}
+              className="gif-image"
+            />
+          </div>
+        </div>
+      )}
     </div>
+  
+
   );
 };
 

@@ -308,3 +308,19 @@ body {
 .modal button:last-child:hover {
   background-color: darkred;
 }
+
+.gaden-simulation-click{
+  position: absolute;
+  top: 100px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+  width: 100%;
+}
+
+.gif-description {
+  font-size: 20px;
+  margin-top: 10px;
+  text-align: left;
+}

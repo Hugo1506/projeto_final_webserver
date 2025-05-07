@@ -27,6 +27,10 @@ const Welcome = ({ username, onLogout }) => {
   const [showModal, setShowModal] = useState(false);
   const [simulationToDelete, setSimulationToDelete] = useState(null);
   const [clickedGif, setClickedGif] = useState(null);
+  const [robotXlocation, setRobotXLocation] = useState('');
+  const [robotYlocation, setRobotYLocation] = useState('');
+  const [height, setHeight] = useState('');
+  const [robotSpeed, setRobotSpeed] = useState('');
 
   const navigate = useNavigate();
   const searchInputRef = useRef(null);
@@ -151,7 +155,8 @@ const Welcome = ({ username, onLogout }) => {
         return {
           url,
           height,
-          type
+          type,
+          simulation
         };
       });
       
@@ -419,6 +424,7 @@ const Welcome = ({ username, onLogout }) => {
     setSimulationDetail(false);
     setGadenSimulationClickVisible(true);
     setClickedGif(gifObj);
+    setHeight(gifObj.height);
 
   }
 
@@ -480,6 +486,40 @@ const Welcome = ({ username, onLogout }) => {
       setFadeOut(false);
     }, 500);
   }
+
+
+  const handleRobotSimulationSubmit = async (e,simulation) => {
+    e.preventDefault();
+  
+    const formData = {
+      username,
+      simulation,
+      height,
+      robotSpeed,
+      robotXposition: robotXlocation,
+      robotYposition: robotYlocation
+    };
+  
+    try {
+      const response = await fetch('http://localhost:3000/robotSimulation', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+  
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+  
+      const result = await response.json();
+      console.log('Simulation result:', result);
+    } catch (error) {
+      console.error('Error during simulation:', error);
+    }
+  }
+
   return (
     <div className="welcome-container">
       <div className="welcome-banner">
@@ -753,12 +793,46 @@ const Welcome = ({ username, onLogout }) => {
           >
             Go Back
           </button>
-          <div className="gif-description">
-            <h3>Height: { clickedGif.height ?? 'Unknown'}</h3>
-            <img
-              src={clickedGif.url}
-              className="gif-image"
-            />
+          <div className="side-by-side-container">
+            <div className="gif-description-robot">
+              <h3>Height: {clickedGif.height ?? 'Unknown'}</h3>
+              <img
+                src={clickedGif.url}
+                className="gif-image"
+              />
+            </div>
+
+            <form onSubmit={(e) => handleRobotSimulationSubmit(e, clickedGif.simulation)} className="robot-simulation-form">              <div className="robot-simulation-inputs">
+                <label>Robot Speed in meters </label>
+                <input
+                  type="float"
+                  id="robotSpeed"
+                  name="robotSpeed"
+                  value={robotSpeed}
+                  onChange={(e) => setRobotSpeed(e.target.value)}
+                  placeholder="Enter a robot speed value X.X"
+                />
+                <label>Robot X coordinate </label>
+                <input
+                  type="float"
+                  id="robotXlocation"
+                  name="robotXlocation"
+                  value={robotXlocation}
+                  onChange={(e) => setRobotXLocation(e.target.value)}
+                  placeholder="Enter a robot X location value X.X"
+                />
+                <label>Robot Y coordinate </label>
+                <input
+                  type="float"
+                  id="robotYlocation"
+                  name="robotYlocation"
+                  value={robotYlocation}
+                  onChange={(e) => setRobotYLocation(e.target.value)}
+                  placeholder="Enter a robot Y location value X.X"
+                />
+                <button type="submit" className={`submit-button ${fadeOut ? 'fade-out' : ''}`} >Submit</button>
+              </div>
+            </form>
           </div>
         </div>
       )}

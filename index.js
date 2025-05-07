@@ -10,6 +10,8 @@ const cors = require('cors');
 const fs = require('fs');
 const yaml = require('js-yaml');
 const zlib = require('zlib');
+const axios = require('axios');
+
 
 const app = express();
 const port =3000;
@@ -352,6 +354,37 @@ app.get('/getBoundsValues', (req, res) => {
     const { xMin, xMax, yMin, yMax, zMin, zMax } = bounds;
     res.status(200).json({ xMin, xMax, yMin, yMax, zMin, zMax });
   });
+
+});
+
+
+app.post('/robotSimulation', async (req, res) => {
+  const username = req.body.username;
+  const simulation = req.body.simulation;
+  const height = req.body.height;
+  const robotSpeed = req.body.robotSpeed;
+  const robotXposition = req.body.robotXposition;
+  const robotYposition = req.body.robotYposition;
+
+
+  simulationNumber = simulation.split('_')[1];
+  try {
+    const response = await axios.get('http://simulation:8000/', {
+      params: {
+        username,
+        simulationNumber,
+        height,
+        robotSpeed,
+        robotXposition,
+        robotYposition
+      }
+    });
+
+    return res.status(200).json(response.data);
+  } catch (error) {
+    console.error('Error calling simulation service:', error.message);
+    return res.status(500).json({ error: 'Failed to call simulation backend' });
+  }
 
 });
 

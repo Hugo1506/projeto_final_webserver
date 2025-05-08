@@ -31,6 +31,8 @@ const Welcome = ({ username, onLogout }) => {
   const [robotYlocation, setRobotYLocation] = useState('');
   const [height, setHeight] = useState('');
   const [robotSpeed, setRobotSpeed] = useState('');
+  const [activeButton, setActiveButton] = useState('gaden');
+  const [showCheckboxes, setShowCheckboxes] = useState(true); 
 
   const navigate = useNavigate();
   const searchInputRef = useRef(null);
@@ -58,10 +60,11 @@ const Welcome = ({ username, onLogout }) => {
     );
   };
 
-  const filteredGifs = checkedOptions.all
-        ? gifs
-        : gifs.filter((gif) => checkedOptions[gif.type]);
-
+  const filteredGifs = (activeButton === 'robot')
+    ? gifs.filter((gif) => gif.type === 'robot')
+    : checkedOptions.all
+    ? gifs 
+    : gifs.filter((gif) => checkedOptions[gif.type]);
 
   const fetchSimulationStatus = async (simulation) => {
     try {
@@ -387,6 +390,7 @@ const Welcome = ({ username, onLogout }) => {
           if (status === "DONE") {
             setSimulationStatus("Done");
             clearInterval(intervalId);
+            return;
           } else {
             setSimulationStatus("Simulation still running");
           }
@@ -517,6 +521,17 @@ const Welcome = ({ username, onLogout }) => {
       console.log('Simulation result:', result);
     } catch (error) {
       console.error('Error during simulation:', error);
+    }
+  }
+
+  const handleToggleButton = (button) => {
+    setActiveButton(button);
+    if (button === 'gaden') {
+      setActiveButton('gaden');
+      setShowCheckboxes(true);
+    } else {
+      setActiveButton('robot');
+      setShowCheckboxes(false);
     }
   }
 
@@ -714,51 +729,66 @@ const Welcome = ({ username, onLogout }) => {
             >
               Go Back
             </button>
-
-            <div className="checkbox-filters">
-              <label>
-                <input
-                  type="checkbox"
-                  name="all"
-                  checked={checkedOptions.all}
-                  onChange={handleCheckboxChange}
-                />
-                Show all the simulations
-              </label>
-
-              <label>
-                <input
-                  type="checkbox"
-                  name="heatmap"
-                  checked={checkedOptions.heatmap}
-                  onChange={handleCheckboxChange}
-                />
-                Show heatmap
-              </label>
-
-              <label>
-                <input
-                  type="checkbox"
-                  name="wind"
-                  checked={checkedOptions.wind}
-                  onChange={handleCheckboxChange}
-                />
-                Show wind vectors
-              </label>
-
-              <label>
-                <input
-                  type="checkbox"
-                  name="contour"
-                  checked={checkedOptions.contour}
-                  onChange={handleCheckboxChange}
-                />
-                Show contour
-              </label>
+            <div className="toggle-buttons">
+              <button
+                className={`toggle-button ${activeButton === 'gaden' ? 'active' : 'inactive'}`}
+                onClick={() => handleToggleButton('gaden')}
+              >
+                Gaden Simulations
+              </button>
+              <button
+                className={`toggle-button ${activeButton === 'robot' ? 'active' : 'inactive'}`}
+                onClick={() => handleToggleButton('robot')}
+              >
+                Robot Simulations
+              </button>
             </div>
+            {showCheckboxes && (
+              <div className="checkbox-filters">
+                <label>
+                  <input
+                    type="checkbox"
+                    name="all"
+                    checked={checkedOptions.all}
+                    onChange={handleCheckboxChange}
+                  />
+                  Show all the simulations
+                </label>
+
+                <label>
+                  <input
+                    type="checkbox"
+                    name="heatmap"
+                    checked={checkedOptions.heatmap}
+                    onChange={handleCheckboxChange}
+                  />
+                  Show heatmap
+                </label>
+
+                <label>
+                  <input
+                    type="checkbox"
+                    name="wind"
+                    checked={checkedOptions.wind}
+                    onChange={handleCheckboxChange}
+                  />
+                  Show wind vectors
+                </label>
+
+                <label>
+                  <input
+                    type="checkbox"
+                    name="contour"
+                    checked={checkedOptions.contour}
+                    onChange={handleCheckboxChange}
+                  />
+                  Show contour
+                </label>
+              </div>    
+          )}
           </div>
           <div className="gif-container">
-            <></>
+
             {!loadingGifs && filteredGifs.length === 0 && (
               <p>No GIFs available for the selected options.</p>
             )}
@@ -767,6 +797,15 @@ const Welcome = ({ username, onLogout }) => {
               filteredGifs
                 .slice()
                 .sort((a, b) => a.height - b.height)
+                .filter((gifObj) => {
+                  if (activeButton === 'gaden') {
+                    return ['heatmap', 'wind', 'contour'].includes(gifObj.type); 
+                  }
+                  if (activeButton === 'robot') {
+                    return gifObj.type === 'robot';  
+                  }
+                  return true;
+                })
                 .map((gifObj, index) => (
                   <div key={index} className="gif-description">
                     <h3>Height: {gifObj.height ?? 'Unknown'}</h3>

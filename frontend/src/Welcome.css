@@ -337,3 +337,29 @@ body {
   display: flex;
   flex-direction: column;
 }
+
+.toggle-buttons {
+  margin-top: 20px;
+  display: flex;
+  gap: 10px;
+}
+
+.toggle-button {
+  padding: 10px 20px;
+  font-size: 16px;
+  cursor: pointer;
+  border: 2px solid #333;
+  border-radius: 5px;
+  background-color: #f0f0f0;
+  transition: background-color 0.3s ease;
+}
+
+.toggle-button.active {
+  background-color: #4CAF50;
+  color: white;
+}
+
+.toggle-button.inactive {
+  background-color: #f0f0f0;
+  color: #333;
+}

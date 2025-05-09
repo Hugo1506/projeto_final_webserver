@@ -278,7 +278,9 @@ app.post('/uploadSimulationResults', (req, res) => {
       return res.status(500).send('Internal Server Error');
     }
 
-    res.status(200).send('Results uploaded successfully');
+    res.status(200).json({
+      id: results.insertId,
+    });
   });
 
 });
@@ -321,8 +323,10 @@ app.post('/plumeLocationOutOfBounds', (req, res) => {
         console.error('Error deleting simulation directory:', err);
         return res.status(500).send('Failed to delete simulation directory');
       }
-
-      res.status(200).send('Simulation removed successfully');
+    
+    res.status(200).json({
+      message: 'Results uploaded successfully',
+    });
     });
   });
 });
@@ -358,34 +362,48 @@ app.get('/getBoundsValues', (req, res) => {
 });
 
 
-app.post('/robotSimulation', async (req, res) => {
-  const username = req.body.username;
-  const simulation = req.body.simulation;
-  const height = req.body.height;
-  const robotSpeed = req.body.robotSpeed;
-  const robotXposition = req.body.robotXposition;
-  const robotYposition = req.body.robotYposition;
+app.post('/robotSimulation', (req, res) => {
+  const { username, simulation, height, robotSpeed, robotXposition, robotYposition } = req.body;
 
+  const simulationNumber = simulation.split('_')[1];
+  
+  axios.get('http://simulation:8000/', {
+    params: {
+      username,
+      simulationNumber,
+      height,
+      robotSpeed,
+      robotXposition,
+      robotYposition
+    }
+  })
+  .then(response => {
+    const message = response.data;
 
-  simulationNumber = simulation.split('_')[1];
-  try {
-    const response = await axios.get('http://simulation:8000/', {
-      params: {
-        username,
-        simulationNumber,
-        height,
-        robotSpeed,
-        robotXposition,
-        robotYposition
+    const robotPath = JSON.stringify(message.frames);
+    const id = message.id;
+
+    const queryUpdateRobotPath = `
+      UPDATE simulation_results
+      SET robot_path = ?
+      WHERE simulation = ? 
+      AND type = 'robot'
+      AND id = ?
+    `;
+
+    pool.query(queryUpdateRobotPath, [robotPath, simulation, id], (error, results) => {
+      if (error) {
+        console.error('Error saving robot path:', error);
+        return res.status(500).json({ error: 'Failed to save robot path' });
       }
+      return res.status(200).json({ message: 'Simulation data saved successfully', data: results });
     });
 
-    return res.status(200).json(response.data);
-  } catch (error) {
+  })
+  .catch(error => {
     console.error('Error calling simulation service:', error.message);
     return res.status(500).json({ error: 'Failed to call simulation backend' });
-  }
-
+  });
 });
 
 // rota que apaga a simulação
@@ -423,7 +441,7 @@ app.post('/deleteSimulation', (req, res) => {
 
 app.get('/getSimulationResultsGifs', (req, res) => {
   const simulation = req.query.simulation;
-  const queryGetSimulationResults = 'SELECT gif, height, type FROM simulation_results WHERE simulation = ?';
+  const queryGetSimulationResults = 'SELECT gif, height, type, robot_path FROM simulation_results WHERE simulation = ?';
 
   pool.query(queryGetSimulationResults, [simulation], (error, results) => {
     if (error) {
@@ -453,7 +471,8 @@ app.get('/getSimulationResultsGifs', (req, res) => {
         gifs.push({
           gif: decompressedBuffer.toString('base64'),
           height: result.height,
-          type: result.type
+          type: result.type,
+          robot_path: result.robot_path
         });
 
         processedCount++;

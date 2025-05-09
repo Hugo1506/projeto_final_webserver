@@ -32,7 +32,8 @@ const Welcome = ({ username, onLogout }) => {
   const [height, setHeight] = useState('');
   const [robotSpeed, setRobotSpeed] = useState('');
   const [activeButton, setActiveButton] = useState('gaden');
-  const [showCheckboxes, setShowCheckboxes] = useState(true); 
+  const [showCheckboxes, setShowCheckboxes] = useState(true);
+  const [robotSimulation, setRobotSimulation] = useState(true);
 
   const navigate = useNavigate();
   const searchInputRef = useRef(null);
@@ -140,7 +141,7 @@ const Welcome = ({ username, onLogout }) => {
   
       const gifsData = await response.json();
       
-      const gifs = gifsData.map(({ gif, height,type }) => {
+      const gifs = gifsData.map(({ gif, height,type,robot_path }) => {
         const byteCharacters = atob(gif);  
         const byteArrays = [];
   
@@ -159,7 +160,8 @@ const Welcome = ({ username, onLogout }) => {
           url,
           height,
           type,
-          simulation
+          simulation,
+          robot_path
         };
       });
       
@@ -529,9 +531,11 @@ const Welcome = ({ username, onLogout }) => {
     if (button === 'gaden') {
       setActiveButton('gaden');
       setShowCheckboxes(true);
+      setRobotSimulation(true);
     } else {
       setActiveButton('robot');
       setShowCheckboxes(false);
+      setRobotSimulation(false);
     }
   }
 
@@ -824,7 +828,7 @@ const Welcome = ({ username, onLogout }) => {
       </>
       )}
       </div>
-      {gadenSimulationClickVisible && clickedGif && (
+      {gadenSimulationClickVisible && clickedGif && robotSimulation && (
         <div className="gaden-simulation-click">
           <button
             className={`go-back-simulation-details ${fadeOut ? 'fade-out' : ''}`}
@@ -873,6 +877,24 @@ const Welcome = ({ username, onLogout }) => {
               </div>
             </form>
           </div>
+        </div>
+      )}
+      {gadenSimulationClickVisible && clickedGif && !robotSimulation && (
+        <div className="gaden-simulation-click">
+          <button
+            className={`go-back-simulation-details ${fadeOut ? 'fade-out' : ''}`}
+            onClick={handleGoBackSimulationDetails}
+          >
+            Go Back
+          </button>
+          <div className="gif-description-robot">
+            <h3>Height: {clickedGif.height ?? 'Unknown'}</h3>
+            <img
+              src={clickedGif.url}
+              className="gif-image"
+            />
+          </div>
+          <h4>{clickedGif.robot_path ?? 'Unknown'}</h4>
         </div>
       )}
     </div>

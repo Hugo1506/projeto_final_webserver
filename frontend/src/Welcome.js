@@ -161,8 +161,15 @@ const Welcome = ({ username, onLogout }) => {
           height,
           type,
           simulation,
-          robot_path
-        };
+          robot_path: (() => {
+          try {
+            return typeof robot_path === 'string' ? JSON.parse(robot_path) : robot_path;
+          } catch (e) {
+            console.warn("Failed to parse robot_path:", e);
+            return [];
+          }
+        })()
+      };
       });
       
       const gifTypes = gifs.map(g => g.type);
@@ -887,14 +894,34 @@ const Welcome = ({ username, onLogout }) => {
           >
             Go Back
           </button>
-          <div className="gif-description-robot">
-            <h3>Height: {clickedGif.height ?? 'Unknown'}</h3>
-            <img
-              src={clickedGif.url}
-              className="gif-image"
-            />
+
+          <div className="content-container">
+            <div className="gif-description-robot">
+              <h3>Height: {clickedGif.height ?? 'Unknown'}</h3>
+              <img
+                src={clickedGif.url}
+                className="gif-image"
+                alt="Simulation"
+              />
+            </div>
+
+            <div className="robot-path-list-container">
+              <h4>Robot Path:</h4>
+              {Array.isArray(clickedGif.robot_path) && clickedGif.robot_path.length > 0 ? (
+                <ul className="robot-path-list">
+                  {clickedGif.robot_path.map((point, index) => (
+                    <li key={index} className="robot-path-item">
+                      <strong>Position:</strong> (x: {point.robot_position.x.toFixed(2)}, y: {point.robot_position.y.toFixed(2)}, z: {point.robot_position.z})<br />
+                      <strong>Concentration:</strong> {point.concentration}<br />
+                      <strong>Current:</strong> (x: {point.wind_speed.x.toFixed(3)}, y: {point.wind_speed.y.toFixed(3)}, z: {point.wind_speed.z.toFixed(3)})
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p>No robot path data available.</p>
+              )}
+            </div>
           </div>
-          <h4>{clickedGif.robot_path ?? 'Unknown'}</h4>
         </div>
       )}
     </div>

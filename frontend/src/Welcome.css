@@ -268,7 +268,6 @@ body {
   z-index: 1000;
 }
 
-/* Modal content */
 .modal {
   background-color: white;
   padding: 20px;
@@ -362,4 +361,41 @@ body {
 .toggle-button.inactive {
   background-color: #f0f0f0;
   color: #333;
+}
+
+.gaden-simulation-click {
+  padding: 20px;
+}
+
+.content-container {
+  display: flex;
+  gap: 20px; 
+  align-items: flex-start; 
+}
+
+.gif-description-robot {
+  flex: 1;
+  max-width: 50%; 
+}
+
+.robot-path-list-container {
+  flex: 1;
+  max-width: 50%; 
+  
+}
+
+.robot-path-list {
+  list-style: none;
+  height: 485px;
+  padding: 0;
+  margin: 0;
+  overflow-y: auto; 
+}
+
+.robot-path-item {
+  border: 1px solid #ddd;
+  padding: 10px;
+  margin-bottom: 20px;
+  background-color: #f9f9f9;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }

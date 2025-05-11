@@ -70,7 +70,7 @@ const storage = multer.diskStorage({
 const upload = multer({ storage: storage });
 
 // Função que envia os dados para o volume que os dois containers partilham
-function sendToVolume(username, simulationNumber, innerCadFilePaths, outerCadFilePaths, windFilePaths, plumeXLocation, plumeYLocation, plumeZLocation) {
+function sendToVolume(username, simulationNumber, innerCadFilePaths, outerCadFilePaths, windFilePaths) {
   const baseDir = path.join('/simulation_data', username, `sim_${simulationNumber}`);
 
     // define os subdiretórios
@@ -161,9 +161,9 @@ function sendToVolume(username, simulationNumber, innerCadFilePaths, outerCadFil
           loop_to_step: 24,
 
         
-          source_position_x: plumeXLocation, // (m)
-          source_position_y: plumeYLocation, // (m)
-          source_position_z: plumeZLocation, // (m)
+          source_position_x: "1.0", // (m)
+          source_position_y: "1.0", // (m)
+          source_position_z: "1.0", // (m)
 
           save_results: 1, 
           results_time_step: 0.5, 
@@ -285,7 +285,8 @@ app.post('/uploadSimulationResults', (req, res) => {
 
 });
 
-app.post('/plumeLocationOutOfBounds', (req, res) => {
+
+app.post('/setBounds', (req, res) => {
   const simulation = req.body.simulation;
   const xMin = req.body.x_min;
   const xMax = req.body.x_max;
@@ -294,40 +295,26 @@ app.post('/plumeLocationOutOfBounds', (req, res) => {
   const zMin = req.body.z_min;
   const zMax = req.body.z_max;
 
-  // extrai o nome de utilizador e o número da simulação 
-  const [name, number] = simulation.split('_');
-
-  // Define o caminho para a pasta da simulação
-  const simulationDirPath = path.join('/simulation_data', name, `sim_${number}`);
-
-
   const bounds = JSON.stringify({ xMin, xMax, yMin, yMax, zMin, zMax });
 
-  const queryUpdateSimulationStatus = `
-      UPDATE simulation_queue 
-      SET status = ?, simulation_bounds = ? 
-      WHERE simulation = ?
-    `;
-    pool.query(queryUpdateSimulationStatus, ['OUT OF BOUNDS', bounds, simulation], (error, results) => {    if (error) {
-      console.error(error);
-      return res.status(500).send('Internal Server Error');
-    }
-
-    if (results.affectedRows === 0) {
-      return res.status(404).send('Simulation not found');
-    }
+  const querySetSimulationBounds = `UPDATE simulation_queue 
+      SET simulation_bounds = ? 
+      WHERE simulation = ?`
   
-    // remove a pasta da simulação recursivamente 
-    fs.rm(simulationDirPath, { recursive: true, force: true }, (err) => {
-      if (err) {
-        console.error('Error deleting simulation directory:', err);
-        return res.status(500).send('Failed to delete simulation directory');
+    pool.query(querySetSimulationBounds, [bounds, simulation], (error, results) => {
+      if (error) {
+        console.error(error);
+        return res.status(500).send('Internal Server Error');
       }
-    
-    res.status(200).json({
-      message: 'Results uploaded successfully',
-    });
-    });
+
+      if (results.affectedRows === 0) {
+        return res.status(404).send('Simulation not found');
+      }
+
+      
+      res.status(200).json({
+        message: 'Results uploaded successfully',
+      });
   });
 });
 
@@ -355,7 +342,7 @@ app.get('/getBoundsValues', (req, res) => {
       return res.status(500).json({ error: 'Invalid bounds data' });
     }
 
-    const { xMin, xMax, yMin, yMax, zMin, zMax } = bounds;
+    const { xMin, xMax, yMin, yMax, zMin, zMax } = bounds;  
     res.status(200).json({ xMin, xMax, yMin, yMax, zMin, zMax });
   });
 
@@ -506,16 +493,13 @@ app.post('/uploadFiles', upload.fields([
   const simulationName = req.body.simulationName || `Simulation_${simulationNumber}`; 
   const simulationField = `${username}_${simulationNumber}`;
   const queryInsertSimulation = 'INSERT INTO simulation_queue (username, simulationNumber, simulation, simulationName) VALUES (?, ?, ?, ?)';
-  const plumeXLocation = req.body.plumeXLocation;
-  const plumeYLocation = req.body.plumeYLocation;
-  const plumeZLocation = req.body.plumeZLocation;
 
   const innerCadFilePaths = req.files.innerCadFiles.map(file => file.path);
   const outerCadFilePaths = req.files.outerCadFiles.map(file => file.path);
   const windFilePaths = req.files.windFiles.map(file => file.path);
 
   // envia os dados da simulação para o volume
-  const sentToVolume = sendToVolume(username, simulationNumber, innerCadFilePaths, outerCadFilePaths, windFilePaths, plumeXLocation, plumeYLocation, plumeZLocation);
+  const sentToVolume = sendToVolume(username, simulationNumber, innerCadFilePaths, outerCadFilePaths, windFilePaths);
   
   // insere os dados da simulação para a base de dados
   pool.query(queryInsertSimulation, [username, simulationNumber, simulationField, simulationName], (error, results) => {

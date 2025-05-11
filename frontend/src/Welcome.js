@@ -34,6 +34,8 @@ const Welcome = ({ username, onLogout }) => {
   const [activeButton, setActiveButton] = useState('gaden');
   const [showCheckboxes, setShowCheckboxes] = useState(true);
   const [robotSimulation, setRobotSimulation] = useState(true);
+  const [simulationBounds, setSimulationBounds] = useState(null);
+  const [showPlumeLocation,setShowPlumeLocation] = useState(false);
 
   const navigate = useNavigate();
   const searchInputRef = useRef(null);
@@ -278,10 +280,7 @@ const Welcome = ({ username, onLogout }) => {
     formData.append('username', username);
     formData.append('simulationNumber', simulationNumber);
     formData.append('simulationName', simulationName);
-    formData.append('plumeXLocation', plumeXLocation);
-    formData.append('plumeYLocation', plumeYLocation);
-    formData.append('plumeZLocation', plumeZLocation);
-    console.log(plumeXLocation, plumeYLocation, plumeZLocation);
+
     if (files.innerCadFiles) {
       Array.from(files.innerCadFiles).forEach((file) => {
         formData.append('innerCadFiles', file);
@@ -315,18 +314,11 @@ const Welcome = ({ username, onLogout }) => {
   
           if (status === "IN_QUEUE") {
             alert("Simulation is in queue...");
-          } else if (status === "OUT OF BOUNDS") {
-            const boundsData = await fetchBoundsStatus(simulation);
-            if (boundsData) {
-              const { xMin, xMax, yMin, yMax, zMin, zMax } = boundsData;
-              alert(`Simulation is out of bounds.\nBounds:\nX: ${xMin} - ${xMax}\nY: ${yMin} - ${yMax}\nZ: ${zMin} - ${zMax}`);
-              break;
-            } else {
-              alert("Simulation is out of bounds, but bounds could not be retrieved.");
-            }
-            break;
           } else if (status === "IN SIMULATION") {
             alert("Simulation has started.");
+            const bounds = await fetchBoundsStatus(simulation);
+            setSimulationBounds(bounds);
+            setShowPlumeLocation(true);
             break;
           }
   
@@ -345,6 +337,24 @@ const Welcome = ({ username, onLogout }) => {
     setFileInputVisible(false);
   };
 
+  const handlePlumeSubmit = async (e) => {
+    e.preventDefault();
+    const formData = new FormData();
+
+    formData.append('username', username);
+    formData.append('plumeXLocation', plumeXLocation);
+    formData.append('plumeYLocation', plumeYLocation);
+    formData.append('plumeZLocation', plumeZLocation);
+
+    try {
+      const response = await fetch('http://localhost:3000/uploadPlumeLocation', {
+        method: 'POST',
+        body: formData,
+      });
+    } catch (error) {
+      console.error('Error:', error);
+    }
+  };
   const handleGoBack = () => {
     setFadeOut(true); 
     setTimeout(() => {
@@ -597,7 +607,7 @@ const Welcome = ({ username, onLogout }) => {
            <br />
   	 </div>
     )}
-      {isNewSimulation && (
+      {isNewSimulation && !showPlumeLocation && (
         <form onSubmit={handleFileSubmit} className="file-upload-form">
           <div>
             <label htmlFor="simulationName">Name of the simulation (optional):</label>
@@ -608,31 +618,6 @@ const Welcome = ({ username, onLogout }) => {
               value={simulationName}
               onChange={(e) => setSimulationName(e.target.value)}
               placeholder="Enter simulation name"
-            />
-            <label htmlFor="plumeXLocation">Plume location </label>
-            <input
-              type="float"
-              id="plumeXLocation"
-              name="plumeXLocation"
-              value={plumeXLocation}
-              onChange={(e) => setPlumeXLocation(e.target.value)}
-              placeholder="Enter plume location x value X.X"
-            />
-            <input
-              type="float"
-              id="plumeYLocation"
-              name="plumeYLocation"
-              value={plumeYLocation}
-              onChange={(e) => setPlumeYLocation(e.target.value)}
-              placeholder="Enter plume location y value X.X"
-            />
-            <input
-              type="float"
-              id="plumeZLocation"
-              name="plumeZLocation"
-              value={plumeZLocation}
-              onChange={(e) => setPlumeZLocation(e.target.value)}
-              placeholder="Enter plume location z value X.X"
             />
           </div>
           <div>
@@ -669,6 +654,44 @@ const Welcome = ({ username, onLogout }) => {
             Go Back
           </button>
         </form> 
+      )}
+      {isNewSimulation && showPlumeLocation && (
+        <form onSubmit={handlePlumeSubmit} className="file-upload-form">
+          <div>
+            <h4 htmlFor="plumeXLocation">Plume location </h4>
+            <label htmlFor="plumeXLocation">Range: {simulationBounds.xMin} and {simulationBounds.xMax}</label>
+            <input
+              type="float"
+              id="plumeXLocation"
+              name="plumeXLocation"
+              value={plumeXLocation}
+              onChange={(e) => setPlumeXLocation(e.target.value)}
+              placeholder="Enter plume location x value X.X"
+            />
+            <label htmlFor="plumeYLocation">Range: {simulationBounds.yMin} and {simulationBounds.yMax}</label>
+            <input
+              type="float"
+              id="plumeYLocation"
+              name="plumeYLocation"
+              value={plumeYLocation}
+              onChange={(e) => setPlumeYLocation(e.target.value)}
+              placeholder="Enter plume location y value X.X"
+            />
+            <label htmlFor="plumeZLocation">Range: {simulationBounds.zMin} and {simulationBounds.zMax} </label>
+            <input
+              type="float"
+              id="plumeZLocation"
+              name="plumeZLocation"
+              value={plumeZLocation}
+              onChange={(e) => setPlumeZLocation(e.target.value)}
+              placeholder="Enter plume location z value X.X"
+            />
+          </div>
+          <button type="submit" className={`submit-button ${fadeOut ? 'fade-out' : ''}`} >Submit</button>
+          <button type="button" onClick={handleGoBackGadenChoise} className={`go-back-button ${fadeOut ? 'fade-out' : ''}`}>
+            Go Back
+          </button>
+        </form>
       )}
         {SavedSimulationsVisible && (
           <div className="saved-simulations-list" >

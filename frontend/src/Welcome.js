@@ -339,22 +339,30 @@ const Welcome = ({ username, onLogout }) => {
 
   const handlePlumeSubmit = async (e) => {
     e.preventDefault();
-    const formData = new FormData();
+    const simulationCorrected = simulationNumber - 1;
+    const formData = {
+      username,
+      simulationNumber: simulationCorrected,
+      plumeXlocation: plumeXLocation,
+      plumeYlocation: plumeYLocation,
+      plumeZlocation: plumeZLocation,
+    };
 
-    formData.append('username', username);
-    formData.append('plumeXLocation', plumeXLocation);
-    formData.append('plumeYLocation', plumeYLocation);
-    formData.append('plumeZLocation', plumeZLocation);
-
+    
+    console.log('Form data:', formData);
     try {
       const response = await fetch('http://localhost:3000/uploadPlumeLocation', {
         method: 'POST',
-        body: formData,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
       });
     } catch (error) {
       console.error('Error:', error);
     }
   };
+
   const handleGoBack = () => {
     setFadeOut(true); 
     setTimeout(() => {
@@ -372,6 +380,7 @@ const Welcome = ({ username, onLogout }) => {
       setGadenChoiseVisible(true);
       setIsNewSimulation(false);
       setSavedSimulationsVisible(false);
+      setShowPlumeLocation(false);
       setFadeOut(false); 
     }, 500);
  

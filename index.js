@@ -393,6 +393,29 @@ app.post('/robotSimulation', (req, res) => {
   });
 });
 
+
+app.post ('/uploadPlumeLocation', (req, res) => {
+  const{username,simulationNumber,plumeXlocation,plumeYlocation,plumeZlocation} = req.body;
+  axios.get('http://simulation:8000/set_plume_location', {
+    params: {
+      username,
+      simulationNumber,
+      plumeXlocation,
+      plumeYlocation,
+      plumeZlocation
+    }
+  })
+  .then(response => {
+
+   return res.status(200).json({ message: 'Plume location saved'});
+
+  })
+  .catch(error => {
+    console.error('Error calling simulation service:', error.message);
+    return res.status(500).json({ error: 'Failed to call simulation backend' });
+  });
+});
+
 // rota que apaga a simulação
 app.post('/deleteSimulation', (req, res) => {
   const simulation = req.query.simulation;

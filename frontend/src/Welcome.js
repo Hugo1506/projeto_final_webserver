@@ -36,9 +36,12 @@ const Welcome = ({ username, onLogout }) => {
   const [robotSimulation, setRobotSimulation] = useState(true);
   const [simulationBounds, setSimulationBounds] = useState(null);
   const [showPlumeLocation,setShowPlumeLocation] = useState(false);
-
+  const [ambientSimulator, setAmbientSimulator] = useState("");
   const navigate = useNavigate();
   const searchInputRef = useRef(null);
+  const [selectedHeight, setSelectedHeight] = useState('');
+  const [availableHeights, setAvailableHeights] = useState([]);
+
 
   const [checkedOptions, setCheckedOptions] = useState({
     all: false,
@@ -66,8 +69,10 @@ const Welcome = ({ username, onLogout }) => {
   const filteredGifs = (activeButton === 'robot')
     ? gifs.filter((gif) => gif.type === 'robot')
     : checkedOptions.all
-    ? gifs 
-    : gifs.filter((gif) => checkedOptions[gif.type]);
+    ? gifs
+    : gifs
+        .filter((gif) => checkedOptions[gif.type])
+
 
   const fetchSimulationStatus = async (simulation) => {
     try {
@@ -174,6 +179,13 @@ const Welcome = ({ username, onLogout }) => {
       };
       });
       
+
+      const uniqueHeights = [...new Set(gifs.map(gif => gif.height))];
+
+      setSelectedHeight(""); 
+
+      setAvailableHeights(uniqueHeights);
+
       const gifTypes = gifs.map(g => g.type);
 
       setCheckedOptions({
@@ -181,7 +193,10 @@ const Welcome = ({ username, onLogout }) => {
         heatmap: gifTypes.includes('heatmap'),
         wind: gifTypes.includes('wind'),
         contour: gifTypes.includes('contour'),
+        [selectedHeight]: true,
       });
+
+      
 
       setGifs(gifs);
     } catch (error) {
@@ -246,6 +261,7 @@ const Welcome = ({ username, onLogout }) => {
     setFadeOut(true);
     setTimeout(() => {
       setGadenChoiseVisible(true);
+      setAmbientSimulator("Simulatior: Gaden version 2.5.0");
       setFadeOut(false);
     }, 500);
   };
@@ -370,6 +386,7 @@ const Welcome = ({ username, onLogout }) => {
       setGadenChoiseVisible(false);
       setIsNewSimulation(false);
       setSavedSimulationsVisible(false);
+      setAmbientSimulator("");
       setFadeOut(false); 
     }, 500);
   };
@@ -565,6 +582,7 @@ const Welcome = ({ username, onLogout }) => {
     }
   }
 
+
   return (
     <div className="welcome-container">
       <div className="welcome-banner">
@@ -590,11 +608,12 @@ const Welcome = ({ username, onLogout }) => {
             className={`gaden-button ${fadeOut ? 'fade-out' : ''}`}
             onClick={handleGadenClick}
           >
-            Gaden
+            Gaden <br /> version: 2.5.0
           </button>
         ) : null}
        {GadenChoiseVisible && (
          <div className="gaden-choice-buttons">
+          <h1 className={'info-header'}>{ambientSimulator}</h1>
           <button
            className={`new-simulation-button ${fadeOut ? 'fade-out' : ''}`}
            onClick={handleNewSimulationClick}
@@ -795,7 +814,7 @@ const Welcome = ({ username, onLogout }) => {
                     checked={checkedOptions.all}
                     onChange={handleCheckboxChange}
                   />
-                  Show all the simulations
+                  Show all simulations
                 </label>
 
                 <label>
@@ -827,7 +846,19 @@ const Welcome = ({ username, onLogout }) => {
                   />
                   Show contour
                 </label>
-              </div>    
+              
+                <select value={selectedHeight} onChange={(e) => {
+                  console.log('Selected Height:', e.target.value);
+                  setSelectedHeight(e.target.value);
+                }}>
+                  <option value="">All heights</option>
+                  {availableHeights.map((height, idx) => (
+                    <option key={idx} value={height}>
+                      {height ?? 'Unknown'}
+                    </option>
+                  ))}
+                </select>   
+              </div> 
           )}
           </div>
           <div className="gif-container">
@@ -837,9 +868,10 @@ const Welcome = ({ username, onLogout }) => {
             )}
 
             {filteredGifs.length > 0 && (
+              
               filteredGifs
                 .slice()
-                .sort((a, b) => a.height - b.height)
+                .sort((a, b) => Number(a.height) - Number(b.height))
                 .filter((gifObj) => {
                   if (activeButton === 'gaden') {
                     return ['heatmap', 'wind', 'contour'].includes(gifObj.type); 
@@ -849,6 +881,13 @@ const Welcome = ({ username, onLogout }) => {
                   }
                   return true;
                 })
+                .filter((gifObj) => {
+                  if (!selectedHeight) {
+                    return true;
+                  }
+                  return gifObj.height == selectedHeight;
+                })
+                
                 .map((gifObj, index) => (
                   <div key={index} className="gif-description">
                     <h3>Height: {gifObj.height ?? 'Unknown'}</h3>

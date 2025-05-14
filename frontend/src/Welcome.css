@@ -399,3 +399,29 @@ body {
   background-color: #f9f9f9;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
+
+.info-header{
+  text-align: center;
+}
+
+select {
+  font-size: 16px;
+  padding: 10px 15px;
+  margin-bottom: 20px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  cursor: pointer;
+  background-color: #f9f9f9;
+  width: 200px;
+  transition: all 0.3s ease;
+}
+
+select:hover {
+  border-color: #007bff;
+}
+
+select:focus {
+  outline: none;
+  border-color: #0056b3;
+  background-color: #fff;
+}

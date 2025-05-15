@@ -354,7 +354,7 @@ app.post('/robotSimulation', (req, res) => {
 
   const simulationNumber = simulation.split('_')[1];
   
-  axios.get('http://simulation:8000/', {
+  axios.get('http://simulation:8000/robot_simulation', {
     params: {
       username,
       simulationNumber,

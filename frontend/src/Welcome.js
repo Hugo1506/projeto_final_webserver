@@ -10,7 +10,7 @@ const Welcome = ({ username, onLogout }) => {
   const [simulationNumber, setSimulationNumber] = useState(null);
   const [fadeOut, setFadeOut] = useState(false);
   const [GadenChoiseVisible, setGadenChoiseVisible] = useState(false);
-  const [SavedSimulationsVisible, setSavedSimulationsVisible] = useState(false);
+  const [savedSimulationsVisible, setSavedSimulationsVisible] = useState(false);
   const [isNewSimulation, setIsNewSimulation] = useState(false);
 	const [simulationName, setSimulationName] = useState('');
   const [plumeXLocation, setPlumeXLocation] = useState('');
@@ -41,7 +41,10 @@ const Welcome = ({ username, onLogout }) => {
   const searchInputRef = useRef(null);
   const [selectedHeight, setSelectedHeight] = useState('');
   const [availableHeights, setAvailableHeights] = useState([]);
-
+  const [plumeSimulationIsLoading, setPlumeSimulationIsLoading] = useState(false);
+  const [plumeSimulationLoadingText, setPlumeSimulationLoadingText] = useState("Waiting for Simulation Results");
+  const [robotSimulationIsLoading, setRobotSimulationIsLoading] = useState(false);
+  const [robotSimulationLoadingText, setRobotSimulationLoadingText] = useState("Waiting for Robot Simulation Results");
 
   const [checkedOptions, setCheckedOptions] = useState({
     all: false,
@@ -50,6 +53,31 @@ const Welcome = ({ username, onLogout }) => {
     contour: false,
   });
     
+
+  useEffect(() => {
+    if (!plumeSimulationIsLoading) return; // não corre se não estiver à espera dos resultados da simulação 
+
+    let dotCount = 0;
+    const interval = setInterval(() => {
+      dotCount = (dotCount + 1) % 4; // faz reset da contagem quando chega a 4 
+      setPlumeSimulationLoadingText(`Waiting for simulation Results${".".repeat(dotCount)}`);
+    }, 500);
+
+    return () => clearInterval(interval);
+  }, [plumeSimulationIsLoading]);
+
+  useEffect(() => {
+    if (!robotSimulationIsLoading) return; // não corre se não estiver à espera dos resultados da simulação 
+
+    let dotCount = 0;
+    const interval = setInterval(() => {
+      dotCount = (dotCount + 1) % 4; // faz reset da contagem quando chega a 4 
+      setRobotSimulationLoadingText(`Waiting for simulation Results${".".repeat(dotCount)}`);
+    }, 500);
+
+    return () => clearInterval(interval);
+  }, [robotSimulationIsLoading]);
+
 
   // modal que para confirmar algo
   const ConfirmationModal = ({ message, onConfirm, onCancel }) => {
@@ -213,10 +241,10 @@ const Welcome = ({ username, onLogout }) => {
 
   // foca a search box 
   useEffect(() => {
-    if (SavedSimulationsVisible && searchInputRef.current) {
+    if (savedSimulationsVisible && searchInputRef.current) {
       searchInputRef.current.focus();
     }
-  }, [SavedSimulationsVisible]);
+  }, [savedSimulationsVisible]);
 
   const handleCheckboxChange = (event) => {
     const { name, checked } = event.target;
@@ -355,6 +383,8 @@ const Welcome = ({ username, onLogout }) => {
 
   const handlePlumeSubmit = async (e) => {
     e.preventDefault();
+    setPlumeSimulationIsLoading(true);
+
     const simulationCorrected = simulationNumber - 1;
     const formData = {
       username,
@@ -376,6 +406,12 @@ const Welcome = ({ username, onLogout }) => {
       });
     } catch (error) {
       console.error('Error:', error);
+    } finally{
+      await fetchSavedSimulations();
+      setPlumeSimulationIsLoading(false);
+      setIsNewSimulation(false);
+      setShowPlumeLocation(false);
+      setSavedSimulationsVisible(true);
     }
   };
 
@@ -539,7 +575,7 @@ const Welcome = ({ username, onLogout }) => {
 
   const handleRobotSimulationSubmit = async (e,simulation) => {
     e.preventDefault();
-  
+    setRobotSimulationIsLoading(true);
     const formData = {
       username,
       simulation,
@@ -566,6 +602,12 @@ const Welcome = ({ username, onLogout }) => {
       console.log('Simulation result:', result);
     } catch (error) {
       console.error('Error during simulation:', error);
+    } finally {
+      setRobotSimulationIsLoading(false);
+      setGadenSimulationClickVisible(false);
+      setSimulationDetail(true);
+      handleToggleButton('robot');
+      await handleSimulationClick(simulation);
     }
   }
 
@@ -603,7 +645,7 @@ const Welcome = ({ username, onLogout }) => {
         />
       </div>
       <div className="main-content">
-        {!gadenSimulationClickVisible && !fileInputVisible && !GadenChoiseVisible && !isNewSimulation && !SavedSimulationsVisible && !simulationDetail? (
+        {!gadenSimulationClickVisible && !fileInputVisible && !GadenChoiseVisible && !isNewSimulation && !savedSimulationsVisible && !simulationDetail? (
           <button
             className={`gaden-button ${fadeOut ? 'fade-out' : ''}`}
             onClick={handleGadenClick}
@@ -684,44 +726,53 @@ const Welcome = ({ username, onLogout }) => {
         </form> 
       )}
       {isNewSimulation && showPlumeLocation && (
-        <form onSubmit={handlePlumeSubmit} className="file-upload-form">
-          <div>
-            <h4 htmlFor="plumeXLocation">Plume location </h4>
-            <label htmlFor="plumeXLocation">Range: {simulationBounds.xMin} and {simulationBounds.xMax}</label>
-            <input
-              type="float"
-              id="plumeXLocation"
-              name="plumeXLocation"
-              value={plumeXLocation}
-              onChange={(e) => setPlumeXLocation(e.target.value)}
-              placeholder="Enter plume location x value X.X"
-            />
-            <label htmlFor="plumeYLocation">Range: {simulationBounds.yMin} and {simulationBounds.yMax}</label>
-            <input
-              type="float"
-              id="plumeYLocation"
-              name="plumeYLocation"
-              value={plumeYLocation}
-              onChange={(e) => setPlumeYLocation(e.target.value)}
-              placeholder="Enter plume location y value X.X"
-            />
-            <label htmlFor="plumeZLocation">Range: {simulationBounds.zMin} and {simulationBounds.zMax} </label>
-            <input
-              type="float"
-              id="plumeZLocation"
-              name="plumeZLocation"
-              value={plumeZLocation}
-              onChange={(e) => setPlumeZLocation(e.target.value)}
-              placeholder="Enter plume location z value X.X"
-            />
-          </div>
-          <button type="submit" className={`submit-button ${fadeOut ? 'fade-out' : ''}`} >Submit</button>
-          <button type="button" onClick={handleGoBackGadenChoise} className={`go-back-button ${fadeOut ? 'fade-out' : ''}`}>
-            Go Back
-          </button>
-        </form>
+        <div style={{ position: "relative" }}>
+          <form onSubmit={handlePlumeSubmit} className="file-upload-form">
+            <div>
+              <h4 htmlFor="plumeXLocation">Plume location </h4>
+              <label htmlFor="plumeXLocation">Range: {simulationBounds.xMin} and {simulationBounds.xMax}</label>
+              <input
+                type="float"
+                id="plumeXLocation"
+                name="plumeXLocation"
+                value={plumeXLocation}
+                onChange={(e) => setPlumeXLocation(e.target.value)}
+                placeholder="Enter plume location x value X.X"
+              />
+              <label htmlFor="plumeYLocation">Range: {simulationBounds.yMin} and {simulationBounds.yMax}</label>
+              <input
+                type="float"
+                id="plumeYLocation"
+                name="plumeYLocation"
+                value={plumeYLocation}
+                onChange={(e) => setPlumeYLocation(e.target.value)}
+                placeholder="Enter plume location y value X.X"
+              />
+              <label htmlFor="plumeZLocation">Range: {simulationBounds.zMin} and {simulationBounds.zMax} </label>
+              <input
+                type="float"
+                id="plumeZLocation"
+                name="plumeZLocation"
+                value={plumeZLocation}
+                onChange={(e) => setPlumeZLocation(e.target.value)}
+                placeholder="Enter plume location z value X.X"
+              />
+            </div>
+            <button type="submit" className={`submit-button ${fadeOut ? 'fade-out' : ''}`} >Submit</button>
+            <button type="button" onClick={handleGoBackGadenChoise} className={`go-back-button ${fadeOut ? 'fade-out' : ''}`}>
+              Go Back
+            </button>
+          </form>
+          {plumeSimulationIsLoading && (
+        <div className="popup-overlay">
+            <div className="popup">
+              <p>{plumeSimulationLoadingText}</p>
+        </div>
+      </div>
+    )}
+    </div>
       )}
-        {SavedSimulationsVisible && (
+        {savedSimulationsVisible && (
           <div className="saved-simulations-list" >
             <div className="saved-simulations-header">
               <h3>Saved Simulations</h3>
@@ -955,6 +1006,13 @@ const Welcome = ({ username, onLogout }) => {
               </div>
             </form>
           </div>
+          {robotSimulationIsLoading && (
+        <div className="popup-overlay">
+            <div className="popup">
+              <p>{robotSimulationLoadingText}</p>
+        </div>
+        </div>
+      )}
         </div>
       )}
       {gadenSimulationClickVisible && clickedGif && !robotSimulation && (

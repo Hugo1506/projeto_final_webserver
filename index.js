@@ -269,10 +269,11 @@ app.post('/uploadSimulationResults', (req, res) => {
   const simulationResultType = req.body.type;
   const height = req.body.height;
   const compressedGif = req.body.gif;
-  
-  const queryInsertSimulationResult = 'INSERT INTO simulation_results (simulation,type,gif,height) VALUES (?, ?, ?,?)';
+  const iteration = req.body.iteration;
 
-  pool.query(queryInsertSimulationResult, [simulation, simulationResultType, compressedGif,height], (error, results) => {
+  const queryInsertSimulationResult = 'INSERT INTO simulation_results (simulation,type,gif,height,iteration) VALUES (?, ?, ?, ?, ?)';
+
+  pool.query(queryInsertSimulationResult, [simulation, simulationResultType, compressedGif,height, iteration], (error, results) => {
     if (error) {
       console.error(error);
       return res.status(500).send('Internal Server Error');

@@ -68,14 +68,12 @@ const Welcome = ({ username, onLogout }) => {
     if (filteredGifs.length > 0) {
       const max = Math.max(...filteredGifs.map(g => g.iteration));
       setMaxIteration(max);
-      console.log("max:",maxIteration)
     }
   }, [filteredGifs]);
 
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentIteration(prev => (prev + 1) > maxIteration ? 0 : prev + 1);
-      console.log("Current Iteration:", currentIteration);
     }, 500); // 500ms 
 
     return () => clearInterval(interval);

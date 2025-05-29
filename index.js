@@ -452,7 +452,7 @@ app.post('/deleteSimulation', (req, res) => {
 
 app.get('/getSimulationResultsGifs', (req, res) => {
   const simulation = req.query.simulation;
-  const queryGetSimulationResults = 'SELECT gif, height, type, robot_path FROM simulation_results WHERE simulation = ?';
+  const queryGetSimulationResults = 'SELECT gif, height, type, iteration, robot_path FROM simulation_results WHERE simulation = ?';
 
   pool.query(queryGetSimulationResults, [simulation], (error, results) => {
     if (error) {
@@ -483,6 +483,7 @@ app.get('/getSimulationResultsGifs', (req, res) => {
           gif: decompressedBuffer.toString('base64'),
           height: result.height,
           type: result.type,
+          iteration: result.iteration,
           robot_path: result.robot_path
         });
 

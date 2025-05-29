@@ -45,6 +45,9 @@ const Welcome = ({ username, onLogout }) => {
   const [plumeSimulationLoadingText, setPlumeSimulationLoadingText] = useState("Waiting for Simulation Results");
   const [robotSimulationIsLoading, setRobotSimulationIsLoading] = useState(false);
   const [robotSimulationLoadingText, setRobotSimulationLoadingText] = useState("Waiting for Robot Simulation Results");
+  const [currentIteration, setCurrentIteration] = useState(0);
+  const [maxIteration, setMaxIteration] = useState(0);
+
 
   const [checkedOptions, setCheckedOptions] = useState({
     all: false,
@@ -52,7 +55,31 @@ const Welcome = ({ username, onLogout }) => {
     wind: false,
     contour: false,
   });
-    
+
+  const filteredGifs = (activeButton === 'robot')
+    ? gifs.filter((gif) => gif.type === 'robot')
+    : checkedOptions.all
+    ? gifs
+    : gifs
+        .filter((gif) => checkedOptions[gif.type])
+  
+  // verifica qual é a iteração máxima 
+  useEffect(() => {
+    if (filteredGifs.length > 0) {
+      const max = Math.max(...filteredGifs.map(g => g.iteration));
+      setMaxIteration(max);
+      console.log("max:",maxIteration)
+    }
+  }, [filteredGifs]);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentIteration(prev => (prev + 1) > maxIteration ? 0 : prev + 1);
+      console.log("Current Iteration:", currentIteration);
+    }, 500); // 500ms 
+
+    return () => clearInterval(interval);
+  }, [maxIteration]);
 
   useEffect(() => {
     if (!plumeSimulationIsLoading) return; // não corre se não estiver à espera dos resultados da simulação 
@@ -94,12 +121,7 @@ const Welcome = ({ username, onLogout }) => {
     );
   };
 
-  const filteredGifs = (activeButton === 'robot')
-    ? gifs.filter((gif) => gif.type === 'robot')
-    : checkedOptions.all
-    ? gifs
-    : gifs
-        .filter((gif) => checkedOptions[gif.type])
+
 
 
   const fetchSimulationStatus = async (simulation) => {
@@ -176,7 +198,7 @@ const Welcome = ({ username, onLogout }) => {
   
       const gifsData = await response.json();
       
-      const gifs = gifsData.map(({ gif, height,type,robot_path }) => {
+      const gifs = gifsData.map(({ gif, height,type,iteration,robot_path }) => {
         const byteCharacters = atob(gif);  
         const byteArrays = [];
   
@@ -196,6 +218,7 @@ const Welcome = ({ username, onLogout }) => {
           height,
           type,
           simulation,
+          iteration,
           robot_path: (() => {
           try {
             return typeof robot_path === 'string' ? JSON.parse(robot_path) : robot_path;
@@ -922,7 +945,11 @@ const Welcome = ({ username, onLogout }) => {
               
               filteredGifs
                 .slice()
-                .sort((a, b) => Number(a.height) - Number(b.height))
+                .sort((a, b) => {
+                  const heightDiff = Number(a.height) - Number(b.height);
+                  if (heightDiff !== 0) return heightDiff;
+                  return a.type.localeCompare(b.type);
+                })
                 .filter((gifObj) => {
                   if (activeButton === 'gaden') {
                     return ['heatmap', 'wind', 'contour'].includes(gifObj.type); 
@@ -938,6 +965,8 @@ const Welcome = ({ username, onLogout }) => {
                   }
                   return gifObj.height == selectedHeight;
                 })
+
+                .filter((gifObj) => gifObj.iteration === currentIteration)
                 
                 .map((gifObj, index) => (
                   <div key={index} className="gif-description">

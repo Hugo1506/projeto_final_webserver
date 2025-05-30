@@ -47,8 +47,16 @@ const Welcome = ({ username, onLogout }) => {
   const [robotSimulationLoadingText, setRobotSimulationLoadingText] = useState("Waiting for Robot Simulation Results");
   const [currentIteration, setCurrentIteration] = useState(0);
   const [maxIteration, setMaxIteration] = useState(0);
+  const [imageLoaded, setImageLoaded] = useState({});
 
 
+
+  const handleImageLoaded = (url) => {
+    setImageLoaded((prevState) => ({
+      ...prevState,
+      [url]: true,
+    }));
+  };
   const [checkedOptions, setCheckedOptions] = useState({
     all: false,
     heatmap: false,
@@ -63,18 +71,25 @@ const Welcome = ({ username, onLogout }) => {
     : gifs
         .filter((gif) => checkedOptions[gif.type])
   
+
   // verifica qual é a iteração máxima 
   useEffect(() => {
     if (filteredGifs.length > 0) {
       const max = Math.max(...filteredGifs.map(g => g.iteration));
       setMaxIteration(max);
-    }
+   }
   }, [filteredGifs]);
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setCurrentIteration(prev => (prev + 1) > maxIteration ? 0 : prev + 1);
-    }, 500); // 500ms 
+      setCurrentIteration(prev => {
+        if (prev < maxIteration) {
+          return prev + 1;
+        }else{
+          return 0; 
+        }
+      });
+    }, 500); // 500ms
 
     return () => clearInterval(interval);
   }, [maxIteration]);
@@ -193,10 +208,13 @@ const Welcome = ({ username, onLogout }) => {
       if (!response.ok) {
         throw new Error('Failed to fetch GIFs');
       }
-  
+      
       const gifsData = await response.json();
       
+
       const gifs = gifsData.map(({ gif, height,type,iteration,robot_path }) => {
+
+
         const byteCharacters = atob(gif);  
         const byteArrays = [];
   
@@ -210,6 +228,7 @@ const Welcome = ({ username, onLogout }) => {
   
         const blob = new Blob(byteArrays, { type: 'image/gif' });
         const url = URL.createObjectURL(blob);
+        
 
         return {
           url,
@@ -943,11 +962,7 @@ const Welcome = ({ username, onLogout }) => {
               
               filteredGifs
                 .slice()
-                .sort((a, b) => {
-                  const heightDiff = Number(a.height) - Number(b.height);
-                  if (heightDiff !== 0) return heightDiff;
-                  return a.type.localeCompare(b.type);
-                })
+                .sort((a, b) => {a.type.localeCompare(b.type)})
                 .filter((gifObj) => {
                   if (activeButton === 'gaden') {
                     return ['heatmap', 'wind', 'contour'].includes(gifObj.type); 
@@ -964,7 +979,7 @@ const Welcome = ({ username, onLogout }) => {
                   return gifObj.height == selectedHeight;
                 })
 
-                .filter((gifObj) => gifObj.iteration === currentIteration)
+                .filter((gifObj) => gifObj.iteration === currentIteration && gifObj.url)
                 
                 .map((gifObj, index) => (
                   <div key={index} className="gif-description">
@@ -974,6 +989,7 @@ const Welcome = ({ username, onLogout }) => {
                       alt={`Simulation GIF ${index + 1}`}
                       className="gif-image"
                       onClick={() => {handleGifClick(gifObj)}}
+                      onLoad={() => handleImageLoaded(gifObj.url)}
                       style={{ cursor: 'pointer' }}
                     />
                   </div>

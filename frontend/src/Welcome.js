@@ -48,8 +48,11 @@ const Welcome = ({ username, onLogout }) => {
   const [currentIteration, setCurrentIteration] = useState(0);
   const [maxIteration, setMaxIteration] = useState(0);
   const [imageLoaded, setImageLoaded] = useState({});
-
-
+  const [relatedGifs, setRelatedGifs] = useState([]);
+  const [isPausedGaden, setIsPausedGaden] = useState(false);
+  const intervalRef = useRef(null);
+  const [gadenSimulationOriginalSpeed, setGadenSimulationOriginalSpeed] = useState(500);
+  const [gadenSimulationSpeed, setGadenSimulationSpeed] = useState(1);
 
   const handleImageLoaded = (url) => {
     setImageLoaded((prevState) => ({
@@ -57,6 +60,36 @@ const Welcome = ({ username, onLogout }) => {
       [url]: true,
     }));
   };
+  
+  useEffect(() => {
+    if (isPausedGaden) {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+      return; 
+    }
+
+    const speed = gadenSimulationOriginalSpeed / gadenSimulationSpeed;
+    console.log("Current Speed:", speed);
+    if (maxIteration > 0) {
+      intervalRef.current = setInterval(() => {
+        setCurrentIteration(prev => {
+          if (prev < maxIteration) {
+            return prev + 1; 
+          } else {
+            return 1;
+          }
+        });
+      }, speed); 
+    }
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current); 
+      }
+    };
+  }, [relatedGifs, maxIteration, isPausedGaden, gadenSimulationSpeed, gadenSimulationOriginalSpeed]);
+
+
   const [checkedOptions, setCheckedOptions] = useState({
     all: false,
     heatmap: false,
@@ -77,22 +110,8 @@ const Welcome = ({ username, onLogout }) => {
     if (filteredGifs.length > 0) {
       const max = Math.max(...filteredGifs.map(g => g.iteration));
       setMaxIteration(max);
-   }
+    }
   }, [filteredGifs]);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentIteration(prev => {
-        if (prev < maxIteration) {
-          return prev + 1;
-        }else{
-          return 0; 
-        }
-      });
-    }, 500); // 500ms
-
-    return () => clearInterval(interval);
-  }, [maxIteration]);
 
   useEffect(() => {
     if (!plumeSimulationIsLoading) return; // não corre se não estiver à espera dos resultados da simulação 
@@ -545,13 +564,23 @@ const Welcome = ({ username, onLogout }) => {
     }, 500);
   } 
 
-  const handleGifClick = (gifObj) => {
-    setSimulationDetail(false);
-    setGadenSimulationClickVisible(true);
-    setClickedGif(gifObj);
-    setHeight(gifObj.height);
+const handleGifClick = (clickedGif) => {
+  const { type, height } = clickedGif;
 
-  }
+  const filteredRelatedGifs = filteredGifs.filter(gifObj => gifObj.type === type && gifObj.height === height);
+
+  setRelatedGifs(filteredRelatedGifs);
+
+  const maxIter = Math.max(...filteredRelatedGifs.map(g => g.iteration));
+  setMaxIteration(maxIter);
+
+  setClickedGif(clickedGif);
+
+  setGadenSimulationClickVisible(true);
+  setSimulationDetail(false);
+
+  setCurrentIteration(0);
+};
 
   const handleSearch = (event) => {
     const query = event.target.value.toLowerCase();
@@ -609,6 +638,9 @@ const Welcome = ({ username, onLogout }) => {
       setGadenSimulationClickVisible(false);
       setSimulationDetail(true);
       setFadeOut(false);
+      setRelatedGifs([]); 
+      setCurrentIteration(0);
+      setMaxIteration(0);
     }, 500);
   }
 
@@ -664,6 +696,30 @@ const Welcome = ({ username, onLogout }) => {
     }
   }
 
+  const handlePauseResume = () => {
+    setIsPausedGaden(prev => !prev);
+  };
+
+  const handleIterationBackGaden = () => {
+    if(currentIteration > 1 && isPausedGaden){
+      setCurrentIteration(prev => prev -1 )
+    }
+  }
+
+  const handleIterationForwardGaden = () => {
+    if(currentIteration < maxIteration && isPausedGaden){
+      setCurrentIteration(prev => prev + 1)
+    }   
+  }
+
+  const handleChangeSimulationSpeedGaden = () => {
+    setGadenSimulationSpeed((prev) => {
+      if (prev === 1) return 2;
+      if (prev === 2) return 4;
+      if (prev === 4) return 8;
+      return 1;
+    });
+  };
 
   return (
     <div className="welcome-container">
@@ -1010,11 +1066,38 @@ const Welcome = ({ username, onLogout }) => {
           </button>
           <div className="side-by-side-container">
             <div className="gif-description-robot">
-              <h3>Height: {clickedGif.height ?? 'Unknown'}</h3>
-              <img
-                src={clickedGif.url}
-                className="gif-image"
-              />
+              {relatedGifs
+                .filter(gifObj => gifObj.iteration === currentIteration)
+                .map((gifObj, index) => (
+                  <div key={index} className="gif-description">
+                    <h3>Height: {gifObj.height ?? 'Unknown'}</h3>
+                    <h3>Iteration: {gifObj.iteration}</h3>
+                    <img
+                      src={gifObj.url}
+                      alt={`Related GIF ${index + 1}`}
+                      className="gif-image"
+                      style={{ cursor: 'pointer' }}
+                    />
+                    <div className="button-container-gaden-gif">
+                      <button onClick={handleIterationBackGaden}>
+                        {currentIteration > 1 && isPausedGaden ? '⏮️' : '🚫'}
+                      </button>
+                      <button onClick={handlePauseResume}> 
+                        {isPausedGaden ? '▶️' : '⏸️'} 
+                      </button>
+                      <button onClick={handleIterationForwardGaden}>
+                        {currentIteration < maxIteration && isPausedGaden ? '⏭️' : '🚫'}
+                      </button>
+                      <br />
+                      <button onClick={handleChangeSimulationSpeedGaden}>
+                        {gadenSimulationSpeed}x
+                      </button>
+                      <button onClick={() => setCurrentIteration(1)}>
+                        ↻
+                      </button>
+                    </div>
+                  </div>
+                ))}
             </div>
 
             <form onSubmit={(e) => handleRobotSimulationSubmit(e, clickedGif.simulation)} className="robot-simulation-form">              <div className="robot-simulation-inputs">

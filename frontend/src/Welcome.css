@@ -448,3 +448,9 @@ select:focus {
   text-align: center;
   z-index: 11;
 }
+
+.button-container-gaden-gif {
+  display: flex;
+  align-items: center; 
+  flex-wrap: nowrap;
+}

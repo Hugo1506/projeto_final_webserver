@@ -564,23 +564,24 @@ const Welcome = ({ username, onLogout }) => {
     }, 500);
   } 
 
-const handleGifClick = (clickedGif) => {
-  const { type, height } = clickedGif;
+  const handleGifClick = (clickedGif) => {
+    const { type, height } = clickedGif;
 
-  const filteredRelatedGifs = filteredGifs.filter(gifObj => gifObj.type === type && gifObj.height === height);
+    const filteredRelatedGifs = filteredGifs.filter(gifObj => gifObj.type === type && gifObj.height === height);
 
-  setRelatedGifs(filteredRelatedGifs);
+    setRelatedGifs(filteredRelatedGifs);
 
-  const maxIter = Math.max(...filteredRelatedGifs.map(g => g.iteration));
-  setMaxIteration(maxIter);
+    const maxIter = Math.max(...filteredRelatedGifs.map(g => g.iteration));
+    setMaxIteration(maxIter);
 
-  setClickedGif(clickedGif);
+    setClickedGif(clickedGif);
+    setHeight(clickedGif.height);
+    
+    setGadenSimulationClickVisible(true);
+    setSimulationDetail(false);
 
-  setGadenSimulationClickVisible(true);
-  setSimulationDetail(false);
-
-  setCurrentIteration(0);
-};
+    setCurrentIteration(0);
+  };
 
   const handleSearch = (event) => {
     const query = event.target.value.toLowerCase();
@@ -1152,12 +1153,38 @@ const handleGifClick = (clickedGif) => {
 
           <div className="content-container">
             <div className="gif-description-robot">
-              <h3>Height: {clickedGif.height ?? 'Unknown'}</h3>
-              <img
-                src={clickedGif.url}
-                className="gif-image"
-                alt="Simulation"
-              />
+              {relatedGifs
+                .filter(gifObj => gifObj.iteration === currentIteration)
+                .map((gifObj, index) => (
+                  <div key={index} className="gif-description">
+                    <h3>Height: {gifObj.height ?? 'Unknown'}</h3>
+                    <h3>Iteration: {gifObj.iteration}</h3>
+                    <img
+                      src={gifObj.url}
+                      alt={`Related GIF ${index + 1}`}
+                      className="gif-image"
+                      style={{ cursor: 'pointer' }}
+                    />
+                    <div className="button-container-gaden-gif">
+                      <button onClick={handleIterationBackGaden}>
+                        {currentIteration > 1 && isPausedGaden ? '⏮️' : '🚫'}
+                      </button>
+                      <button onClick={handlePauseResume}> 
+                        {isPausedGaden ? '▶️' : '⏸️'} 
+                      </button>
+                      <button onClick={handleIterationForwardGaden}>
+                        {currentIteration < maxIteration && isPausedGaden ? '⏭️' : '🚫'}
+                      </button>
+                      <br />
+                      <button onClick={handleChangeSimulationSpeedGaden}>
+                        {gadenSimulationSpeed}x
+                      </button>
+                      <button onClick={() => setCurrentIteration(1)}>
+                        ↻
+                      </button>
+                    </div>
+                  </div>
+                ))}
             </div>
 
             <div className="robot-path-list-container">

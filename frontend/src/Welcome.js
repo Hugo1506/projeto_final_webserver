@@ -229,10 +229,9 @@ const Welcome = ({ username, onLogout }) => {
       }
       
       const gifsData = await response.json();
-      
 
-      const gifs = gifsData.map(({ gif, height,type,iteration,robot_path }) => {
-
+      const gifs = gifsData.map(({ gif, height,type,iteration,robotSim_id,robot_path }) => {
+  
 
         const byteCharacters = atob(gif);  
         const byteArrays = [];
@@ -255,6 +254,7 @@ const Welcome = ({ username, onLogout }) => {
           type,
           simulation,
           iteration,
+          robotSim_id,
           robot_path: (() => {
           try {
             return typeof robot_path === 'string' ? JSON.parse(robot_path) : robot_path;
@@ -565,12 +565,11 @@ const Welcome = ({ username, onLogout }) => {
   } 
 
   const handleGifClick = (clickedGif) => {
-    const { type, height } = clickedGif;
+    const { type, height, robotSim_id } = clickedGif;
+    const filteredRelatedGifs = filteredGifs.filter(gifObj => gifObj.type === type && gifObj.height === height && gifObj.robotSim_id === robotSim_id);
 
-    const filteredRelatedGifs = filteredGifs.filter(gifObj => gifObj.type === type && gifObj.height === height);
 
     setRelatedGifs(filteredRelatedGifs);
-
     const maxIter = Math.max(...filteredRelatedGifs.map(g => g.iteration));
     setMaxIteration(maxIter);
 

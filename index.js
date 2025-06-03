@@ -197,16 +197,13 @@ function sendToVolume(username, simulationNumber, innerCadFilePaths, outerCadFil
       const key = `CAD_${index}`;
       gaden_params.gaden_environment.ros__parameters[key] = `$(var pkg_dir)/scenarios/$(var scenario)/cad_models/${path.basename(cadFilePath)}`;
       
-      // Set color for .dae files (change as needed)
       gaden_params.gaden_environment.ros__parameters[`${key}_color`] = [0.92, 0.96, 0.96]; 
     });
     
-    // Process the filtered outer .dae files
     outerDaeFiles.forEach((cadFilePath, index) => {
       const key = `CAD_${innerDaeFiles.length + index}`;
       gaden_params.gaden_environment.ros__parameters[key] = `$(var pkg_dir)/scenarios/$(var scenario)/cad_models/${path.basename(cadFilePath)}`;
       
-      // Set color for .dae files (change as needed)
       gaden_params.gaden_environment.ros__parameters[`${key}_color`] = [0.96, 0.17, 0.3]; 
     });
 
@@ -270,10 +267,11 @@ app.post('/uploadSimulationResults', (req, res) => {
   const height = req.body.height;
   const compressedGif = req.body.gif;
   const iteration = req.body.iteration;
+  const robotSim_id = req.body.robotSim_id;
 
-  const queryInsertSimulationResult = 'INSERT INTO simulation_results (simulation,type,gif,height,iteration) VALUES (?, ?, ?, ?, ?)';
+  const queryInsertSimulationResult = 'INSERT INTO simulation_results (simulation,type,gif,height,iteration, robotSim_id) VALUES (?, ?, ?, ?, ?, ?)';
 
-  pool.query(queryInsertSimulationResult, [simulation, simulationResultType, compressedGif,height, iteration], (error, results) => {
+  pool.query(queryInsertSimulationResult, [simulation, simulationResultType, compressedGif,height, iteration, robotSim_id], (error, results) => {
     if (error) {
       console.error(error);
       return res.status(500).send('Internal Server Error');
@@ -347,6 +345,27 @@ app.get('/getBoundsValues', (req, res) => {
     res.status(200).json({ xMin, xMax, yMin, yMax, zMin, zMax });
   });
 
+});
+
+
+app.get('/getRobotSimulationID', (req, res) => {
+  const simulation = req.query.simulation;
+  const queryGetRobotSimulationID = 'SELECT robotSim_id FROM simulation_results WHERE simulation = ? AND type = "robot"';
+
+  pool.query(queryGetRobotSimulationID, [simulation], (error, results) => {
+    if (error) {
+      console.error(error);
+      return res.status(500).json({ error: 'Internal Server Error' });
+    }
+
+    if (results.length === 0) {
+      const id = 0;
+      return res.status(200).json({ id });
+    }
+
+    const id = results[0].robotSim_id;
+    res.status(200).json({ id });
+  });
 });
 
 
@@ -452,7 +471,7 @@ app.post('/deleteSimulation', (req, res) => {
 
 app.get('/getSimulationResultsGifs', (req, res) => {
   const simulation = req.query.simulation;
-  const queryGetSimulationResults = 'SELECT gif, height, type, iteration, robot_path FROM simulation_results WHERE simulation = ?';
+  const queryGetSimulationResults = 'SELECT gif, height, type, iteration,robotSim_id robot_path FROM simulation_results WHERE simulation = ?';
 
   pool.query(queryGetSimulationResults, [simulation], (error, results) => {
     if (error) {
@@ -478,12 +497,21 @@ app.get('/getSimulationResultsGifs', (req, res) => {
           return res.status(500).send('Failed to decompress GIF');
         }
 
-       
+       var robotSim_id_to_send; 
+       if (result.robotSim_id === null || result.robotSim_id === undefined) {
+          robotSim_id_to_send = -1;
+       }else{
+          robotSim_id_to_send = result.robotSim_id;
+       }
+
+       console.log(result.robot_path)
+
         gifs.push({
           gif: decompressedBuffer.toString('base64'),
           height: result.height,
           type: result.type,
           iteration: result.iteration,
+          robotSim_id: robotSim_id_to_send,
           robot_path: result.robot_path
         });
 

@@ -370,7 +370,7 @@ app.get('/getRobotSimulationID', (req, res) => {
 
 
 app.post('/robotSimulation', (req, res) => {
-  const { username, simulation, height, robotSpeed, robotXposition, robotYposition } = req.body;
+  const { username, simulation, height, robotSpeed, robotXposition, robotYposition, finalXposition, finalYposition } = req.body;
 
   const simulationNumber = simulation.split('_')[1];
   
@@ -381,7 +381,9 @@ app.post('/robotSimulation', (req, res) => {
       height,
       robotSpeed,
       robotXposition,
-      robotYposition
+      robotYposition,
+      finalXposition,
+      finalYposition
     }
   })
   .then(response => {
@@ -471,9 +473,31 @@ app.post('/deleteSimulation', (req, res) => {
 
 app.get('/getSimulationResultsGifs', (req, res) => {
   const simulation = req.query.simulation;
-  const queryGetSimulationResults = 'SELECT gif, height, type, iteration,robotSim_id robot_path FROM simulation_results WHERE simulation = ?';
+  const queryGetSimulationResults = `
+    (
+      SELECT 
+        MIN(id) as id,
+        MIN(gif) as gif,
+        MIN(height) as height,
+        MIN(type) as type,
+        iteration,
+        robotSim_id,
+        MIN(robot_path) as robot_path
+      FROM simulation_results
+      WHERE simulation = ? AND type = 'robot'
+      GROUP BY iteration, robotSim_id
+    )
+    UNION ALL
+    (
+      SELECT 
+        id,
+        gif, height, type, iteration, robotSim_id, robot_path
+      FROM simulation_results
+      WHERE simulation = ? AND type != 'robot'
+    )
+  `;
 
-  pool.query(queryGetSimulationResults, [simulation], (error, results) => {
+  pool.query(queryGetSimulationResults, [simulation,simulation], (error, results) => {
     if (error) {
       console.error(error);
       return res.status(500).send('Internal Server Error');
@@ -504,7 +528,6 @@ app.get('/getSimulationResultsGifs', (req, res) => {
           robotSim_id_to_send = result.robotSim_id;
        }
 
-       console.log(result.robot_path)
 
         gifs.push({
           gif: decompressedBuffer.toString('base64'),
@@ -651,7 +674,6 @@ app.post('/setStatusToInSimulation', (req, res) => {
 
 app.post('/setStatusToDone', (req, res) => {
   const simulation = req.body.simulation;
-  console.log(req.body);
   const querySetStatus = 'UPDATE simulation_queue SET status = "DONE" WHERE simulation = ?';
 
   pool.query(querySetStatus, [simulation], async(error, results) => {

@@ -29,6 +29,8 @@ const Welcome = ({ username, onLogout }) => {
   const [clickedGif, setClickedGif] = useState(null);
   const [robotXlocation, setRobotXLocation] = useState('');
   const [robotYlocation, setRobotYLocation] = useState('');
+  const [finalRobotXlocation, setFinalRobotXLocation] = useState('');
+  const [finalRobotYlocation, setFinalRobotYLocation] = useState('');
   const [height, setHeight] = useState('');
   const [robotSpeed, setRobotSpeed] = useState('');
   const [activeButton, setActiveButton] = useState('gaden');
@@ -70,7 +72,7 @@ const Welcome = ({ username, onLogout }) => {
     }
 
     const speed = gadenSimulationOriginalSpeed / gadenSimulationSpeed;
-    console.log("Current Speed:", speed);
+
     if (maxIteration > 0) {
       intervalRef.current = setInterval(() => {
         setCurrentIteration(prev => {
@@ -178,7 +180,6 @@ const Welcome = ({ username, onLogout }) => {
         throw new Error('Network response was not ok');
       }
       const data = await response.json();
-      console.log('Received data:', data);
       setSimulationNumber(data.simulationNumber);
     } catch (error) {
       console.error('Error fetching simulation number:', error);
@@ -453,8 +454,6 @@ const Welcome = ({ username, onLogout }) => {
       plumeZlocation: plumeZLocation,
     };
 
-    
-    console.log('Form data:', formData);
     try {
       const response = await fetch('http://localhost:3000/uploadPlumeLocation', {
         method: 'POST',
@@ -566,8 +565,8 @@ const Welcome = ({ username, onLogout }) => {
 
   const handleGifClick = (clickedGif) => {
     const { type, height, robotSim_id } = clickedGif;
-    const filteredRelatedGifs = filteredGifs.filter(gifObj => gifObj.type === type && gifObj.height === height && gifObj.robotSim_id === robotSim_id);
 
+    const filteredRelatedGifs = filteredGifs.filter(gifObj => gifObj.type === type && gifObj.height === height && gifObj.robotSim_id === robotSim_id);
 
     setRelatedGifs(filteredRelatedGifs);
     const maxIter = Math.max(...filteredRelatedGifs.map(g => g.iteration));
@@ -654,7 +653,9 @@ const Welcome = ({ username, onLogout }) => {
       height,
       robotSpeed,
       robotXposition: robotXlocation,
-      robotYposition: robotYlocation
+      robotYposition: robotYlocation,
+      finalXposition: finalRobotXlocation,
+      finalYposition: finalRobotYlocation
     };
   
     try {
@@ -671,7 +672,6 @@ const Welcome = ({ username, onLogout }) => {
       }
   
       const result = await response.json();
-      console.log('Simulation result:', result);
     } catch (error) {
       console.error('Error during simulation:', error);
     } finally {
@@ -720,6 +720,7 @@ const Welcome = ({ username, onLogout }) => {
       return 1;
     });
   };
+
 
   return (
     <div className="welcome-container">
@@ -995,7 +996,7 @@ const Welcome = ({ username, onLogout }) => {
                 </label>
               
                 <select value={selectedHeight} onChange={(e) => {
-                  console.log('Selected Height:', e.target.value);
+
                   setSelectedHeight(e.target.value);
                 }}>
                   <option value="">All heights</option>
@@ -1021,10 +1022,10 @@ const Welcome = ({ username, onLogout }) => {
                 .sort((a, b) => {a.type.localeCompare(b.type)})
                 .filter((gifObj) => {
                   if (activeButton === 'gaden') {
-                    return ['heatmap', 'wind', 'contour'].includes(gifObj.type); 
+                    return ['heatmap', 'wind', 'contour'].includes(gifObj.type) && gifObj.iteration === currentIteration; 
                   }
                   if (activeButton === 'robot') {
-                    return gifObj.type === 'robot';  
+                    return gifObj.type === 'robot' && gifObj.iteration === 0;  
                   }
                   return true;
                 })
@@ -1034,8 +1035,6 @@ const Welcome = ({ username, onLogout }) => {
                   }
                   return gifObj.height == selectedHeight;
                 })
-
-                .filter((gifObj) => gifObj.iteration === currentIteration && gifObj.url)
                 
                 .map((gifObj, index) => (
                   <div key={index} className="gif-description">
@@ -1110,7 +1109,7 @@ const Welcome = ({ username, onLogout }) => {
                   onChange={(e) => setRobotSpeed(e.target.value)}
                   placeholder="Enter a robot speed value X.X"
                 />
-                <label>Robot X coordinate </label>
+                <label>Initial robot X coordinate </label>
                 <input
                   type="float"
                   id="robotXlocation"
@@ -1119,7 +1118,7 @@ const Welcome = ({ username, onLogout }) => {
                   onChange={(e) => setRobotXLocation(e.target.value)}
                   placeholder="Enter a robot X location value X.X"
                 />
-                <label>Robot Y coordinate </label>
+                <label> Initial robot Y coordinate </label>
                 <input
                   type="float"
                   id="robotYlocation"
@@ -1127,6 +1126,24 @@ const Welcome = ({ username, onLogout }) => {
                   value={robotYlocation}
                   onChange={(e) => setRobotYLocation(e.target.value)}
                   placeholder="Enter a robot Y location value X.X"
+                />
+                <label>Final robot X coordinate </label>
+                <input
+                  type="float"
+                  id="finalRobotXlocation"
+                  name="finalRobotXlocation"
+                  value={finalRobotXlocation}
+                  onChange={(e) => setFinalRobotXLocation(e.target.value)}
+                  placeholder="Enter final X location value X.X"
+                />
+                <label> Final robot Y coordinate </label>
+                <input
+                  type="float"
+                  id="finalRobotYlocation"
+                  name="finalRobotYlocation"
+                  value={finalRobotYlocation}
+                  onChange={(e) => setFinalRobotYLocation(e.target.value)}
+                  placeholder="Enter final Y location value X.X"
                 />
                 <button type="submit" className={`submit-button ${fadeOut ? 'fade-out' : ''}`} >Submit</button>
               </div>
@@ -1152,38 +1169,41 @@ const Welcome = ({ username, onLogout }) => {
 
           <div className="content-container">
             <div className="gif-description-robot">
+              
               {relatedGifs
                 .filter(gifObj => gifObj.iteration === currentIteration)
+              
                 .map((gifObj, index) => (
-                  <div key={index} className="gif-description">
-                    <h3>Height: {gifObj.height ?? 'Unknown'}</h3>
-                    <h3>Iteration: {gifObj.iteration}</h3>
-                    <img
-                      src={gifObj.url}
-                      alt={`Related GIF ${index + 1}`}
-                      className="gif-image"
-                      style={{ cursor: 'pointer' }}
-                    />
-                    <div className="button-container-gaden-gif">
-                      <button onClick={handleIterationBackGaden}>
-                        {currentIteration > 1 && isPausedGaden ? '⏮️' : '🚫'}
-                      </button>
-                      <button onClick={handlePauseResume}> 
-                        {isPausedGaden ? '▶️' : '⏸️'} 
-                      </button>
-                      <button onClick={handleIterationForwardGaden}>
-                        {currentIteration < maxIteration && isPausedGaden ? '⏭️' : '🚫'}
-                      </button>
-                      <br />
-                      <button onClick={handleChangeSimulationSpeedGaden}>
-                        {gadenSimulationSpeed}x
-                      </button>
-                      <button onClick={() => setCurrentIteration(1)}>
-                        ↻
-                      </button>
+                    <div key={index} className="gif-description">
+                      <h3>Height: {gifObj.height ?? 'Unknown'}</h3>
+                      <h3>Iteration: {gifObj.iteration}</h3>
+                      <img
+                        src={gifObj.url}
+                        alt={`Related GIF ${index + 1}`}
+                        className="gif-image"
+                        style={{ cursor: 'pointer' }}
+                      />
+                      <div className="button-container-gaden-gif">
+                        <button onClick={handleIterationBackGaden}>
+                          {currentIteration > 1 && isPausedGaden ? '⏮️' : '🚫'}
+                        </button>
+                        <button onClick={handlePauseResume}> 
+                          {isPausedGaden ? '▶️' : '⏸️'} 
+                        </button>
+                        <button onClick={handleIterationForwardGaden}>
+                          {currentIteration < maxIteration && isPausedGaden ? '⏭️' : '🚫'}
+                        </button>
+                        <br />
+                        <button onClick={handleChangeSimulationSpeedGaden}>
+                          {gadenSimulationSpeed}x
+                        </button>
+                        <button onClick={() => setCurrentIteration(1)}>
+                          ↻
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                ))
+              }
             </div>
 
             <div className="robot-path-list-container">

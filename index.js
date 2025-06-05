@@ -350,7 +350,9 @@ app.get('/getBoundsValues', (req, res) => {
 
 app.get('/getRobotSimulationID', (req, res) => {
   const simulation = req.query.simulation;
-  const queryGetRobotSimulationID = 'SELECT robotSim_id FROM simulation_results WHERE simulation = ? AND type = "robot"';
+  const queryGetRobotSimulationID = 'SELECT MAX(robotSim_id)  FROM simulation_results WHERE simulation = ? AND type = "robot"';
+
+
 
   pool.query(queryGetRobotSimulationID, [simulation], (error, results) => {
     if (error) {
@@ -363,7 +365,7 @@ app.get('/getRobotSimulationID', (req, res) => {
       return res.status(200).json({ id });
     }
 
-    const id = results[0].robotSim_id;
+    const id = results[0]['MAX(robotSim_id)']; 
     res.status(200).json({ id });
   });
 });
@@ -388,27 +390,39 @@ app.post('/robotSimulation', (req, res) => {
   })
   .then(response => {
     const message = response.data;
+    const frames = message.frames;
+    const robotSim_id = message.robotSim_id;
 
-    const robotPath = JSON.stringify(message.frames);
-    const id = message.id;
+    let completed = 0;
+    let hasError = false;
 
-    const queryUpdateRobotPath = `
-      UPDATE simulation_results
-      SET robot_path = ?
-      WHERE simulation = ? 
-      AND type = 'robot'
-      AND id = ?
-    `;
+    frames.forEach(frame => {
+      const robotPath = JSON.stringify([frame]); 
+      const iteration = frame.iteration;
 
-    pool.query(queryUpdateRobotPath, [robotPath, simulation, id], (error, results) => {
-      if (error) {
-        console.error('Error saving robot path:', error);
-        return res.status(500).json({ error: 'Failed to save robot path' });
-      }
-      return res.status(200).json({ message: 'Simulation data saved successfully', data: results });
+      const queryUpdateRobotPath = `
+        UPDATE simulation_results
+        SET robot_path = ?
+        WHERE simulation = ? 
+        AND type = 'robot'
+        AND robotSim_id = ?
+        AND iteration = ?
+      `;
+
+      pool.query(queryUpdateRobotPath, [robotPath, simulation, robotSim_id, iteration], (error, results) => {
+        if (hasError) return;
+        if (error) {
+          hasError = true;
+          console.error('Error saving robot path:', error);
+          return res.status(500).json({ error: 'Failed to save robot path' });
+        }
+        completed++;
+        if (completed === frames.length) {
+          return res.status(200).json({ message: 'Simulation data saved successfully for all iterations' });
+        }
+      });
     });
-
-  })
+})
   .catch(error => {
     console.error('Error calling simulation service:', error.message);
     return res.status(500).json({ error: 'Failed to call simulation backend' });
@@ -528,7 +542,6 @@ app.get('/getSimulationResultsGifs', (req, res) => {
           robotSim_id_to_send = result.robotSim_id;
        }
 
-
         gifs.push({
           gif: decompressedBuffer.toString('base64'),
           height: result.height,
@@ -537,6 +550,8 @@ app.get('/getSimulationResultsGifs', (req, res) => {
           robotSim_id: robotSim_id_to_send,
           robot_path: result.robot_path
         });
+
+
 
         processedCount++;
 

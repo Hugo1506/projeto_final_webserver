@@ -55,6 +55,8 @@ const Welcome = ({ username, onLogout }) => {
   const intervalRef = useRef(null);
   const [gadenSimulationOriginalSpeed, setGadenSimulationOriginalSpeed] = useState(500);
   const [gadenSimulationSpeed, setGadenSimulationSpeed] = useState(1);
+  const [robotPathData, setRobotPathData] = useState({});
+
 
   const handleImageLoaded = (url) => {
     setImageLoaded((prevState) => ({
@@ -110,8 +112,7 @@ const Welcome = ({ username, onLogout }) => {
   // verifica qual é a iteração máxima 
   useEffect(() => {
     if (filteredGifs.length > 0) {
-      const max = Math.max(...filteredGifs.map(g => g.iteration));
-      setMaxIteration(max);
+      const max = Math.max(...filteredGifs.map(g => g.iteration ));
     }
   }, [filteredGifs]);
 
@@ -578,7 +579,9 @@ const Welcome = ({ username, onLogout }) => {
     setGadenSimulationClickVisible(true);
     setSimulationDetail(false);
 
+
     setCurrentIteration(0);
+
   };
 
   const handleSearch = (event) => {
@@ -1208,19 +1211,20 @@ const Welcome = ({ username, onLogout }) => {
 
             <div className="robot-path-list-container">
               <h4>Robot Path:</h4>
-              {Array.isArray(clickedGif.robot_path) && clickedGif.robot_path.length > 0 ? (
                 <ul className="robot-path-list">
-                  {clickedGif.robot_path.map((point, index) => (
-                    <li key={index} className="robot-path-item">
-                      <strong>Position:</strong> (x: {point.robot_position.x.toFixed(2)}, y: {point.robot_position.y.toFixed(2)}, z: {point.robot_position.z})<br />
-                      <strong>Concentration:</strong> {point.concentration}<br />
-                      <strong>Current:</strong> (x: {point.wind_speed.x.toFixed(3)}, y: {point.wind_speed.y.toFixed(3)}, z: {point.wind_speed.z.toFixed(3)})
-                    </li>
-                  ))}
+                  {relatedGifs
+                    .filter(gifObj => gifObj.iteration === currentIteration && Array.isArray(gifObj.robot_path))
+                    .flatMap(gifObj =>
+                      gifObj.robot_path.map((point, index) => (
+                        <li key={index} className="robot-path-item">
+                          <strong>Position:</strong> (x: {point.robot_position.x.toFixed(2)}, y: {point.robot_position.y.toFixed(2)}, z: {point.robot_position.z})<br />
+                          <strong>Concentration:</strong> {point.concentration}<br />
+                          <strong>Current:</strong> (x: {point.wind_speed.x.toFixed(3)}, y: {point.wind_speed.y.toFixed(3)}, z: {point.wind_speed.z.toFixed(3)})
+                        </li>
+                      ))
+                    )
+                  }
                 </ul>
-              ) : (
-                <p>No robot path data available.</p>
-              )}
             </div>
           </div>
         </div>

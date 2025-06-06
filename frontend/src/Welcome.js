@@ -56,7 +56,7 @@ const Welcome = ({ username, onLogout }) => {
   const [gadenSimulationOriginalSpeed, setGadenSimulationOriginalSpeed] = useState(500);
   const [gadenSimulationSpeed, setGadenSimulationSpeed] = useState(1);
   const [robotPathData, setRobotPathData] = useState({});
-
+  const [showTotalStatsRobotSim, setShowTotalStatsRobotSim] = useState(false);
 
   const handleImageLoaded = (url) => {
     setImageLoaded((prevState) => ({
@@ -1211,20 +1211,32 @@ const Welcome = ({ username, onLogout }) => {
 
             <div className="robot-path-list-container">
               <h4>Robot Path:</h4>
-                <ul className="robot-path-list">
-                  {relatedGifs
-                    .filter(gifObj => gifObj.iteration === currentIteration && Array.isArray(gifObj.robot_path))
-                    .flatMap(gifObj =>
-                      gifObj.robot_path.map((point, index) => (
-                        <li key={index} className="robot-path-item">
-                          <strong>Position:</strong> (x: {point.robot_position.x.toFixed(2)}, y: {point.robot_position.y.toFixed(2)}, z: {point.robot_position.z})<br />
-                          <strong>Concentration:</strong> {Number(point.concentration).toFixed(7)}<br />
-                          <strong>Current:</strong> (x: {point.wind_speed.x.toFixed(3)}, y: {point.wind_speed.y.toFixed(3)}, z: {point.wind_speed.z.toFixed(3)})
-                        </li>
-                      ))
-                    )
-                  }
-                </ul>
+              <div className="checkbox-filters">
+              <label>
+                <input
+                  type="checkbox"
+                  checked={showTotalStatsRobotSim}
+                  onChange={() => setShowTotalStatsRobotSim((prev) => !prev)}
+                />
+                show total stats
+              </label>
+              </div>
+              <ul className="robot-path-list">
+                {(showTotalStatsRobotSim
+                  ? relatedGifs.filter(gifObj => Array.isArray(gifObj.robot_path))
+                  : relatedGifs.filter(gifObj => gifObj.iteration === currentIteration && Array.isArray(gifObj.robot_path))
+                )
+                  .flatMap(gifObj =>
+                    gifObj.robot_path.map((point, index) => (
+                      <li key={index} className="robot-path-item">
+                        <strong>Position:</strong> (x: {point.robot_position.x.toFixed(2)}, y: {point.robot_position.y.toFixed(2)}, z: {point.robot_position.z})<br />
+                        <strong>Concentration:</strong> {Number(point.concentration).toFixed(7)}<br />
+                        <strong>Current:</strong> (x: {point.wind_speed.x.toFixed(3)}, y: {point.wind_speed.y.toFixed(3)}, z: {point.wind_speed.z.toFixed(3)})
+                      </li>
+                    ))
+                  )
+                }
+              </ul>
             </div>
           </div>
         </div>

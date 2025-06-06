@@ -1094,7 +1094,7 @@ const Welcome = ({ username, onLogout }) => {
                       <button onClick={handleChangeSimulationSpeedGaden}>
                         {gadenSimulationSpeed}x
                       </button>
-                      <button onClick={() => setCurrentIteration(1)}>
+                      <button onClick={() => setCurrentIteration(Math.min(...relatedGifs.map(g => g.iteration)))}>
                         ↻
                       </button>
                     </div>
@@ -1200,7 +1200,7 @@ const Welcome = ({ username, onLogout }) => {
                         <button onClick={handleChangeSimulationSpeedGaden}>
                           {gadenSimulationSpeed}x
                         </button>
-                        <button onClick={() => setCurrentIteration(1)}>
+                        <button onClick={() => setCurrentIteration(Math.min(...relatedGifs.map(g => g.iteration)))}>
                           ↻
                         </button>
                       </div>
@@ -1218,7 +1218,7 @@ const Welcome = ({ username, onLogout }) => {
                       gifObj.robot_path.map((point, index) => (
                         <li key={index} className="robot-path-item">
                           <strong>Position:</strong> (x: {point.robot_position.x.toFixed(2)}, y: {point.robot_position.y.toFixed(2)}, z: {point.robot_position.z})<br />
-                          <strong>Concentration:</strong> {point.concentration}<br />
+                          <strong>Concentration:</strong> {Number(point.concentration).toFixed(7)}<br />
                           <strong>Current:</strong> (x: {point.wind_speed.x.toFixed(3)}, y: {point.wind_speed.y.toFixed(3)}, z: {point.wind_speed.z.toFixed(3)})
                         </li>
                       ))

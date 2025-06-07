@@ -49,6 +49,7 @@ const Welcome = ({ username, onLogout }) => {
   const [robotSimulationLoadingText, setRobotSimulationLoadingText] = useState("Waiting for Robot Simulation Results");
   const [currentIteration, setCurrentIteration] = useState(0);
   const [maxIteration, setMaxIteration] = useState(0);
+  const [minIteration, setMinIteration] = useState(0);
   const [imageLoaded, setImageLoaded] = useState({});
   const [relatedGifs, setRelatedGifs] = useState([]);
   const [isPausedGaden, setIsPausedGaden] = useState(false);
@@ -572,6 +573,8 @@ const Welcome = ({ username, onLogout }) => {
     setRelatedGifs(filteredRelatedGifs);
     const maxIter = Math.max(...filteredRelatedGifs.map(g => g.iteration));
     setMaxIteration(maxIter);
+    const minIter = Math.min(...filteredRelatedGifs.map(g => g.iteration));
+    setMinIteration(minIter);
 
     setClickedGif(clickedGif);
     setHeight(clickedGif.height);
@@ -643,6 +646,7 @@ const Welcome = ({ username, onLogout }) => {
       setRelatedGifs([]); 
       setCurrentIteration(0);
       setMaxIteration(0);
+      setMinIteration(0);
     }, 500);
   }
 
@@ -704,7 +708,7 @@ const Welcome = ({ username, onLogout }) => {
   };
 
   const handleIterationBackGaden = () => {
-    if(currentIteration > 1 && isPausedGaden){
+    if(currentIteration > minIteration && isPausedGaden){
       setCurrentIteration(prev => prev -1 )
     }
   }
@@ -1082,7 +1086,7 @@ const Welcome = ({ username, onLogout }) => {
                     />
                     <div className="button-container-gaden-gif">
                       <button onClick={handleIterationBackGaden}>
-                        {currentIteration > 1 && isPausedGaden ? '⏮️' : '🚫'}
+                        {currentIteration > minIteration && isPausedGaden ? '⏮️' : '🚫'}
                       </button>
                       <button onClick={handlePauseResume}> 
                         {isPausedGaden ? '▶️' : '⏸️'} 
@@ -1094,7 +1098,7 @@ const Welcome = ({ username, onLogout }) => {
                       <button onClick={handleChangeSimulationSpeedGaden}>
                         {gadenSimulationSpeed}x
                       </button>
-                      <button onClick={() => setCurrentIteration(Math.min(...relatedGifs.map(g => g.iteration)))}>
+                      <button onClick={() => setCurrentIteration(minIteration)}>
                         ↻
                       </button>
                     </div>
@@ -1188,7 +1192,7 @@ const Welcome = ({ username, onLogout }) => {
                       />
                       <div className="button-container-gaden-gif">
                         <button onClick={handleIterationBackGaden}>
-                          {currentIteration > 1 && isPausedGaden ? '⏮️' : '🚫'}
+                          {currentIteration > minIteration && isPausedGaden ? '⏮️' : '🚫'}
                         </button>
                         <button onClick={handlePauseResume}> 
                           {isPausedGaden ? '▶️' : '⏸️'} 
@@ -1200,7 +1204,7 @@ const Welcome = ({ username, onLogout }) => {
                         <button onClick={handleChangeSimulationSpeedGaden}>
                           {gadenSimulationSpeed}x
                         </button>
-                        <button onClick={() => setCurrentIteration(Math.min(...relatedGifs.map(g => g.iteration)))}>
+                        <button onClick={() => setCurrentIteration(minIteration)}>
                           ↻
                         </button>
                       </div>

@@ -1070,7 +1070,7 @@ const Welcome = ({ username, onLogout }) => {
           >
             Go Back
           </button>
-          <div className="side-by-side-container">
+          <div className="content-container">
             <div className="gif-description-robot">
               {relatedGifs
                 .filter(gifObj => gifObj.iteration === currentIteration)
@@ -1085,6 +1085,7 @@ const Welcome = ({ username, onLogout }) => {
                       style={{ cursor: 'pointer' }}
                     />
                     <div className="button-container-gaden-gif">
+                      <div>
                       <button onClick={handleIterationBackGaden}>
                         {currentIteration > minIteration && isPausedGaden ? '⏮️' : '🚫'}
                       </button>
@@ -1094,67 +1095,70 @@ const Welcome = ({ username, onLogout }) => {
                       <button onClick={handleIterationForwardGaden}>
                         {currentIteration < maxIteration && isPausedGaden ? '⏭️' : '🚫'}
                       </button>
-                      <br />
-                      <button onClick={handleChangeSimulationSpeedGaden}>
-                        {gadenSimulationSpeed}x
-                      </button>
-                      <button onClick={() => setCurrentIteration(minIteration)}>
-                        ↻
-                      </button>
+                      </div>
+                      <div>
+                        <button onClick={handleChangeSimulationSpeedGaden}>
+                          {gadenSimulationSpeed}x
+                        </button>
+                        <button onClick={() => setCurrentIteration(minIteration)}>
+                          ↻
+                        </button>
+                        </div>
                     </div>
                   </div>
                 ))}
             </div>
-
-            <form onSubmit={(e) => handleRobotSimulationSubmit(e, clickedGif.simulation)} className="robot-simulation-form">              <div className="robot-simulation-inputs">
-                <label>Robot Speed in meters </label>
-                <input
-                  type="float"
-                  id="robotSpeed"
-                  name="robotSpeed"
-                  value={robotSpeed}
-                  onChange={(e) => setRobotSpeed(e.target.value)}
-                  placeholder="Enter a robot speed value X.X"
-                />
-                <label>Initial robot X coordinate </label>
-                <input
-                  type="float"
-                  id="robotXlocation"
-                  name="robotXlocation"
-                  value={robotXlocation}
-                  onChange={(e) => setRobotXLocation(e.target.value)}
-                  placeholder="Enter a robot X location value X.X"
-                />
-                <label> Initial robot Y coordinate </label>
-                <input
-                  type="float"
-                  id="robotYlocation"
-                  name="robotYlocation"
-                  value={robotYlocation}
-                  onChange={(e) => setRobotYLocation(e.target.value)}
-                  placeholder="Enter a robot Y location value X.X"
-                />
-                <label>Final robot X coordinate </label>
-                <input
-                  type="float"
-                  id="finalRobotXlocation"
-                  name="finalRobotXlocation"
-                  value={finalRobotXlocation}
-                  onChange={(e) => setFinalRobotXLocation(e.target.value)}
-                  placeholder="Enter final X location value X.X"
-                />
-                <label> Final robot Y coordinate </label>
-                <input
-                  type="float"
-                  id="finalRobotYlocation"
-                  name="finalRobotYlocation"
-                  value={finalRobotYlocation}
-                  onChange={(e) => setFinalRobotYLocation(e.target.value)}
-                  placeholder="Enter final Y location value X.X"
-                />
-                <button type="submit" className={`submit-button ${fadeOut ? 'fade-out' : ''}`} >Submit</button>
-              </div>
-            </form>
+            <div className="robot-simulation-form-container">
+              <form onSubmit={(e) => handleRobotSimulationSubmit(e, clickedGif.simulation)} className="robot-simulation-form">              <div className="robot-simulation-inputs">
+                  <label>Robot Speed in meters </label>
+                  <input
+                    type="float"
+                    id="robotSpeed"
+                    name="robotSpeed"
+                    value={robotSpeed}
+                    onChange={(e) => setRobotSpeed(e.target.value)}
+                    placeholder="Enter a robot speed value X.X"
+                  />
+                  <label>Initial robot X coordinate </label>
+                  <input
+                    type="float"
+                    id="robotXlocation"
+                    name="robotXlocation"
+                    value={robotXlocation}
+                    onChange={(e) => setRobotXLocation(e.target.value)}
+                    placeholder="Enter a robot X location value X.X"
+                  />
+                  <label> Initial robot Y coordinate </label>
+                  <input
+                    type="float"
+                    id="robotYlocation"
+                    name="robotYlocation"
+                    value={robotYlocation}
+                    onChange={(e) => setRobotYLocation(e.target.value)}
+                    placeholder="Enter a robot Y location value X.X"
+                  />
+                  <label>Final robot X coordinate </label>
+                  <input
+                    type="float"
+                    id="finalRobotXlocation"
+                    name="finalRobotXlocation"
+                    value={finalRobotXlocation}
+                    onChange={(e) => setFinalRobotXLocation(e.target.value)}
+                    placeholder="Enter final X location value X.X"
+                  />
+                  <label> Final robot Y coordinate </label>
+                  <input
+                    type="float"
+                    id="finalRobotYlocation"
+                    name="finalRobotYlocation"
+                    value={finalRobotYlocation}
+                    onChange={(e) => setFinalRobotYLocation(e.target.value)}
+                    placeholder="Enter final Y location value X.X"
+                  />
+                  <button type="submit" className={`submit-button ${fadeOut ? 'fade-out' : ''}`} >Submit</button>
+                </div>
+              </form>
+            </div>
           </div>
           {robotSimulationIsLoading && (
         <div className="popup-overlay">
@@ -1191,6 +1195,7 @@ const Welcome = ({ username, onLogout }) => {
                         style={{ cursor: 'pointer' }}
                       />
                       <div className="button-container-gaden-gif">
+                        <div>
                         <button onClick={handleIterationBackGaden}>
                           {currentIteration > minIteration && isPausedGaden ? '⏮️' : '🚫'}
                         </button>
@@ -1200,19 +1205,20 @@ const Welcome = ({ username, onLogout }) => {
                         <button onClick={handleIterationForwardGaden}>
                           {currentIteration < maxIteration && isPausedGaden ? '⏭️' : '🚫'}
                         </button>
-                        <br />
-                        <button onClick={handleChangeSimulationSpeedGaden}>
-                          {gadenSimulationSpeed}x
-                        </button>
-                        <button onClick={() => setCurrentIteration(minIteration)}>
-                          ↻
-                        </button>
+                        </div>
+                        <div>
+                          <button onClick={handleChangeSimulationSpeedGaden}>
+                            {gadenSimulationSpeed}x
+                          </button>
+                          <button onClick={() => setCurrentIteration(minIteration)}>
+                            ↻
+                          </button>
+                          </div>
                       </div>
                     </div>
                 ))
               }
             </div>
-
             <div className="robot-path-list-container">
               <h4>Robot Path:</h4>
               <div className="checkbox-filters">

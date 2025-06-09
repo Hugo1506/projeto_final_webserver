@@ -117,8 +117,9 @@ body {
 }
 
 .gif-image {
-  width: 48%;
-  min-width: 300px;
+  width: 300px;
+  min-width: 0;
+  max-width: 100%;
   height: auto;
 }
 
@@ -318,24 +319,6 @@ body {
   width: 100%;
 }
 
-.side-by-side-container {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  margin-top: 20px;
-  align-items: flex-start;
-  gap: 20px;
-}
-
-.gif-description-robot {
-  grid-column: 2;
-  text-align: center;
-}
-
-.robot-simulation-form {
-  grid-column: 3;
-  display: flex;
-  flex-direction: column;
-}
 
 .toggle-buttons {
   margin-top: 20px;
@@ -369,13 +352,18 @@ body {
 
 .content-container {
   display: flex;
-  gap: 20px; 
-  align-items: flex-start; 
+  gap: 20px;
+  align-items: flex-start;
+  justify-content: center;
+  max-width: 900px;     
+  margin: 0 auto;        
+  width: 100%;
 }
 
 .gif-description-robot {
   flex: 1;
-  max-width: 50%; 
+  max-width: 50%;
+  text-align: center;
 }
 
 .robot-path-list-container {
@@ -383,7 +371,11 @@ body {
   max-width: 50%; 
   
 }
-
+.robot-simulation-form-container{
+  flex: 1;
+  max-width: 50%; 
+}
+  
 .robot-path-list {
   list-style: none;
   height: 485px;
@@ -457,7 +449,9 @@ select:focus {
 .button-container-gaden-gif {
   display: flex;
   align-items: center; 
+  flex-direction: column;
   flex-wrap: nowrap;
 }
+
 
 

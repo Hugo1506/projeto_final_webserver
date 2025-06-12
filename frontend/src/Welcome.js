@@ -58,6 +58,25 @@ const Welcome = ({ username, onLogout }) => {
   const [gadenSimulationSpeed, setGadenSimulationSpeed] = useState(1);
   const [robotPathData, setRobotPathData] = useState({});
   const [showTotalStatsRobotSim, setShowTotalStatsRobotSim] = useState(false);
+  const [selectedRobotNumber, setSelectedRobotNumber] = useState(1);
+  const [robots, setRobots] = useState([
+    { robotSpeed: '', robotXlocation: '', robotYlocation: '', finalRobotXlocation: '', finalRobotYlocation: '' },
+    { robotSpeed: '', robotXlocation: '', robotYlocation: '', finalRobotXlocation: '', finalRobotYlocation: '' },
+    { robotSpeed: '', robotXlocation: '', robotYlocation: '', finalRobotXlocation: '', finalRobotYlocation: '' },
+    { robotSpeed: '', robotXlocation: '', robotYlocation: '', finalRobotXlocation: '', finalRobotYlocation: '' },
+  ]);
+
+
+
+
+
+  const handleRobotInputChange = (idx, field, value) => {
+    setRobots(prev =>
+      prev.map((robot, i) =>
+        i === idx ? { ...robot, [field]: value } : robot
+      )
+    );
+  };
 
   const handleImageLoaded = (url) => {
     setImageLoaded((prevState) => ({
@@ -1110,53 +1129,62 @@ const Welcome = ({ username, onLogout }) => {
             </div>
             <div className="robot-simulation-form-container">
               <form onSubmit={(e) => handleRobotSimulationSubmit(e, clickedGif.simulation)} className="robot-simulation-form">              <div className="robot-simulation-inputs">
-                  <label>Robot Speed in meters </label>
-                  <input
-                    type="float"
-                    id="robotSpeed"
-                    name="robotSpeed"
-                    value={robotSpeed}
-                    onChange={(e) => setRobotSpeed(e.target.value)}
-                    placeholder="Enter a robot speed value X.X"
-                  />
-                  <label>Initial robot X coordinate </label>
-                  <input
-                    type="float"
-                    id="robotXlocation"
-                    name="robotXlocation"
-                    value={robotXlocation}
-                    onChange={(e) => setRobotXLocation(e.target.value)}
-                    placeholder="Enter a robot X location value X.X"
-                  />
-                  <label> Initial robot Y coordinate </label>
-                  <input
-                    type="float"
-                    id="robotYlocation"
-                    name="robotYlocation"
-                    value={robotYlocation}
-                    onChange={(e) => setRobotYLocation(e.target.value)}
-                    placeholder="Enter a robot Y location value X.X"
-                  />
-                  <label>Final robot X coordinate </label>
-                  <input
-                    type="float"
-                    id="finalRobotXlocation"
-                    name="finalRobotXlocation"
-                    value={finalRobotXlocation}
-                    onChange={(e) => setFinalRobotXLocation(e.target.value)}
-                    placeholder="Enter final X location value X.X"
-                  />
-                  <label> Final robot Y coordinate </label>
-                  <input
-                    type="float"
-                    id="finalRobotYlocation"
-                    name="finalRobotYlocation"
-                    value={finalRobotYlocation}
-                    onChange={(e) => setFinalRobotYLocation(e.target.value)}
-                    placeholder="Enter final Y location value X.X"
-                  />
+                <div className="robot-simulation-inputs">
+                  {[1, 2, 3, 4].map((num) => (
+                    <button
+                      key={num}
+                      type="button"
+                      className={`number-of-robots-button${selectedRobotNumber === num ? ' selected' : ''}`}
+                      onClick={() => setSelectedRobotNumber(num)}
+                    >
+                      {num}
+                    </button>
+                  ))}
+                  </div>
+                  <br />
+                 {[...Array(selectedRobotNumber)].map((_, idx) => (
+                  <div key={idx} className="robot-params-input">
+                    <h4>Robot {idx + 1}</h4>
+                    <label>Robot Speed in meters</label>
+                    <input
+                      type="float"
+                      value={robots[idx].robotSpeed}
+                      onChange={e => handleRobotInputChange(idx, 'robotSpeed', e.target.value)}
+                      placeholder="Enter a robot speed value X.X"
+                    />
+                    <label>Initial robot X coordinate</label>
+                    <input
+                      type="float"
+                      value={robots[idx].robotXlocation}
+                      onChange={e => handleRobotInputChange(idx, 'robotXlocation', e.target.value)}
+                      placeholder="Enter a robot X location value X.X"
+                    />
+                    <label>Initial robot Y coordinate</label>
+                    <input
+                      type="float"
+                      value={robots[idx].robotYlocation}
+                      onChange={e => handleRobotInputChange(idx, 'robotYlocation', e.target.value)}
+                      placeholder="Enter a robot Y location value X.X"
+                    />
+                    <label>Final robot X coordinate</label>
+                    <input
+                      type="float"
+                      value={robots[idx].finalRobotXlocation}
+                      onChange={e => handleRobotInputChange(idx, 'finalRobotXlocation', e.target.value)}
+                      placeholder="Enter final X location value X.X"
+                    />
+                    <label>Final robot Y coordinate</label>
+                    <input
+                      type="float"
+                      value={robots[idx].finalRobotYlocation}
+                      onChange={e => handleRobotInputChange(idx, 'finalRobotYlocation', e.target.value)}
+                      placeholder="Enter final Y location value X.X"
+                    />
+                  </div>
+                ))}
                   <button type="submit" className={`submit-button ${fadeOut ? 'fade-out' : ''}`} >Submit</button>
                 </div>
+                
               </form>
             </div>
           </div>

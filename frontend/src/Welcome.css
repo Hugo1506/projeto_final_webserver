@@ -453,5 +453,28 @@ select:focus {
   flex-wrap: nowrap;
 }
 
+.robot-simulation-inputs{
+  margin-bottom: 10px;
+}
 
+.number-of-robots-button {
+  background-color: white;
+  color: black;
+  border: 2px solid black;
+  transition: background 0.2s, color 0.2s, border 0.2s;
+}
+
+.number-of-robots-button.selected {
+  background-color: #007bff;
+  color: white;
+  border: 2px solid #007bff;
+}
+
+
+.robot-params-input{
+  border: '1px solid #eee';
+  margin-bottom: 10;
+  padding: 10;
+}
+  
 

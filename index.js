@@ -372,7 +372,9 @@ app.get('/getRobotSimulationID', (req, res) => {
 
 
 app.post('/robotSimulation', (req, res) => {
-  const { username, simulation, height, robotSpeed, robotXposition, robotYposition, finalXposition, finalYposition } = req.body;
+  const { username, simulation, height, robots } = req.body;
+
+  const numberOfRobots = robots.length;
 
   const simulationNumber = simulation.split('_')[1];
   
@@ -381,11 +383,8 @@ app.post('/robotSimulation', (req, res) => {
       username,
       simulationNumber,
       height,
-      robotSpeed,
-      robotXposition,
-      robotYposition,
-      finalXposition,
-      finalYposition
+      numberOfRobots,
+      robots: JSON.stringify(robots)
     }
   })
   .then(response => {

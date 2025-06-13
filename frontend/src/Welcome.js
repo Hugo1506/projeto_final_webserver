@@ -101,7 +101,7 @@ const Welcome = ({ username, onLogout }) => {
           if (prev < maxIteration) {
             return prev + 1; 
           } else {
-            return 1;
+            return minIteration;
           }
         });
       }, speed); 
@@ -673,16 +673,24 @@ const Welcome = ({ username, onLogout }) => {
   const handleRobotSimulationSubmit = async (e,simulation) => {
     e.preventDefault();
     setRobotSimulationIsLoading(true);
-    const formData = {
-      username,
-      simulation,
-      height,
-      robotSpeed,
-      robotXposition: robotXlocation,
-      robotYposition: robotYlocation,
-      finalXposition: finalRobotXlocation,
-      finalYposition: finalRobotYlocation
-    };
+    const robotsToSend = robots
+    .slice(0, selectedRobotNumber)
+    .filter(robot =>
+      robot.robotSpeed && robot.robotXlocation && robot.robotYlocation && robot.finalRobotXlocation && robot.finalRobotYlocation
+    );
+
+  if (robotsToSend.length === 0) {
+    alert('Please fill in all fields for at least one robot.');
+    setRobotSimulationIsLoading(false);
+    return;
+  }
+
+  const formData = {
+    username,
+    simulation,
+    height,
+    robots: robotsToSend
+  };
   
     try {
       const response = await fetch('http://localhost:3000/robotSimulation', {

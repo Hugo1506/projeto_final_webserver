@@ -1270,17 +1270,21 @@ const Welcome = ({ username, onLogout }) => {
               <ul className="robot-path-list">
                 {(showTotalStatsRobotSim
                   ? relatedGifs.filter(gifObj => Array.isArray(gifObj.robot_path))
-                  : relatedGifs.filter(gifObj => gifObj.iteration === currentIteration && Array.isArray(gifObj.robot_path))
+                  : relatedGifs.filter(gifObj => gifObj.iteration === currentIteration)
                 )
-                  .flatMap(gifObj =>
-                    gifObj.robot_path.map((point, index) => (
-                      <li key={index} className="robot-path-item">
-                        <strong>Position:</strong> (x: {point.robot_position.x.toFixed(2)}, y: {point.robot_position.y.toFixed(2)}, z: {point.robot_position.z})<br />
-                        <strong>Concentration:</strong> {Number(point.concentration).toFixed(7)}<br />
-                        <strong>Current:</strong> (x: {point.wind_speed.x.toFixed(3)}, y: {point.wind_speed.y.toFixed(3)}, z: {point.wind_speed.z.toFixed(3)})
-                      </li>
-                    ))
-                  )
+                 .flatMap(gifObj =>
+                  gifObj.robot_path.map((point) => (
+                    <li
+                      key={`${gifObj.iteration}-${point.robot}-${point.robot_position.x}-${point.robot_position.y}-${point.robot_position.z}`}
+                      className="robot-path-item"
+                    >
+                      <strong>Robot:</strong> {point.robot} <br />
+                      <strong>Position:</strong> (x: {point.robot_position.x.toFixed(2)}, y: {point.robot_position.y.toFixed(2)}, z: {point.robot_position.z})<br />
+                      <strong>Concentration:</strong> {Number(point.concentration).toFixed(7)}<br />
+                      <strong>Current:</strong> (x: {point.wind_speed.x.toFixed(3)}, y: {point.wind_speed.y.toFixed(3)}, z: {point.wind_speed.z.toFixed(3)})
+                    </li>
+                  ))
+                )
                 }
               </ul>
             </div>

@@ -395,9 +395,17 @@ app.post('/robotSimulation', (req, res) => {
     let completed = 0;
     let hasError = false;
 
+    const framesByIteration = {};
     frames.forEach(frame => {
-      const robotPath = JSON.stringify([frame]); 
-      const iteration = frame.iteration;
+      if (!framesByIteration[frame.iteration]) {
+        framesByIteration[frame.iteration] = [];
+      }
+      framesByIteration[frame.iteration].push(frame);
+    });
+
+    // Now save all robot frames for each iteration
+    Object.entries(framesByIteration).forEach(([iteration, framesArray]) => {
+      const robotPath = JSON.stringify(framesArray);
 
       const queryUpdateRobotPath = `
         UPDATE simulation_results

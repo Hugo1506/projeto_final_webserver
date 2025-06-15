@@ -59,6 +59,9 @@ const Welcome = ({ username, onLogout }) => {
   const [robotPathData, setRobotPathData] = useState({});
   const [showTotalStatsRobotSim, setShowTotalStatsRobotSim] = useState(false);
   const [selectedRobotNumber, setSelectedRobotNumber] = useState(1);
+  const [selectedRobotFilter, setSelectedRobotFilter] = useState('all');
+  const [robotNumbers, setRobotNumbers] = useState([]);
+
   const [robots, setRobots] = useState([
     { robotSpeed: '', robotXlocation: '', robotYlocation: '', finalRobotXlocation: '', finalRobotYlocation: '' },
     { robotSpeed: '', robotXlocation: '', robotYlocation: '', finalRobotXlocation: '', finalRobotYlocation: '' },
@@ -77,6 +80,19 @@ const Welcome = ({ username, onLogout }) => {
       )
     );
   };
+
+  useEffect(() => {
+    if (!relatedGifs || relatedGifs.length === 0) {
+      setRobotNumbers([]);
+      return;
+    }
+    const robotsAtZero = relatedGifs
+      .filter(gifObj => gifObj.iteration === 0 && Array.isArray(gifObj.robot_path))
+      .flatMap(gifObj => gifObj.robot_path.map(point => point.robot));
+    const uniqueRobots = Array.from(new Set(robotsAtZero));
+    setRobotNumbers(uniqueRobots);
+  }, [relatedGifs]);
+
 
   const handleImageLoaded = (url) => {
     setImageLoaded((prevState) => ({
@@ -1152,6 +1168,7 @@ const Welcome = ({ username, onLogout }) => {
                   <br />
                  {[...Array(selectedRobotNumber)].map((_, idx) => (
                   <div key={idx} className="robot-params-input">
+                  <label>Number of robots</label>
                     <h4>Robot {idx + 1}</h4>
                     <label>Robot Speed in meters</label>
                     <input
@@ -1266,26 +1283,50 @@ const Welcome = ({ username, onLogout }) => {
                 />
                 show total stats
               </label>
+              <br />
+              <select
+                value={selectedRobotFilter}
+                onChange={e => setSelectedRobotFilter(e.target.value)}
+              >
+                <option value="all">All Robots</option>
+                {robotNumbers.map(robotNum => (
+                  <option key={robotNum} value={robotNum}>
+                    Robot {robotNum}
+                  </option>
+                ))}
+              </select>
               </div>
               <ul className="robot-path-list">
-                {(showTotalStatsRobotSim
-                  ? relatedGifs.filter(gifObj => Array.isArray(gifObj.robot_path))
-                  : relatedGifs.filter(gifObj => gifObj.iteration === currentIteration)
-                )
-                 .flatMap(gifObj =>
-                  gifObj.robot_path.map((point) => (
-                    <li
-                      key={`${gifObj.iteration}-${point.robot}-${point.robot_position.x}-${point.robot_position.y}-${point.robot_position.z}`}
-                      className="robot-path-item"
-                    >
-                      <strong>Robot:</strong> {point.robot} <br />
-                      <strong>Position:</strong> (x: {point.robot_position.x.toFixed(2)}, y: {point.robot_position.y.toFixed(2)}, z: {point.robot_position.z})<br />
-                      <strong>Concentration:</strong> {Number(point.concentration).toFixed(7)}<br />
-                      <strong>Current:</strong> (x: {point.wind_speed.x.toFixed(3)}, y: {point.wind_speed.y.toFixed(3)}, z: {point.wind_speed.z.toFixed(3)})
-                    </li>
-                  ))
-                )
-                }
+                {(() => {
+                  const seen = new Set();
+                  return (showTotalStatsRobotSim
+                    ? relatedGifs.filter(gifObj => Array.isArray(gifObj.robot_path))
+                    : relatedGifs.filter(gifObj => gifObj.iteration === currentIteration)
+                  )
+                    .flatMap(gifObj =>
+                      gifObj.robot_path
+                        .filter(point =>
+                          selectedRobotFilter === 'all' ? true : String(point.robot) === String(selectedRobotFilter)
+                        )
+                        .filter(point => {
+                          const key = `${gifObj.iteration}-${point.robot}`;
+                          if (seen.has(key)) return false;
+                          seen.add(key);
+                          return true;
+                        })
+                        .map((point, idx) => (
+                          <li
+                            key={`${gifObj.iteration}-${point.robot}-${point.robot_position.x}-${point.robot_position.y}-${point.robot_position.z}-${idx}`}
+                            className="robot-path-item"
+                          >
+                            <strong>Robot:</strong> {point.robot} <br />
+                            <strong>Position:</strong> (x: {point.robot_position.x.toFixed(2)}, y: {point.robot_position.y.toFixed(2)}, z: {point.robot_position.z})<br />
+                            <strong>Concentration:</strong> {Number(point.concentration).toFixed(7)}<br />
+                            <strong>Current:</strong> (x: {point.wind_speed.x.toFixed(3)}, y: {point.wind_speed.y.toFixed(3)}, z: {point.wind_speed.z.toFixed(3)})
+                          </li>
+                        ))
+                    );
+                })()}
               </ul>
             </div>
           </div>

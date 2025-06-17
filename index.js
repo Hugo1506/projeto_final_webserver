@@ -267,7 +267,7 @@ app.post('/uploadSimulationResults', (req, res) => {
   const height = req.body.height;
   const compressedGif = req.body.gif;
   const iteration = req.body.iteration;
-  const robotSim_id = req.body.robotSim_id;
+  const robotSim_id = req.body.robotSim_id !== undefined ? req.body.robotSim_id : -1;
 
   const queryInsertSimulationResult = 'INSERT INTO simulation_results (simulation,type,gif,height,iteration, robotSim_id) VALUES (?, ?, ?, ?, ?, ?)';
 
@@ -293,6 +293,22 @@ app.post('/setBounds', (req, res) => {
   const yMax = req.body.y_max;
   const zMin = req.body.z_min;
   const zMax = req.body.z_max;
+
+  const username = simulation.split('_')[0];
+  const simulationNumber = simulation.split('_')[1];
+  
+  axios.get('http://simulation:8000/example_simulation', {
+    params: {
+      username,
+      simulationNumber,
+      plumeXlocation: xMin,      
+      plumeYlocation: yMin,      
+      plumeZlocation: zMin,      
+      zMin,
+      zMax
+    }
+  });
+
 
   const bounds = JSON.stringify({ xMin, xMax, yMin, yMax, zMin, zMax });
 

@@ -387,29 +387,26 @@ app.get('/getRobotSimulationID', (req, res) => {
 });
 
 
-app.post('/robotSimulation', (req, res) => {
+app.post('/robotSimulation', async (req, res) => {
   const { username, simulation, height, robots } = req.body;
 
   const numberOfRobots = robots.length;
-
   const simulationNumber = simulation.split('_')[1];
-  
-  axios.get('http://simulation:8000/robot_simulation', {
-    params: {
-      username,
-      simulationNumber,
-      height,
-      numberOfRobots,
-      robots: JSON.stringify(robots)
-    }
-  })
-  .then(response => {
+
+  try {
+    const response = await axios.get('http://simulation:8000/robot_simulation', {
+      params: {
+        username,
+        simulationNumber,
+        height,
+        numberOfRobots,
+        robots: JSON.stringify(robots)
+      }
+    });
+
     const message = response.data;
     const frames = message.frames;
     const robotSim_id = message.robotSim_id;
-
-    let completed = 0;
-    let hasError = false;
 
     const framesByIteration = {};
     frames.forEach(frame => {
@@ -419,37 +416,40 @@ app.post('/robotSimulation', (req, res) => {
       framesByIteration[frame.iteration].push(frame);
     });
 
-    // Now save all robot frames for each iteration
-    Object.entries(framesByIteration).forEach(([iteration, framesArray]) => {
+    const queries = Object.entries(framesByIteration).map(([iteration, framesArray]) => {
       const robotPath = JSON.stringify(framesArray);
-
-      const queryUpdateRobotPath = `
-        UPDATE simulation_results
-        SET robot_path = ?
-        WHERE simulation = ? 
-        AND type = 'robot'
-        AND robotSim_id = ?
-        AND iteration = ?
-      `;
-
-      pool.query(queryUpdateRobotPath, [robotPath, simulation, robotSim_id, iteration], (error, results) => {
-        if (hasError) return;
-        if (error) {
-          hasError = true;
-          console.error('Error saving robot path:', error);
-          return res.status(500).json({ error: 'Failed to save robot path' });
-        }
-        completed++;
-        if (completed === frames.length) {
-          return res.status(200).json({ message: 'Simulation data saved successfully for all iterations' });
-        }
+      
+      return new Promise((resolve, reject) => {
+        pool.query(
+          `UPDATE simulation_results 
+           SET robot_path = ? 
+           WHERE simulation = ? 
+           AND type = 'robot'
+           AND robotSim_id = ?
+           AND iteration = ?`,
+          [robotPath, simulation, robotSim_id, iteration],
+          (error, results) => {
+            if (error) reject(error);
+            else resolve(results);
+          }
+        );
       });
     });
-})
-  .catch(error => {
-    console.error('Error calling simulation service:', error.message);
-    return res.status(500).json({ error: 'Failed to call simulation backend' });
-  });
+
+    await Promise.all(queries);
+
+    res.status(200).json({ 
+      message: 'Simulation data saved successfully',
+      robotSim_id: robotSim_id
+    });
+
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({ 
+      error: 'Failed to process simulation data',
+      details: error.message 
+    });
+  }
 });
 
 

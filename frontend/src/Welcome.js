@@ -61,6 +61,7 @@ const Welcome = ({ username, onLogout }) => {
   const [selectedRobotNumber, setSelectedRobotNumber] = useState(1);
   const [selectedRobotFilter, setSelectedRobotFilter] = useState('all');
   const [robotNumbers, setRobotNumbers] = useState([]);
+  const [robotSimulationMode, setRobotSimulationMode] = useState("linear");
 
   const [robots, setRobots] = useState([
     { robotSpeed: '', robotXlocation: '', robotYlocation: '', finalRobotXlocation: '', finalRobotYlocation: '' },
@@ -727,8 +728,8 @@ const Welcome = ({ username, onLogout }) => {
     } finally {
       setRobotSimulationIsLoading(false);
       setGadenSimulationClickVisible(false);
-      setSimulationDetail(true);
       handleToggleButton('robot');
+      setSimulationDetail(true);
       await handleSimulationClick(simulation);
     }
   }

@@ -687,52 +687,70 @@ const Welcome = ({ username, onLogout }) => {
   }
 
 
-  const handleRobotSimulationSubmit = async (e,simulation) => {
+  const handleRobotSimulationSubmit = async (e, simulation) => {
     e.preventDefault();
     setRobotSimulationIsLoading(true);
+
     const robotsToSend = robots
-    .slice(0, selectedRobotNumber)
-    .filter(robot =>
-      robot.robotSpeed && robot.robotXlocation && robot.robotYlocation && robot.finalRobotXlocation && robot.finalRobotYlocation
-    );
+        .slice(0, selectedRobotNumber)
+        .filter(robot => {
+            if (robotSimulationMode === 'linear') {
+                return robot.robotSpeed && robot.robotXlocation && robot.robotYlocation && 
+                       robot.finalRobotXlocation && robot.finalRobotYlocation;
+            } else {
+                return robot.robotSpeed && robot.robotXlocation && robot.robotYlocation && 
+                       robot.angle !== undefined && robot.angle !== '';
+            }
+        })
+        .map(robot => ({
+            ...robot,
+            // Convert string values to numbers
+            robotSpeed: parseFloat(robot.robotSpeed),
+            robotXlocation: parseFloat(robot.robotXlocation),
+            robotYlocation: parseFloat(robot.robotYlocation),
+            angle: robotSimulationMode === 'moth' ? parseFloat(robot.angle) : undefined
+        }));
 
-  if (robotsToSend.length === 0) {
-    alert('Please fill in all fields for at least one robot.');
-    setRobotSimulationIsLoading(false);
-    return;
-  }
-
-  const formData = {
-    username,
-    simulation,
-    height,
-    robots: robotsToSend
-  };
-  
-    try {
-      const response = await fetch('http://localhost:3000/robotSimulation', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      });
-  
-      if (!response.ok) {
-        throw new Error('Network response was not ok');
-      }
-  
-      const result = await response.json();
-    } catch (error) {
-      console.error('Error during simulation:', error);
-    } finally {
-      setRobotSimulationIsLoading(false);
-      setGadenSimulationClickVisible(false);
-      handleToggleButton('robot');
-      setSimulationDetail(true);
-      await handleSimulationClick(simulation);
+    if (robotsToSend.length === 0) {
+        alert('Please fill in all fields for at least one robot.');
+        setRobotSimulationIsLoading(false);
+        return;
     }
-  }
+
+    const formData = {
+        username,
+        simulation: simulation,
+        height: parseFloat(height),
+        numberOfRobots: robotsToSend.length,
+        robots: robotsToSend,
+        simulationMode: robotSimulationMode
+    };
+
+    try {
+        const response = await fetch('http://localhost:3000/silkworm_moth_simulation', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(formData)
+        });
+
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+
+        const result = await response.json();
+        console.log('Simulation result:', result);
+    } catch (error) {
+        console.error('Error during simulation:', error);
+    } finally {
+        setRobotSimulationIsLoading(false);
+        setGadenSimulationClickVisible(false);
+        handleToggleButton('robot');
+        setSimulationDetail(true);
+        await handleSimulationClick(simulation);
+    }
+}
 
   const handleToggleButton = (button) => {
     setActiveButton(button);
@@ -1155,6 +1173,7 @@ const Welcome = ({ username, onLogout }) => {
             <div className="robot-simulation-form-container">
               <form onSubmit={(e) => handleRobotSimulationSubmit(e, clickedGif.simulation)} className="robot-simulation-form">              <div className="robot-simulation-inputs">
                 <div className="robot-simulation-inputs">
+                  <label>Number of robots</label>
                   {[1, 2, 3, 4].map((num) => (
                     <button
                       key={num}
@@ -1165,51 +1184,85 @@ const Welcome = ({ username, onLogout }) => {
                       {num}
                     </button>
                   ))}
+                  <div className="robot-simulation-modes">
+                      <button
+                        type="button"
+                        className={`simulation-mode-button ${robotSimulationMode === 'linear' ? 'selected' : ''}`}
+                        onClick={() => setRobotSimulationMode('linear')}
+                      >
+                        Linear Simulation
+                      </button>
+                      <button
+                        type="button"
+                        className={`simulation-mode-button ${robotSimulationMode === 'moth' ? 'selected' : ''}`}
+                        onClick={() => setRobotSimulationMode('moth')}
+                      >
+                        Silkworm Moth Simulation
+                      </button>
+                    </div>
                   </div>
                   <br />
-                 {[...Array(selectedRobotNumber)].map((_, idx) => (
-                  <div key={idx} className="robot-params-input">
-                  <label>Number of robots</label>
-                    <h4>Robot {idx + 1}</h4>
-                    <label>Robot Speed in meters</label>
-                    <input
-                      type="float"
-                      value={robots[idx].robotSpeed}
-                      onChange={e => handleRobotInputChange(idx, 'robotSpeed', e.target.value)}
-                      placeholder="Enter a robot speed value X.X"
-                    />
-                    <label>Initial robot X coordinate</label>
-                    <input
-                      type="float"
-                      value={robots[idx].robotXlocation}
-                      onChange={e => handleRobotInputChange(idx, 'robotXlocation', e.target.value)}
-                      placeholder="Enter a robot X location value X.X"
-                    />
-                    <label>Initial robot Y coordinate</label>
-                    <input
-                      type="float"
-                      value={robots[idx].robotYlocation}
-                      onChange={e => handleRobotInputChange(idx, 'robotYlocation', e.target.value)}
-                      placeholder="Enter a robot Y location value X.X"
-                    />
-                    <label>Final robot X coordinate</label>
-                    <input
-                      type="float"
-                      value={robots[idx].finalRobotXlocation}
-                      onChange={e => handleRobotInputChange(idx, 'finalRobotXlocation', e.target.value)}
-                      placeholder="Enter final X location value X.X"
-                    />
-                    <label>Final robot Y coordinate</label>
-                    <input
-                      type="float"
-                      value={robots[idx].finalRobotYlocation}
-                      onChange={e => handleRobotInputChange(idx, 'finalRobotYlocation', e.target.value)}
-                      placeholder="Enter final Y location value X.X"
-                    />
-                  </div>
-                ))}
+                  {[...Array(selectedRobotNumber)].map((_, idx) => (
+                    <div key={idx} className="robot-params-input">
+                      <h4>Robot {idx + 1}</h4>
+                      <label>Robot Speed in meters</label>
+                      <input
+                        type="float"
+                        value={robots[idx].robotSpeed}
+                        onChange={e => handleRobotInputChange(idx, 'robotSpeed', e.target.value)}
+                        placeholder="Enter a robot speed value X.X"
+                      />
+                      <label>Initial robot X coordinate</label>
+                      <input
+                        type="float"
+                        value={robots[idx].robotXlocation}
+                        onChange={e => handleRobotInputChange(idx, 'robotXlocation', e.target.value)}
+                        placeholder="Enter a robot X location value X.X"
+                      />
+                      <label>Initial robot Y coordinate</label>
+                      <input
+                        type="float"
+                        value={robots[idx].robotYlocation}
+                        onChange={e => handleRobotInputChange(idx, 'robotYlocation', e.target.value)}
+                        placeholder="Enter a robot Y location value X.X"
+                      />
+                      
+                      {robotSimulationMode === 'linear' ? (
+                        <>
+                          <label>Final robot X coordinate</label>
+                          <input
+                            type="float"
+                            value={robots[idx].finalRobotXlocation}
+                            onChange={e => handleRobotInputChange(idx, 'finalRobotXlocation', e.target.value)}
+                            placeholder="Enter final X location value X.X"
+                          />
+                          <label>Final robot Y coordinate</label>
+                          <input
+                            type="float"
+                            value={robots[idx].finalRobotYlocation}
+                            onChange={e => handleRobotInputChange(idx, 'finalRobotYlocation', e.target.value)}
+                            placeholder="Enter final Y location value X.X"
+                          />
+                        </>
+                      ) : (
+                        <>
+                          <label>Angle (radians)</label>
+                          <input
+                            type="number"
+                            value={robots[idx].angle}
+                            onChange={e => handleRobotInputChange(idx, 'angle', e.target.value)}
+                            placeholder="Enter angle in radians"
+                            min="0"
+                            max={2 * Math.PI}
+                            step="0.01"
+                          />
+                        </>
+                      )}
+                    </div>
+                  ))}      
                   <button type="submit" className={`submit-button ${fadeOut ? 'fade-out' : ''}`} >Submit</button>
                 </div>
+                
                 
               </form>
             </div>

@@ -387,6 +387,41 @@ app.get('/getRobotSimulationID', (req, res) => {
 });
 
 
+app.post('/silkworm_moth_simulation', async (req, res) => {
+  try {
+    const { username, simulation, height, robots } = req.body;
+
+    // Validate required parameters
+    if (!username || !simulation || !height || !robots) {
+      return res.status(400).json({ 
+        error: 'Missing required parameters. Need username, simulation, height, and robots.'
+      });
+    }
+
+    const simulationNumber = simulation.toString().split('_')[1];
+    const numberOfRobots = robots.length;
+
+    const response = await axios.get('http://simulation:8000/silkworm_moth_simulation', {
+      params: {
+        username,
+        simulationNumber,
+        height,
+        numberOfRobots,
+        robots: JSON.stringify(robots)
+      }
+    });
+
+    // ...rest of the existing code...
+
+  } catch (error) {
+    console.error('Error in silkworm_moth_simulation:', error);
+    res.status(500).json({ 
+      error: 'Failed to process simulation data',
+      details: error.message 
+    });
+  }
+});
+
 app.post('/robotSimulation', async (req, res) => {
   const { username, simulation, height, robots } = req.body;
 

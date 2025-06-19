@@ -334,6 +334,7 @@ body {
   border-radius: 5px;
   background-color: #f0f0f0;
   transition: background-color 0.3s ease;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
 .toggle-button.active {
@@ -344,6 +345,16 @@ body {
 .toggle-button.inactive {
   background-color: #f0f0f0;
   color: #333;
+}
+
+.toggle-button.active:hover {
+  background-color: #4CAF50;
+  color: white;
+}
+
+.toggle-button:hover{
+  transform: scale(1.05);
+  background-color: white;
 }
 
 .gaden-simulation-click {
@@ -478,3 +489,37 @@ select:focus {
 }
   
 
+.simulation-mode-button {
+  font-size: 16px;
+  padding: 10px 20px;
+  background-color: white;
+  border: 2px solid black;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+  color: black;
+  transition: opacity 0.5s ease, transform 0.3s ease;
+  text-align: center;
+  margin: 5px;
+}
+
+.simulation-mode-button.selected {
+  background-color: #4CAF50;
+  color: white;
+}
+
+.simulation-mode-button.selected:hover {
+  background-color: #4CAF50;
+  color: white;
+}
+
+.simulation-mode-button:hover {
+  transform: scale(1.05);
+  background-color: white;
+}
+
+.robot-simulation-modes {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin: 20px 0;
+}

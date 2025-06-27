@@ -696,10 +696,10 @@ const Welcome = ({ username, onLogout }) => {
         .filter(robot => {
             if (robotSimulationMode === 'linear') {
                 return robot.robotSpeed && robot.robotXlocation && robot.robotYlocation && 
-                       robot.finalRobotXlocation && robot.finalRobotYlocation;
+                       robot.finalRobotXlocation && robot.finalRobotYlocation && robot.iterations;
             } else {
                 return robot.robotSpeed && robot.robotXlocation && robot.robotYlocation && 
-                       robot.angle !== undefined && robot.angle !== '';
+                       robot.angle !== undefined && robot.angle !== '' && robot.iterations;
             }
         })
         .map(robot => ({
@@ -1205,6 +1205,7 @@ const Welcome = ({ username, onLogout }) => {
                   {[...Array(selectedRobotNumber)].map((_, idx) => (
                     <div key={idx} className="robot-params-input">
                       <h4>Robot {idx + 1}</h4>
+
                       <label>Robot Speed in meters</label>
                       <input
                         type="float"
@@ -1255,6 +1256,13 @@ const Welcome = ({ username, onLogout }) => {
                             min="0"
                             max={2 * Math.PI}
                             step="0.01"
+                          />
+                          <label> Number of iterations</label>
+                          <input 
+                            type="integer"
+                            value={robots[idx].iterations}
+                            onChange={e => handleRobotInputChange(idx, 'iterations', e.target.value)}
+                            placeholder="number of iterations robot will make"
                           />
                         </>
                       )}

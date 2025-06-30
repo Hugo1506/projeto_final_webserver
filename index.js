@@ -459,6 +459,72 @@ app.post('/silkworm_moth_simulation', async (req, res) => {
   }
 });
 
+
+app.post('/pso_simmulation', async (req, res) => {
+  const { username, simulation, height, robots } = req.body;
+
+  const numberOfRobots = robots.length;
+  const simulationNumber = simulation.split('_')[1];
+
+  try {
+    const response = await axios.get('http://simulation:8000/pso_simmulation', {
+      params: {
+        username,
+        simulationNumber,
+        height,
+        numberOfRobots,
+        robots: JSON.stringify(robots)
+      }
+    });
+
+    const message = response.data;
+    const frames = message.frames;
+    const robotSim_id = message.robotSim_id;
+
+    const framesByIteration = {};
+    frames.forEach(frame => {
+      if (!framesByIteration[frame.iteration]) {
+        framesByIteration[frame.iteration] = [];
+      }
+      framesByIteration[frame.iteration].push(frame);
+    });
+
+    const queries = Object.entries(framesByIteration).map(([iteration, framesArray]) => {
+      const robotPath = JSON.stringify(framesArray);
+      
+      return new Promise((resolve, reject) => {
+        pool.query(
+          `UPDATE simulation_results 
+           SET robot_path = ? 
+           WHERE simulation = ? 
+           AND type = 'robot'
+           AND robotSim_id = ?
+           AND iteration = ?`,
+          [robotPath, simulation, robotSim_id, iteration],
+          (error, results) => {
+            if (error) reject(error);
+            else resolve(results);
+          }
+        );
+      });
+    });
+
+    await Promise.all(queries);
+
+    res.status(200).json({ 
+      message: 'Simulation data saved successfully',
+      robotSim_id: robotSim_id
+    });
+
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({ 
+      error: 'Failed to process simulation data',
+      details: error.message 
+    });
+  }
+});
+
 app.post('/robotSimulation', async (req, res) => {
   const { username, simulation, height, robots } = req.body;
 

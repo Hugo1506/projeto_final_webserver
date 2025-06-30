@@ -691,15 +691,22 @@ const Welcome = ({ username, onLogout }) => {
     e.preventDefault();
     setRobotSimulationIsLoading(true);
 
+    let url = ""
     const robotsToSend = robots
         .slice(0, selectedRobotNumber)
         .filter(robot => {
             if (robotSimulationMode === 'linear') {
+                url = "http://localhost:3000/robotSimulation"
                 return robot.robotSpeed && robot.robotXlocation && robot.robotYlocation && 
-                       robot.finalRobotXlocation && robot.finalRobotYlocation && robot.iterations;
-            } else {
+                       robot.finalRobotXlocation && robot.finalRobotYlocation;
+            } else if (robotSimulationMode === "moth") {
+                url = "http://localhost:3000/silkworm_moth_simulation"
                 return robot.robotSpeed && robot.robotXlocation && robot.robotYlocation && 
                        robot.angle !== undefined && robot.angle !== '' && robot.iterations;
+            } else if (robotSimulationMode === "pso") {
+                url = "http://localhost:3000/pso_simmulation"
+                return robot.robotSpeed && robot.robotXlocation && robot.robotYlocation && 
+                       robot.iterations;
             }
         })
         .map(robot => ({
@@ -727,20 +734,20 @@ const Welcome = ({ username, onLogout }) => {
     };
 
     try {
-        const response = await fetch('http://localhost:3000/silkworm_moth_simulation', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(formData)
-        });
+      const response = await fetch(url, {
+          method: 'POST',
+          headers: {
+              'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(formData)
+      });
 
-        if (!response.ok) {
-            throw new Error('Network response was not ok');
-        }
+      if (!response.ok) {
+          throw new Error('Network response was not ok');
+      }
 
-        const result = await response.json();
-        console.log('Simulation result:', result);
+      const result = await response.json();
+      console.log('Simulation result:', result);
     } catch (error) {
         console.error('Error during simulation:', error);
     } finally {
@@ -750,6 +757,7 @@ const Welcome = ({ username, onLogout }) => {
         setSimulationDetail(true);
         await handleSimulationClick(simulation);
     }
+    
 }
 
   const handleToggleButton = (button) => {
@@ -1199,6 +1207,13 @@ const Welcome = ({ username, onLogout }) => {
                       >
                         Silkworm Moth Simulation
                       </button>
+                      <button
+                        type="button"
+                        className={`simulation-mode-button ${robotSimulationMode === 'pso' ? 'selected' : ''}`}
+                        onClick={() => setRobotSimulationMode('pso')}
+                      >
+                        Particle swarm optimization
+                      </button>
                     </div>
                   </div>
                   <br />
@@ -1228,7 +1243,7 @@ const Welcome = ({ username, onLogout }) => {
                         placeholder="Enter a robot Y location value X.X"
                       />
                       
-                      {robotSimulationMode === 'linear' ? (
+                      {robotSimulationMode === 'linear' && (
                         <>
                           <label>Final robot X coordinate</label>
                           <input
@@ -1245,7 +1260,8 @@ const Welcome = ({ username, onLogout }) => {
                             placeholder="Enter final Y location value X.X"
                           />
                         </>
-                      ) : (
+                      )}
+                      {robotSimulationMode === 'moth' && (
                         <>
                           <label>Angle (radians)</label>
                           <input
@@ -1257,12 +1273,16 @@ const Welcome = ({ username, onLogout }) => {
                             max={2 * Math.PI}
                             step="0.01"
                           />
-                          <label> Number of iterations</label>
+                        </>
+                      )}
+                      {['moth', 'pso'].includes(robotSimulationMode) && (
+                        <>
+                          <label>Number of iterations</label>
                           <input 
                             type="integer"
                             value={robots[idx].iterations}
                             onChange={e => handleRobotInputChange(idx, 'iterations', e.target.value)}
-                            placeholder="number of iterations robot will make"
+                            placeholder="Number of iterations robot will make"
                           />
                         </>
                       )}

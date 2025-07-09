@@ -62,6 +62,8 @@ const Welcome = ({ username, onLogout }) => {
   const [selectedRobotFilter, setSelectedRobotFilter] = useState('all');
   const [robotNumbers, setRobotNumbers] = useState([]);
   const [robotSimulationMode, setRobotSimulationMode] = useState("linear");
+  const [psoSimulationIterations, setPsoSimulationIterations] = useState("");
+  const [startingIteration, setStartingIteration] = useState("");
 
   const [robots, setRobots] = useState([
     { robotSpeed: '', robotXlocation: '', robotYlocation: '', finalRobotXlocation: '', finalRobotYlocation: '' },
@@ -691,31 +693,35 @@ const Welcome = ({ username, onLogout }) => {
     e.preventDefault();
     setRobotSimulationIsLoading(true);
 
-    let url = ""
+    let url = "";
     const robotsToSend = robots
         .slice(0, selectedRobotNumber)
         .filter(robot => {
             if (robotSimulationMode === 'linear') {
-                url = "http://localhost:3000/robotSimulation"
-                return robot.robotSpeed && robot.robotXlocation && robot.robotYlocation && 
-                       robot.finalRobotXlocation && robot.finalRobotYlocation;
+                url = "http://localhost:3000/robotSimulation";
+                return robot.robotSpeed && robot.robotXlocation && robot.robotYlocation &&
+                    robot.finalRobotXlocation && robot.finalRobotYlocation;
             } else if (robotSimulationMode === "moth") {
-                url = "http://localhost:3000/silkworm_moth_simulation"
-                return robot.robotSpeed && robot.robotXlocation && robot.robotYlocation && 
-                       robot.angle !== undefined && robot.angle !== '' && robot.iterations;
+                url = "http://localhost:3000/silkworm_moth_simulation";
+                return robot.robotSpeed && robot.robotXlocation && robot.robotYlocation &&
+                    robot.angle !== undefined && robot.angle !== '' && robot.iterations;
             } else if (robotSimulationMode === "pso") {
-                url = "http://localhost:3000/pso_simmulation"
-                return robot.robotSpeed && robot.robotXlocation && robot.robotYlocation && 
-                       robot.iterations;
+                url = "http://localhost:3000/pso_simmulation";
+                return robot.robotSpeed && robot.robotXlocation && robot.robotYlocation &&
+                    psoSimulationIterations;
             }
         })
         .map(robot => ({
             ...robot,
-            // Convert string values to numbers
             robotSpeed: parseFloat(robot.robotSpeed),
             robotXlocation: parseFloat(robot.robotXlocation),
             robotYlocation: parseFloat(robot.robotYlocation),
-            angle: robotSimulationMode === 'moth' ? parseFloat(robot.angle) : undefined
+            angle: robotSimulationMode === 'moth' ? parseFloat(robot.angle) : undefined,
+            iterations: robotSimulationMode === 'pso'
+                ? parseInt(psoSimulationIterations)
+                : robot.iterations !== undefined
+                    ? parseInt(robot.iterations)
+                    : undefined
         }));
 
     if (robotsToSend.length === 0) {
@@ -724,13 +730,22 @@ const Welcome = ({ username, onLogout }) => {
         return;
     }
 
+    let startingIterationToSend 
+
+    if (startingIteration === ""){
+      startingIterationToSend = 0
+    }else{
+      startingIterationToSend = startingIteration
+    }
+
     const formData = {
         username,
         simulation: simulation,
         height: parseFloat(height),
         numberOfRobots: robotsToSend.length,
         robots: robotsToSend,
-        simulationMode: robotSimulationMode
+        simulationMode: robotSimulationMode,
+        startingIteration: startingIterationToSend
     };
 
     try {
@@ -797,6 +812,15 @@ const Welcome = ({ username, onLogout }) => {
       return 1;
     });
   };
+
+
+  const handlePsoIterationsInputChange = (iterations) => {
+    setPsoSimulationIterations(iterations);
+  }
+
+  const handleStartingIterationInputChange = (iteration) => {
+    setStartingIteration(iteration);
+  }
 
 
   return (
@@ -1217,6 +1241,24 @@ const Welcome = ({ username, onLogout }) => {
                     </div>
                   </div>
                   <br />
+                  <label>Starting Iteration (optional default = 0)</label>
+                    <input 
+                      type="integer"
+                      value={startingIteration}
+                      onChange={e => handleStartingIterationInputChange(e.target.value)}
+                      placeholder="Starting iteration of the simulation"
+                    />
+                   {['pso'].includes(robotSimulationMode) && (
+                        <>
+                          <label>Number of iterations</label>
+                          <input 
+                            type="integer"
+                            value={psoSimulationIterations}
+                            onChange={e => handlePsoIterationsInputChange(e.target.value)}
+                            placeholder="Number of iterations robots will make"
+                          />
+                        </>
+                      )}
                   {[...Array(selectedRobotNumber)].map((_, idx) => (
                     <div key={idx} className="robot-params-input">
                       <h4>Robot {idx + 1}</h4>
@@ -1275,7 +1317,7 @@ const Welcome = ({ username, onLogout }) => {
                           />
                         </>
                       )}
-                      {['moth', 'pso'].includes(robotSimulationMode) && (
+                      {['moth'].includes(robotSimulationMode) && (
                         <>
                           <label>Number of iterations</label>
                           <input 

@@ -389,7 +389,7 @@ app.get('/getRobotSimulationID', (req, res) => {
 
 app.post('/silkworm_moth_simulation', async (req, res) => {
   try {
-    const { username, simulation, height, robots } = req.body;
+    const { username, simulation, height, robots, startingIteration} = req.body;
 
     // Validate required parameters
     if (!username || !simulation || !height || !robots) {
@@ -407,6 +407,7 @@ app.post('/silkworm_moth_simulation', async (req, res) => {
         simulationNumber,
         height,
         numberOfRobots,
+        startingIteration,
         robots: JSON.stringify(robots)
       }
     });
@@ -526,7 +527,7 @@ app.post('/pso_simmulation', async (req, res) => {
 });
 
 app.post('/robotSimulation', async (req, res) => {
-  const { username, simulation, height, robots } = req.body;
+  const { username, simulation, height, robots, startingIteration } = req.body;
 
   const numberOfRobots = robots.length;
   const simulationNumber = simulation.split('_')[1];
@@ -538,6 +539,7 @@ app.post('/robotSimulation', async (req, res) => {
         simulationNumber,
         height,
         numberOfRobots,
+        startingIteration,  
         robots: JSON.stringify(robots)
       }
     });

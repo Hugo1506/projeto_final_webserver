@@ -462,7 +462,7 @@ app.post('/silkworm_moth_simulation', async (req, res) => {
 
 
 app.post('/pso_simmulation', async (req, res) => {
-  const { username, simulation, height, robots } = req.body;
+  const { username, simulation, height, robots, startingIteration } = req.body;
 
   const numberOfRobots = robots.length;
   const simulationNumber = simulation.split('_')[1];
@@ -474,6 +474,7 @@ app.post('/pso_simmulation', async (req, res) => {
         simulationNumber,
         height,
         numberOfRobots,
+        startingIteration,
         robots: JSON.stringify(robots)
       }
     });

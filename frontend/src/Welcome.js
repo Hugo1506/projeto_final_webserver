@@ -603,7 +603,10 @@ const Welcome = ({ username, onLogout }) => {
     }, 500);
   } 
 
-  const handleGifClick = (clickedGif) => {
+
+  
+
+  const handleGifClick = async (clickedGif) => {
     const { type, height, robotSim_id } = clickedGif;
 
     const filteredRelatedGifs = filteredGifs.filter(gifObj => gifObj.type === type && gifObj.height === height && gifObj.robotSim_id === robotSim_id);
@@ -613,6 +616,10 @@ const Welcome = ({ username, onLogout }) => {
     setMaxIteration(maxIter);
     const minIter = Math.min(...filteredRelatedGifs.map(g => g.iteration));
     setMinIteration(minIter);
+
+
+    const bounds = await fetchBoundsStatus(clickedGif.simulation);
+    if (bounds) setSimulationBounds(bounds);
 
     setClickedGif(clickedGif);
     setHeight(clickedGif.height);
@@ -1250,12 +1257,12 @@ const Welcome = ({ username, onLogout }) => {
                     />
                    {['pso'].includes(robotSimulationMode) && (
                         <>
-                          <label>Number of iterations</label>
+                          <label>Final iteration</label>
                           <input 
                             type="integer"
                             value={psoSimulationIterations}
                             onChange={e => handlePsoIterationsInputChange(e.target.value)}
-                            placeholder="Number of iterations robots will make"
+                            placeholder="Iteration when the simulation will stop"
                           />
                         </>
                       )}
@@ -1265,39 +1272,47 @@ const Welcome = ({ username, onLogout }) => {
 
                       <label>Robot Speed in meters</label>
                       <input
-                        type="float"
+                        type="number"
                         value={robots[idx].robotSpeed}
                         onChange={e => handleRobotInputChange(idx, 'robotSpeed', e.target.value)}
                         placeholder="Enter a robot speed value X.X"
                       />
-                      <label>Initial robot X coordinate</label>
+                      <label>Initial robot X coordinate, range: {simulationBounds.xMin}-{simulationBounds.xMax}</label>
                       <input
-                        type="float"
+                        type="number"
                         value={robots[idx].robotXlocation}
+                        min = {simulationBounds.xMin}
+                        max = {simulationBounds.xMax}
                         onChange={e => handleRobotInputChange(idx, 'robotXlocation', e.target.value)}
                         placeholder="Enter a robot X location value X.X"
                       />
-                      <label>Initial robot Y coordinate</label>
+                      <label>Initial robot Y coordinate, range: {simulationBounds.yMin}-{simulationBounds.yMax}</label>
                       <input
-                        type="float"
+                        type="number"
                         value={robots[idx].robotYlocation}
+                        min = {simulationBounds.yMin}
+                        max = {simulationBounds.yMax}
                         onChange={e => handleRobotInputChange(idx, 'robotYlocation', e.target.value)}
                         placeholder="Enter a robot Y location value X.X"
                       />
                       
                       {robotSimulationMode === 'linear' && (
                         <>
-                          <label>Final robot X coordinate</label>
+                          <label>Final robot X coordinate, range: {simulationBounds.xMin}-{simulationBounds.xMax}</label>
                           <input
-                            type="float"
+                            type="number"
                             value={robots[idx].finalRobotXlocation}
+                            min = {simulationBounds.xMin}
+                            max = {simulationBounds.xMax}
                             onChange={e => handleRobotInputChange(idx, 'finalRobotXlocation', e.target.value)}
                             placeholder="Enter final X location value X.X"
                           />
-                          <label>Final robot Y coordinate</label>
+                          <label>Final robot Y coordinate, range: {simulationBounds.yMin}-{simulationBounds.yMax}</label>
                           <input
-                            type="float"
+                            type="number"
                             value={robots[idx].finalRobotYlocation}
+                            min = {simulationBounds.yMin}
+                            max = {simulationBounds.yMax}
                             onChange={e => handleRobotInputChange(idx, 'finalRobotYlocation', e.target.value)}
                             placeholder="Enter final Y location value X.X"
                           />
@@ -1319,12 +1334,12 @@ const Welcome = ({ username, onLogout }) => {
                       )}
                       {['moth'].includes(robotSimulationMode) && (
                         <>
-                          <label>Number of iterations</label>
+                          <label>Final iteration</label>
                           <input 
                             type="integer"
                             value={robots[idx].iterations}
                             onChange={e => handleRobotInputChange(idx, 'iterations', e.target.value)}
-                            placeholder="Number of iterations robot will make"
+                            placeholder="Iteration when the robot will stop"
                           />
                         </>
                       )}

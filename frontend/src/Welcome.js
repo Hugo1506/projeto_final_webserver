@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './Welcome.css';
 import logo from './flyrobotics_logo.png'; 
+import GifWithGrid from './GifWithGrid';
 
 const Welcome = ({ username, onLogout }) => {
   const [dropdownVisible, setDropdownVisible] = useState(false);
@@ -64,6 +65,9 @@ const Welcome = ({ username, onLogout }) => {
   const [robotSimulationMode, setRobotSimulationMode] = useState("linear");
   const [psoSimulationIterations, setPsoSimulationIterations] = useState("");
   const [startingIteration, setStartingIteration] = useState("");
+  const [showGrid, setShowGrid] = useState(false);
+  const [selectedRobotIdx, setSelectedRobotIdx] = useState(null);
+
 
   const [robots, setRobots] = useState([
     { robotSpeed: '', robotXlocation: '', robotYlocation: '', finalRobotXlocation: '', finalRobotYlocation: '' },
@@ -829,6 +833,11 @@ const Welcome = ({ username, onLogout }) => {
     setStartingIteration(iteration);
   }
 
+  const toggleGrid = () =>{
+    setShowGrid(!showGrid);
+  }
+
+  
 
   return (
     <div className="welcome-container">
@@ -1179,12 +1188,62 @@ const Welcome = ({ username, onLogout }) => {
                   <div key={index} className="gif-description">
                     <h3>Height: {gifObj.height ?? 'Unknown'}</h3>
                     <h3>Iteration: {gifObj.iteration}</h3>
-                    <img
-                      src={gifObj.url}
-                      alt={`Related GIF ${index + 1}`}
-                      className="gif-image"
-                      style={{ cursor: 'pointer' }}
+                    <div className="grid-toggle-div">
+                      <label>
+                        <input
+                          type="checkbox"
+                          className = "toggle-button"
+                          checked={showGrid}
+                          onChange={() => toggleGrid()}
+                        />
+                        Show Grid
+                      </label>
+                    </div>
+                    {!showGrid ? (
+                      <img
+                        src={gifObj.url}
+                        alt={`Related GIF ${index + 1}`}
+                        className="gif-image"
+                        style={{ cursor: 'pointer' }}
+                      />   
+                    ) : (
+                      <>
+                      <div className="robot-simulation-inputs">
+                        <label>Select the robot to set the coordinates</label>
+                        <br />
+                        {robots.map((robot, idx) => {
+                          if (selectedRobotNumber > idx) {
+                            return (
+                              <button
+                                className="number-of-robots-button"
+                                key={idx}
+                                onClick={() => setSelectedRobotIdx(idx)}
+                                style={{
+                                  background: selectedRobotIdx === idx ? 'lightblue' : 'white',
+                                }}
+                              >
+                              {idx + 1} 
+                              </button>
+                            );
+                          }
+                          return null; 
+                        })}
+                      </div>
+ 
+                    <GifWithGrid
+                      gifObj={gifObj}
+                      simulationBounds={simulationBounds}
+                      robots={robots}  
+                      onSetRobotCoords={(x, y) => {
+                        if (selectedRobotIdx !== null) {
+                          handleRobotInputChange(selectedRobotIdx, 'robotXlocation', x.toFixed(1));
+                          handleRobotInputChange(selectedRobotIdx, 'robotYlocation', y.toFixed(1));
+                        }
+                      }}
                     />
+                  </>
+                    )}
+                    
                     <div className="button-container-gaden-gif">
                       <div>
                       <button onClick={handleIterationBackGaden}>

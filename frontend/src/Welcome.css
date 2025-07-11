@@ -523,3 +523,7 @@ select:focus {
   gap: 10px;
   margin: 20px 0;
 }
+
+.grid-toggle-div{
+  text-align: center;
+}

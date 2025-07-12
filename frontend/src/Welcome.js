@@ -1200,12 +1200,44 @@ const Welcome = ({ username, onLogout }) => {
                       </label>
                     </div>
                     {!showGrid ? (
-                      <img
-                        src={gifObj.url}
-                        alt={`Related GIF ${index + 1}`}
-                        className="gif-image"
-                        style={{ cursor: 'pointer' }}
-                      />   
+                    <>
+                      <div className="robot-simulation-inputs">
+                        <label>Select the robot to set the coordinates</label>
+                        <br />
+                        {robots.map((robot, idx) => {
+                          if (selectedRobotNumber > idx) {
+                            return (
+                              <button
+                                className="number-of-robots-button"
+                                key={idx}
+                                onClick={() => setSelectedRobotIdx(idx)}
+                                style={{
+                                  background: selectedRobotIdx === idx ? 'lightblue' : 'white',
+                                }}
+                              >
+                              {idx + 1} 
+                              </button>
+                            );
+                          }
+                          return null; 
+                        })}
+                      </div>
+ 
+                    <GifWithGrid
+                      gifObj={gifObj}
+                      simulationBounds={simulationBounds}
+                      robots={robots}
+                      grid={false}
+                      type={robotSimulationMode}
+                      onSetRobotCoords={(x, y) => {
+                        if (selectedRobotIdx !== null) {
+                          handleRobotInputChange(selectedRobotIdx, 'robotXlocation', x.toFixed(1));
+                          handleRobotInputChange(selectedRobotIdx, 'robotYlocation', y.toFixed(1));
+                        }
+                      }}
+
+                    />
+                  </>
                     ) : (
                       <>
                       <div className="robot-simulation-inputs">
@@ -1233,13 +1265,16 @@ const Welcome = ({ username, onLogout }) => {
                     <GifWithGrid
                       gifObj={gifObj}
                       simulationBounds={simulationBounds}
-                      robots={robots}  
+                      robots={robots}
+                      grid={true}
+                      type={robotSimulationMode}
                       onSetRobotCoords={(x, y) => {
                         if (selectedRobotIdx !== null) {
                           handleRobotInputChange(selectedRobotIdx, 'robotXlocation', x.toFixed(1));
                           handleRobotInputChange(selectedRobotIdx, 'robotYlocation', y.toFixed(1));
                         }
                       }}
+
                     />
                   </>
                     )}

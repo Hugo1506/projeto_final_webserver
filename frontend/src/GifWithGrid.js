@@ -1,11 +1,8 @@
 import React, { useRef, useEffect, useState } from 'react';
 
-const GifWithGrid = ({ gifObj, simulationBounds, robots, onSetRobotCoords }) => {
+const GifWithGrid = ({ gifObj, simulationBounds, robots, onSetRobotCoords, grid, type }) => {
   const canvasRef = useRef(null);
-  const [hoveredRobot, setHoveredRobot] = useState(null);  // Track the hovered robot
-  const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });  // Position of the tooltip
 
-  // Array of predefined colors for robots
   const robotColors = [
     'red', 'blue', 'green', 'orange', 'purple', 'yellow', 'pink', 'brown', 'cyan', 'magenta'
   ];
@@ -20,38 +17,39 @@ const GifWithGrid = ({ gifObj, simulationBounds, robots, onSetRobotCoords }) => 
     ctx.clearRect(0, 0, width, height);
 
     const { xMin, xMax, yMin, yMax } = simulationBounds;
-    const xRange = xMax - xMin; // height range
-    const yRange = yMax - yMin; // width range
+    const xRange = xMax - xMin; 
+    const yRange = yMax - yMin; 
+    if(grid){
+      // Draw horizontal lines for x (height)
+      for (let x = xMin; x <= xMax; x += 0.1) {
+        const py = ((x - xMin) / xRange) * height;
+        ctx.beginPath();
+        ctx.moveTo(0, py);
+        ctx.lineTo(width, py);
+        ctx.strokeStyle = 'rgba(72, 255, 0, 1)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      }
 
-    // Draw horizontal lines for x (height)
-    for (let x = xMin; x <= xMax; x += 0.1) {
-      const py = ((x - xMin) / xRange) * height;
-      ctx.beginPath();
-      ctx.moveTo(0, py);
-      ctx.lineTo(width, py);
-      ctx.strokeStyle = 'rgba(72, 255, 0, 1)';
-      ctx.lineWidth = 1;
-      ctx.stroke();
+      // Draw vertical lines for y (width)
+      for (let y = yMin; y <= yMax; y += 0.1) {
+        const px = ((y - yMin) / yRange) * width;
+        ctx.beginPath();
+        ctx.moveTo(px, 0);
+        ctx.lineTo(px, height);
+        ctx.strokeStyle = 'rgba(72, 255, 0, 1)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      }
     }
-
-    // Draw vertical lines for y (width)
-    for (let y = yMin; y <= yMax; y += 0.1) {
-      const px = ((y - yMin) / yRange) * width;
-      ctx.beginPath();
-      ctx.moveTo(px, 0);
-      ctx.lineTo(px, height);
-      ctx.strokeStyle = 'rgba(72, 255, 0, 1)';
-      ctx.lineWidth = 1;
-      ctx.stroke();
-    }
+    
 
     // Loop through all robots and draw markers for each with unique color
     robots.forEach((robot, idx) => {
       const robotX = parseFloat(robot?.robotXlocation);
       const robotY = parseFloat(robot?.robotYlocation);
 
-      // Assign a color based on robot index, or cycle through the predefined colors
-      const robotColor = robotColors[idx % robotColors.length];  // Use modulus for cycling through colors
+      const robotColor = robotColors[idx % robotColors.length];  
 
       if (
         typeof robotX === 'number' &&
@@ -71,19 +69,14 @@ const GifWithGrid = ({ gifObj, simulationBounds, robots, onSetRobotCoords }) => 
         ctx.lineWidth = 2;
         ctx.stroke();
 
-        // If the mouse is over this robot's marker, set the hover state
-        if (hoveredRobot && hoveredRobot.idx === idx) {
-          // Draw a tooltip at the mouse position
-          const tooltipText = `Robot ${idx + 1}: (${robotX.toFixed(1)}, ${robotY.toFixed(1)})`;
-          ctx.fillStyle = 'white';
-          ctx.fillRect(tooltipPosition.x, tooltipPosition.y, ctx.measureText(tooltipText).width + 10, 25);
-          ctx.fillStyle = 'black';
-          ctx.fillText(tooltipText, tooltipPosition.x + 5, tooltipPosition.y + 15);
-        }
+        ctx.font = "20px arial bold";
+        ctx.fillStyle = "black";
+        ctx.fillText("R"+(idx+1), markerX+20, markerY-20);
+
       }
     });
 
-  }, [simulationBounds, gifObj.url, robots, hoveredRobot, tooltipPosition]);
+  }, [simulationBounds, gifObj.url, robots, grid]);
 
   const handleCanvasClick = (e) => {
     if (!simulationBounds || !onSetRobotCoords) return;

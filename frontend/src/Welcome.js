@@ -1223,20 +1223,27 @@ const Welcome = ({ username, onLogout }) => {
                         })}
                       </div>
  
-                    <GifWithGrid
-                      gifObj={gifObj}
-                      simulationBounds={simulationBounds}
-                      robots={robots}
-                      grid={false}
-                      type={robotSimulationMode}
-                      onSetRobotCoords={(x, y) => {
-                        if (selectedRobotIdx !== null) {
+                   <GifWithGrid
+                    gifObj={gifObj}
+                    simulationBounds={simulationBounds}
+                    robots={robots}
+                    selectedRobotIdx={selectedRobotIdx}
+                    grid={false}
+                    numberOfRobots={selectedRobotNumber}
+                    type={robotSimulationMode}
+                    onSetRobotCoords={(x, y, xFinal, yFinal) => {
+                      if (selectedRobotIdx !== null) {
+                        if (x !== null) {
                           handleRobotInputChange(selectedRobotIdx, 'robotXlocation', x.toFixed(1));
                           handleRobotInputChange(selectedRobotIdx, 'robotYlocation', y.toFixed(1));
+                          
+                        } else {
+                          handleRobotInputChange(selectedRobotIdx, 'finalRobotXlocation', xFinal.toFixed(1));
+                          handleRobotInputChange(selectedRobotIdx, 'finalRobotYlocation', yFinal.toFixed(1));
                         }
-                      }}
-
-                    />
+                      }
+                    }}
+                  />
                   </>
                     ) : (
                       <>
@@ -1262,21 +1269,28 @@ const Welcome = ({ username, onLogout }) => {
                         })}
                       </div>
  
-                    <GifWithGrid
-                      gifObj={gifObj}
-                      simulationBounds={simulationBounds}
-                      robots={robots}
-                      grid={true}
-                      type={robotSimulationMode}
-                      onSetRobotCoords={(x, y) => {
-                        if (selectedRobotIdx !== null) {
-                          handleRobotInputChange(selectedRobotIdx, 'robotXlocation', x.toFixed(1));
-                          handleRobotInputChange(selectedRobotIdx, 'robotYlocation', y.toFixed(1));
-                        }
-                      }}
-
-                    />
-                  </>
+                      <GifWithGrid
+                        gifObj={gifObj}
+                        simulationBounds={simulationBounds}
+                        robots={robots}
+                        selectedRobotIdx={selectedRobotIdx}
+                        grid={true}
+                        numberOfRobots={selectedRobotNumber}
+                        type={robotSimulationMode}
+                        onSetRobotCoords={(x, y, xFinal, yFinal) => {
+                          if (selectedRobotIdx !== null) {
+                            if (x !== null) {
+                              handleRobotInputChange(selectedRobotIdx, 'robotXlocation', x.toFixed(1));
+                              handleRobotInputChange(selectedRobotIdx, 'robotYlocation', y.toFixed(1));
+                              
+                            } else {
+                              handleRobotInputChange(selectedRobotIdx, 'finalRobotXlocation', xFinal.toFixed(1));
+                              handleRobotInputChange(selectedRobotIdx, 'finalRobotYlocation', yFinal.toFixed(1));
+                            }
+                          }
+                        }}
+                      />
+                 </>
                     )}
                     
                     <div className="button-container-gaden-gif">

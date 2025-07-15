@@ -261,6 +261,11 @@ app.get('/getSimulations', (req, res) => {
   });
 });
 
+
+app.get('/getIntialWindFrame', (req,res) => {
+  
+});
+
 app.post('/uploadSimulationResults', (req, res) => {
   const simulation = req.body.simulation;
   const simulationResultType = req.body.type;
@@ -301,9 +306,6 @@ app.post('/setBounds', (req, res) => {
     params: {
       username,
       simulationNumber,
-      plumeXlocation: xMin,      
-      plumeYlocation: yMin,      
-      plumeZlocation: zMin,      
       zMin,
       zMax
     }

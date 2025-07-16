@@ -651,6 +651,71 @@ app.post('/deleteSimulation', (req, res) => {
   });
 });
 
+
+app.get('/getEnviromentFrames', (req, res) => {
+  const simulation = req.query.simulation;
+  const queryGetEnviromentFrames = `
+    SELECT 
+      id,
+      gif,
+      height,
+      type,
+      iteration,
+      robotSim_id,
+      robot_path
+    FROM simulation_results
+    WHERE simulation = ? AND type = 'plume_wind' AND iteration = 0
+  `;
+
+  pool.query(queryGetEnviromentFrames, [simulation], (error, results) => {
+    if (error) {
+      console.error(error);
+      return res.status(500).send('Internal Server Error');
+    }
+
+    if (results.length === 0) {
+      return res.status(404).send('Environment frames not found');
+    }
+
+    const frames = [];
+    let processedCount = 0;
+
+    // To track unique heights and avoid duplicates
+    const uniqueHeights = new Set();
+
+    results.forEach((result, index) => {
+      const compressedGifBase64 = result.gif;
+      const compressedGifBuffer = Buffer.from(compressedGifBase64, 'base64');
+
+      zlib.unzip(compressedGifBuffer, (err, decompressedBuffer) => {
+        if (err) {
+          console.error(`Error decompressing GIF at index ${index}:`, err);
+          return res.status(500).send('Failed to decompress GIF');
+        }
+
+        // Check if the height is unique
+        if (!uniqueHeights.has(result.height)) {
+          uniqueHeights.add(result.height); // Add the height to the set
+
+          frames.push({
+            gif: decompressedBuffer.toString('base64'),
+            height: result.height,
+            type: result.type,
+            iteration: result.iteration,
+          });
+        }
+
+        processedCount++;
+
+        if (processedCount === results.length) {
+          res.set('Content-Type', 'application/json');
+          res.json(frames);
+        }
+      });
+    });
+  });
+});
+
 app.get('/getSimulationResultsGifs', (req, res) => {
   const simulation = req.query.simulation;
   const queryGetSimulationResults = `

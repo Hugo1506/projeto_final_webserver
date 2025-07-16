@@ -67,7 +67,7 @@ const Welcome = ({ username, onLogout }) => {
   const [startingIteration, setStartingIteration] = useState("");
   const [showGrid, setShowGrid] = useState(false);
   const [selectedRobotIdx, setSelectedRobotIdx] = useState(null);
-
+  const [enviromentIsLoading,setEnviromentIsLoading] = useState(false);
 
   const [robots, setRobots] = useState([
     { robotSpeed: '', robotXlocation: '', robotYlocation: '', finalRobotXlocation: '', finalRobotYlocation: '' },
@@ -172,6 +172,17 @@ const Welcome = ({ username, onLogout }) => {
   }, [plumeSimulationIsLoading]);
 
   useEffect(() => {
+    if (!enviromentIsLoading) return; 
+
+    let dotCount = 0;
+    const interval = setInterval(() => {
+      dotCount = (dotCount + 1) % 4; 
+      setPlumeSimulationLoadingText(`Preprocessing the simulation${".".repeat(dotCount)}`);
+    }, 500);
+    return () => clearInterval(interval);
+  }, [enviromentIsLoading]);
+
+  useEffect(() => {
     if (!robotSimulationIsLoading) return; // não corre se não estiver à espera dos resultados da simulação 
 
     let dotCount = 0;
@@ -261,6 +272,71 @@ const Welcome = ({ username, onLogout }) => {
     } catch (error) {
       console.error('Error fetching bounds status:', error);
       return null;
+    }
+  };
+
+
+  const fetchEnviromentResults = async (simulation) => {
+    try {
+      setLoadingGifs(true);
+      const response = await fetch(`http://localhost:3000/getEnviromentFrames?simulation=${simulation}`);
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch Enviroment frames');
+      }
+      
+      const gifsData = await response.json();
+
+      const gifs = gifsData.map(({ gif, height,type,iteration }) => {
+  
+
+        const byteCharacters = atob(gif);  
+        const byteArrays = [];
+  
+        for (let offset = 0; offset < byteCharacters.length; offset += 1024) {
+          const byteArray = new Uint8Array(Math.min(byteCharacters.length - offset, 1024));
+          for (let i = 0; i < byteArray.length; i++) {
+            byteArray[i] = byteCharacters.charCodeAt(offset + i);
+          }
+          byteArrays.push(byteArray);
+        }
+  
+        const blob = new Blob(byteArrays, { type: 'image/gif' });
+        const url = URL.createObjectURL(blob);
+        
+
+        return {
+          url,
+          height,
+          type,
+          simulation,
+          iteration,
+        };
+      });
+      
+
+      const uniqueHeights = [...new Set(gifs.map(gif => gif.height))];
+      const minHeight = Math.min(...uniqueHeights);
+      setSelectedHeight(minHeight);
+
+
+      setAvailableHeights(uniqueHeights);
+
+      const gifTypes = gifs.map(g => g.type);
+
+      setCheckedOptions({
+        all: true,
+        heatmap: gifTypes.includes('heatmap'),
+        wind: gifTypes.includes('wind'),
+        contour: gifTypes.includes('contour'),
+        [selectedHeight]: true,
+      });
+
+      setGifs(gifs);
+    } catch (error) {
+      console.error('Error fetching GIFs:', error);
+    } finally {
+      setLoadingGifs(false); 
     }
   };
 
@@ -460,14 +536,16 @@ const Welcome = ({ username, onLogout }) => {
         while (true) {
           status = await fetchSimulationStatus(simulation);
   
-          if (status === "IN_QUEUE") {
-            alert("Simulation is in queue...");
-          } else if (status === "IN SIMULATION") {
-            alert("Simulation has started.");
+          
+         if (status === "IN SIMULATION") {         
             const bounds = await fetchBoundsStatus(simulation);
+            await fetchEnviromentResults(simulation); 
             setSimulationBounds(bounds);
             setShowPlumeLocation(true);
+            setEnviromentIsLoading(false);
             break;
+          }else{
+            setEnviromentIsLoading(true);
           }
   
           await new Promise(resolve => setTimeout(resolve, 3000));
@@ -892,6 +970,7 @@ const Welcome = ({ username, onLogout }) => {
   	 </div>
     )}
       {isNewSimulation && !showPlumeLocation && (
+        <>
         <form onSubmit={handleFileSubmit} className="file-upload-form">
           <div>
             <label htmlFor="simulationName">Name of the simulation (optional):</label>
@@ -938,9 +1017,50 @@ const Welcome = ({ username, onLogout }) => {
             Go Back
           </button>
         </form> 
+         {enviromentIsLoading && (
+          <div className="popup-overlay">
+            <div className="popup">
+              <p>{plumeSimulationLoadingText}</p>
+            </div>
+          </div>
+        )}
+        </>
       )}
       {isNewSimulation && showPlumeLocation && (
-        <div style={{ position: "relative" }}>
+        <div className="content-container">
+          <select value={selectedHeight} onChange={(e) => {
+
+                  setSelectedHeight(e.target.value);
+                }}>
+                  {availableHeights.map((height, idx) => (
+                    <option key={idx} value={height}>
+                      {height ?? 'Unknown'}
+                    </option>
+                  ))}
+          </select>   
+          {filteredGifs.length > 0 && (
+            filteredGifs
+              .slice()
+              .sort((a, b) => a.type.localeCompare(b.type))
+              .filter((gifObj) => {
+                if (!selectedHeight) {
+                  return true;
+                }
+                return gifObj.height == selectedHeight;
+              })
+              .map((gifObj, index) => (
+                <div key={index} className="gif-description">
+                  <h3>Height: {gifObj.height ?? 'Unknown'}</h3>
+                  <img
+                    src={gifObj.url}
+                    alt={`Simulation GIF ${index + 1}`}
+                    className="gif-image"
+                    onLoad={() => handleImageLoaded(gifObj.url)}
+                    style={{ cursor: 'pointer' }}
+                  />
+                </div>
+              ))
+          )}
           <form onSubmit={handlePlumeSubmit} className="file-upload-form">
             <div>
               <h4 htmlFor="plumeXLocation">Plume location </h4>

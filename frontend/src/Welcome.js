@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import './Welcome.css';
 import logo from './flyrobotics_logo.png'; 
 import GifWithGrid from './GifWithGrid';
+import EnviromentGrid from './enviromentGrid';
 
 const Welcome = ({ username, onLogout }) => {
   const [dropdownVisible, setDropdownVisible] = useState(false);
@@ -1028,36 +1029,69 @@ const Welcome = ({ username, onLogout }) => {
       )}
       {isNewSimulation && showPlumeLocation && (
         <div className="content-container">
-          <select value={selectedHeight} onChange={(e) => {
-
-                  setSelectedHeight(e.target.value);
-                }}>
-                  {availableHeights.map((height, idx) => (
-                    <option key={idx} value={height}>
-                      {height ?? 'Unknown'}
-                    </option>
-                  ))}
-          </select>   
           {filteredGifs.length > 0 && (
             filteredGifs
               .slice()
               .sort((a, b) => a.type.localeCompare(b.type))
               .filter((gifObj) => {
-                if (!selectedHeight) {
-                  return true;
-                }
                 return gifObj.height == selectedHeight;
               })
               .map((gifObj, index) => (
                 <div key={index} className="gif-description">
-                  <h3>Height: {gifObj.height ?? 'Unknown'}</h3>
-                  <img
-                    src={gifObj.url}
-                    alt={`Simulation GIF ${index + 1}`}
-                    className="gif-image"
-                    onLoad={() => handleImageLoaded(gifObj.url)}
-                    style={{ cursor: 'pointer' }}
+                  <div>
+                  <h3>Height: </h3>
+                   <select
+                    value={selectedHeight}
+                    onChange={(e) => setSelectedHeight(e.target.value)}
+                  >
+                    {availableHeights
+                      .map((height) => parseFloat(height)) 
+                      .sort((a, b) => a - b)
+                      .map((height, idx) => (
+                        <option key={idx} value={height}>
+                          {height ?? 'Unknown'}
+                        </option>
+                      ))}
+                  </select>
+                  <div className="grid-toggle-div">
+                  <label>
+                        <input
+                          type="checkbox"
+                          className = "toggle-button"
+                          checked={showGrid}
+                          onChange={() => toggleGrid()}
+                        />
+                        Show Grid
+                  </label>
+                  </div>
+                  </div> 
+                  {showGrid ? (
+                    <EnviromentGrid
+                        gifObj={gifObj}
+                        simulationBounds={simulationBounds}
+                        grid={true}
+                        height={selectedHeight}
+                        onSetPlumeCoords={(x, y, z) => {
+                          setPlumeXLocation(x.toFixed(1));
+                          setPlumeYLocation(y.toFixed(1));
+                          setPlumeZLocation(z.toFixed(1));
+                        }}
                   />
+
+                  ):(
+                    <EnviromentGrid
+                        gifObj={gifObj}
+                        simulationBounds={simulationBounds}
+                        grid={false}
+                        height={selectedHeight}
+                        onSetPlumeCoords={(x, y, z) => {
+                          setPlumeXLocation(x.toFixed(1));
+                          setPlumeYLocation(y.toFixed(1));
+                          setPlumeZLocation(z.toFixed(1));
+                        }}
+                  />
+                  )} 
+                  
                 </div>
               ))
           )}

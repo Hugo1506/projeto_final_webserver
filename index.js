@@ -301,7 +301,6 @@ app.post('/setBounds', (req, res) => {
 
   const username = simulation.split('_')[0];
   const simulationNumber = simulation.split('_')[1];
-  
   axios.get('http://simulation:8000/example_simulation', {
     params: {
       username,
@@ -317,6 +316,7 @@ app.post('/setBounds', (req, res) => {
   const querySetSimulationBounds = `UPDATE simulation_queue 
       SET simulation_bounds = ? 
       WHERE simulation = ?`
+    
   
     pool.query(querySetSimulationBounds, [bounds, simulation], (error, results) => {
       if (error) {
@@ -359,8 +359,16 @@ app.get('/getBoundsValues', (req, res) => {
       return res.status(500).json({ error: 'Invalid bounds data' });
     }
 
-    const { xMin, xMax, yMin, yMax, zMin, zMax } = bounds;  
-    res.status(200).json({ xMin, xMax, yMin, yMax, zMin, zMax });
+    if (bounds){
+      const { xMin, xMax, yMin, yMax, zMin, zMax } = bounds; 
+      
+      res.status(200).json({ xMin, xMax, yMin, yMax, zMin, zMax });
+      
+    }else{
+      res.status(500).send("bounds is null")
+    }
+
+    
   });
 
 });
@@ -801,7 +809,7 @@ app.post('/uploadFiles', upload.fields([
   { name: 'innerCadFiles', maxCount: 10 },  
   { name: 'outerCadFiles', maxCount: 10 },  
   { name: 'windFiles', maxCount: 50 }   
-]), (req, res) => {
+]), async  (req, res) => {
 
   if (!req.files || 
       (!req.files.innerCadFiles || req.files.innerCadFiles.length === 0) || 
@@ -812,6 +820,7 @@ app.post('/uploadFiles', upload.fields([
 
   const username = req.body.username;
   const simulationNumber = req.body.simulationNumber;
+  const simulation = username + "_" + simulationNumber;
   const simulationName = req.body.simulationName || `Simulation_${simulationNumber}`; 
   const simulationField = `${username}_${simulationNumber}`;
   const queryInsertSimulation = 'INSERT INTO simulation_queue (username, simulationNumber, simulation, simulationName) VALUES (?, ?, ?, ?)';
@@ -822,15 +831,32 @@ app.post('/uploadFiles', upload.fields([
 
   // envia os dados da simulação para o volume
   const sentToVolume = sendToVolume(username, simulationNumber, innerCadFilePaths, outerCadFilePaths, windFilePaths);
-  
-  // insere os dados da simulação para a base de dados
-  pool.query(queryInsertSimulation, [username, simulationNumber, simulationField, simulationName], (error, results) => {
+  let querryError = 0;
+   pool.query(queryInsertSimulation, [username, simulationNumber, simulationField, simulationName], async (error, results) => {
     if (error) {
-      console.error(error);
-      return res.status(500).send('Internal Server Error');
+      querryError = error;
+      console.error('Database Insert Error:', error);
     }
 
-    res.status(200).send('Files uploaded and launch file created successfully.');
+    // Now, if the insert is successful, proceed with the rest of the logic (preprocessing)
+    try {
+      // Call the preprocessing step
+      const response = await axios.get('http://simulation:8000/start_preprocessing', {
+        params: {
+          simulation: simulation
+        }
+      });
+
+      if (querryError !== 0){
+        res.status(200).send(querryError)
+      }else{
+         // Successfully triggered preprocessing, send success response
+        res.status(200).send('Files uploaded and preprocessing started successfully.');
+      }
+    } catch (error) {
+      console.error('Preprocessing Request Error:', error);
+      res.status(500).send('Failed to start preprocessing.');
+    }
   });
 });
 

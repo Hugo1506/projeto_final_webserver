@@ -524,36 +524,28 @@ const Welcome = ({ username, onLogout }) => {
       );
     }
 
+    setEnviromentIsLoading(true);
     try {
       const response = await fetch('http://localhost:3000/uploadFiles', {
         method: 'POST',
         body: formData,
-      });
-
+      });  
       if (response.ok) {
         const simulation = username + "_" + simulationNumber;
   
-        let status = "";
-        while (true) {
-          status = await fetchSimulationStatus(simulation);
-  
-          
-         if (status === "IN SIMULATION") {         
-            const bounds = await fetchBoundsStatus(simulation);
-            await fetchEnviromentResults(simulation); 
-            setSimulationBounds(bounds);
-            setShowPlumeLocation(true);
-            setEnviromentIsLoading(false);
-            break;
-          }else{
-            setEnviromentIsLoading(true);
-          }
+     
+          const bounds = await fetchBoundsStatus(simulation);
+          await fetchEnviromentResults(simulation); 
+          setSimulationBounds(bounds);
+          setShowPlumeLocation(true);
+          setEnviromentIsLoading(false);
+
   
           await new Promise(resolve => setTimeout(resolve, 3000));
-        }
-  
+
         await fetchSimulationNumber();
       } else {
+        setEnviromentIsLoading(false);
         alert('Failed to upload files.');
       }
     } catch (error) {

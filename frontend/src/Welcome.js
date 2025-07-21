@@ -284,6 +284,7 @@ const Welcome = ({ username, onLogout }) => {
       
       if (!response.ok) {
         throw new Error('Failed to fetch Enviroment frames');
+        console.log(response)
       }
       
       const gifsData = await response.json();
@@ -694,16 +695,16 @@ const Welcome = ({ username, onLogout }) => {
 
 
     const bounds = await fetchBoundsStatus(clickedGif.simulation);
-    if (bounds) setSimulationBounds(bounds);
+      if (bounds) setSimulationBounds(bounds);
 
-    setClickedGif(clickedGif);
-    setHeight(clickedGif.height);
-    
-    setGadenSimulationClickVisible(true);
-    setSimulationDetail(false);
+      setClickedGif(clickedGif);
+      setHeight(clickedGif.height);
+      
+      setGadenSimulationClickVisible(true);
+      setSimulationDetail(false);
 
 
-    setCurrentIteration(0);
+      setCurrentIteration(0);
 
   };
 
@@ -1528,6 +1529,7 @@ const Welcome = ({ username, onLogout }) => {
                       <input
                         type="number"
                         value={robots[idx].robotSpeed}
+                        step="0.1"
                         onChange={e => handleRobotInputChange(idx, 'robotSpeed', e.target.value)}
                         placeholder="Enter a robot speed value X.X"
                       />
@@ -1535,6 +1537,7 @@ const Welcome = ({ username, onLogout }) => {
                       <input
                         type="number"
                         value={robots[idx].robotXlocation}
+                        step="0.1"
                         min = {simulationBounds.xMin}
                         max = {simulationBounds.xMax}
                         onChange={e => handleRobotInputChange(idx, 'robotXlocation', e.target.value)}
@@ -1544,6 +1547,7 @@ const Welcome = ({ username, onLogout }) => {
                       <input
                         type="number"
                         value={robots[idx].robotYlocation}
+                        step="0.1"
                         min = {simulationBounds.yMin}
                         max = {simulationBounds.yMax}
                         onChange={e => handleRobotInputChange(idx, 'robotYlocation', e.target.value)}
@@ -1556,6 +1560,7 @@ const Welcome = ({ username, onLogout }) => {
                           <input
                             type="number"
                             value={robots[idx].finalRobotXlocation}
+                            step="0.1"
                             min = {simulationBounds.xMin}
                             max = {simulationBounds.xMax}
                             onChange={e => handleRobotInputChange(idx, 'finalRobotXlocation', e.target.value)}
@@ -1565,6 +1570,7 @@ const Welcome = ({ username, onLogout }) => {
                           <input
                             type="number"
                             value={robots[idx].finalRobotYlocation}
+                            step="0.1"
                             min = {simulationBounds.yMin}
                             max = {simulationBounds.yMax}
                             onChange={e => handleRobotInputChange(idx, 'finalRobotYlocation', e.target.value)}

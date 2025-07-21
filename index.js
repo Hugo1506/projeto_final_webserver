@@ -290,7 +290,7 @@ app.post('/uploadSimulationResults', (req, res) => {
 });
 
 
-app.post('/setBounds', (req, res) => {
+app.post('/setBounds', async (req, res) => {
   const simulation = req.body.simulation;
   const xMin = req.body.x_min;
   const xMax = req.body.x_max;
@@ -301,7 +301,7 @@ app.post('/setBounds', (req, res) => {
 
   const username = simulation.split('_')[0];
   const simulationNumber = simulation.split('_')[1];
-  axios.get('http://simulation:8000/example_simulation', {
+  await axios.get('http://simulation:8000/example_simulation', {
     params: {
       username,
       simulationNumber,
@@ -309,6 +309,13 @@ app.post('/setBounds', (req, res) => {
       zMax
     }
   });
+
+  try {
+    const result = await setStatusToInSimulation(simulation);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send(error);
+  }
 
 
   const bounds = JSON.stringify({ xMin, xMax, yMin, yMax, zMin, zMax });
@@ -662,65 +669,65 @@ app.post('/deleteSimulation', (req, res) => {
 
 app.get('/getEnviromentFrames', (req, res) => {
   const simulation = req.query.simulation;
-  const queryGetEnviromentFrames = `
-    SELECT 
-      id,
-      gif,
-      height,
-      type,
-      iteration,
-      robotSim_id,
-      robot_path
+
+  const query = `
+    SELECT id, gif, height, type, iteration
     FROM simulation_results
-    WHERE simulation = ? AND type = 'plume_wind' AND iteration = 0
+    WHERE simulation = ? AND type = 'plume' AND iteration = 0 
   `;
 
-  pool.query(queryGetEnviromentFrames, [simulation], (error, results) => {
+  pool.query(query, [simulation], async (error, results) => {
     if (error) {
-      console.error(error);
+      console.error('SQL error:', error);
       return res.status(500).send('Internal Server Error');
     }
 
     if (results.length === 0) {
+      console.log('No results found for simulation:', simulation);
       return res.status(404).send('Environment frames not found');
     }
 
-    const frames = [];
-    let processedCount = 0;
-
-    // To track unique heights and avoid duplicates
     const uniqueHeights = new Set();
+    const frames = [];
 
-    results.forEach((result, index) => {
-      const compressedGifBase64 = result.gif;
-      const compressedGifBuffer = Buffer.from(compressedGifBase64, 'base64');
+    try {
+      const decompressedFrames = await Promise.all(
+        results.map(result => {
+          return new Promise((resolve, reject) => {
+            const compressedGifBuffer = Buffer.from(result.gif, 'base64');
 
-      zlib.unzip(compressedGifBuffer, (err, decompressedBuffer) => {
-        if (err) {
-          console.error(`Error decompressing GIF at index ${index}:`, err);
-          return res.status(500).send('Failed to decompress GIF');
-        }
+            zlib.unzip(compressedGifBuffer, (err, decompressedBuffer) => {
+              if (err) return reject(err);
 
-        // Check if the height is unique
-        if (!uniqueHeights.has(result.height)) {
-          uniqueHeights.add(result.height); // Add the height to the set
-
-          frames.push({
-            gif: decompressedBuffer.toString('base64'),
-            height: result.height,
-            type: result.type,
-            iteration: result.iteration,
+              if (!uniqueHeights.has(result.height)) {
+                uniqueHeights.add(result.height);
+                resolve({
+                  gif: decompressedBuffer.toString('base64'),
+                  height: result.height,
+                  type: result.type,
+                  iteration: result.iteration,
+                });
+              } else {
+                resolve(null); 
+              }
+            });
           });
-        }
+        })
+      );
 
-        processedCount++;
+      const filteredFrames = decompressedFrames.filter(frame => frame !== null);
 
-        if (processedCount === results.length) {
-          res.set('Content-Type', 'application/json');
-          res.json(frames);
-        }
-      });
-    });
+      if (filteredFrames.length === 0) {
+        console.warn('No unique heights or all decompressions failed.');
+        return res.status(500).send('Failed to process environment frames');
+      }
+
+      res.set('Content-Type', 'application/json');
+      res.json(filteredFrames);
+    } catch (err) {
+      console.error('Decompression error:', err);
+      res.status(500).send('Error decompressing GIF data');
+    }
   });
 });
 
@@ -926,23 +933,24 @@ app.get('/getFirstInQueue', (req, res) => {
 });
 
 
-app.post('/setStatusToInSimulation', (req, res) => {
-  const simulation = req.body.simulation;
+async function setStatusToInSimulation(simulation) {
+  return new Promise((resolve, reject) => {
+    const querySetStatus = 'UPDATE simulation_queue SET status = "IN SIMULATION" WHERE simulation = ?';
 
-  const querySetStatus = 'UPDATE simulation_queue SET status = "IN SIMULATION" WHERE simulation = ?';
+    pool.query(querySetStatus, [simulation], (error, results) => {
+      if (error) {
+        console.error('Error updating simulation status:', error);
+        return reject('Internal Server Error');
+      }
 
-  pool.query(querySetStatus, [simulation], async(error, results) => {
-    if (error) {
-      console.error(error);
-      return res.status(500).send('Internal Server Error');
-    }
+      if (results.affectedRows === 0) {
+        return reject('Simulation not found');
+      }
 
-    if (results.length === 0) {
-      return res.status(404).send('Simulation not found');
-    }
-    res.status(200).send('Status updated successfully');
+      resolve('Status updated successfully');
+    });
   });
-});
+}
 
 app.post('/setStatusToDone', (req, res) => {
   const simulation = req.body.simulation;

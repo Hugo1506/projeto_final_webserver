@@ -527,3 +527,7 @@ select:focus {
 .grid-toggle-div{
   text-align: center;
 }
+
+.collapsible-section{
+  margin-bottom: 10px;
+}

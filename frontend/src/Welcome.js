@@ -4,6 +4,7 @@ import './Welcome.css';
 import logo from './flyrobotics_logo.png'; 
 import GifWithGrid from './GifWithGrid';
 import EnviromentGrid from './enviromentGrid';
+import HoverComponent from './HoverComponent'
 
 const Welcome = ({ username, onLogout }) => {
   const [dropdownVisible, setDropdownVisible] = useState(false);
@@ -69,6 +70,13 @@ const Welcome = ({ username, onLogout }) => {
   const [showGrid, setShowGrid] = useState(false);
   const [selectedRobotIdx, setSelectedRobotIdx] = useState(null);
   const [enviromentIsLoading,setEnviromentIsLoading] = useState(false);
+  const [showFilamentOptions, setShowFilamentOptions] = useState(false);
+  const [temperatureInC, setTemperatureInC] = useState("");
+  const [ppmCenter, setPpmCenter] = useState("");
+  const [numFilamentsSec, setNumFilamentsSec] = useState("");
+  const [filamentInitialStd, setFilamentInitialStd] = useState("");
+  const [filamentGrowth, setFilamentGrowth] = useState("");
+  const [filamentNoise, setFilamentNoise] = useState("");
 
   const [robots, setRobots] = useState([
     { robotSpeed: '', robotXlocation: '', robotYlocation: '', finalRobotXlocation: '', finalRobotYlocation: '' },
@@ -561,13 +569,63 @@ const Welcome = ({ username, onLogout }) => {
     e.preventDefault();
     setPlumeSimulationIsLoading(true);
 
+    let temperatureToSend;
+    let ppmCenterToSend;
+    let numFilamentsSecToSend;
+    let filamentInitialStdToSend;
+    let filamentGrowthToSend;
+    let filamentNoiseToSend;
+
     const simulationCorrected = simulationNumber - 1;
+
+    if (temperatureInC === ""){
+      temperatureToSend = 298.0;
+    }else{
+      temperatureToSend = temperatureInC + 273.15;
+    }
+
+    if (ppmCenter === ""){
+      ppmCenterToSend = 10.0;
+    }else{
+      ppmCenterToSend = ppmCenter;
+    }
+
+    if (numFilamentsSec === ""){
+      numFilamentsSecToSend = 10;
+    }else{
+      numFilamentsSecToSend = numFilamentsSec;
+    }
+
+    if (filamentInitialStd === ""){
+      filamentInitialStdToSend = 10.0;
+    }else{
+      filamentInitialStdToSend = filamentInitialStd;
+    }
+
+    if (filamentGrowth === ""){
+      filamentGrowthToSend = 10.0;
+    }else{
+      filamentGrowthToSend = filamentGrowth;
+    }
+
+    if (filamentNoise === ""){
+      filamentNoiseToSend = 0.02;
+    }else{
+      filamentNoiseToSend = filamentNoise;
+    }
+
     const formData = {
       username,
       simulationNumber: simulationCorrected,
       plumeXlocation: plumeXLocation,
       plumeYlocation: plumeYLocation,
       plumeZlocation: plumeZLocation,
+      temperatureInK: temperatureToSend,
+      ppmCenter: ppmCenterToSend,
+      numFilamentsSec: numFilamentsSecToSend,
+      filamentInitialStd: filamentInitialStdToSend,
+      filamentGrowth: filamentGrowthToSend,
+      filamentNoise: filamentNoiseToSend,
     };
 
     try {
@@ -1091,34 +1149,131 @@ const Welcome = ({ username, onLogout }) => {
           <form onSubmit={handlePlumeSubmit} className="file-upload-form">
             <div>
               <h4 htmlFor="plumeXLocation">Plume location </h4>
-              <label htmlFor="plumeXLocation">Range: {simulationBounds.xMin} and {simulationBounds.xMax}</label>
+              <label 
+                htmlFor="plumeXLocation">X coord Range: {simulationBounds.xMin} and {simulationBounds.xMax}
+                <HoverComponent text="X value X.X for the plume location"/>
+              </label>
               <input
                 type="float"
                 id="plumeXLocation"
                 name="plumeXLocation"
                 value={plumeXLocation}
                 onChange={(e) => setPlumeXLocation(e.target.value)}
-                placeholder="Enter plume location x value X.X"
               />
-              <label htmlFor="plumeYLocation">Range: {simulationBounds.yMin} and {simulationBounds.yMax}</label>
+              <label 
+                htmlFor="plumeYLocation">Y coord Range: {simulationBounds.yMin} and {simulationBounds.yMax}
+                <HoverComponent text="Y value X.X for the plume location"/>
+              </label>
               <input
                 type="float"
                 id="plumeYLocation"
                 name="plumeYLocation"
                 value={plumeYLocation}
                 onChange={(e) => setPlumeYLocation(e.target.value)}
-                placeholder="Enter plume location y value X.X"
               />
-              <label htmlFor="plumeZLocation">Range: {simulationBounds.zMin} and {simulationBounds.zMax} </label>
+              <label 
+                htmlFor="plumeZLocation"> Z coord Range: {simulationBounds.zMin} and {simulationBounds.zMax} 
+                <HoverComponent text="Z value X.X for the plume location "/>
+              </label>
               <input
                 type="float"
                 id="plumeZLocation"
                 name="plumeZLocation"
                 value={plumeZLocation}
                 onChange={(e) => setPlumeZLocation(e.target.value)}
-                placeholder="Enter plume location z value X.X"
               />
-            </div>
+              <label 
+                htmlFor="temperatureInC">temperature
+                <HoverComponent text="temperature in Celsius Default: 24.85" />
+              </label>
+              <input
+                type="float"
+                id="temperatureInC"
+                step="0.01"
+                min="−273.15"
+                name="temperatureInC"
+                value={temperatureInC}
+                onChange={(e) => setTemperatureInC(e.target.value)}
+              />
+              </div>
+
+              <div className="collapsible-section">
+                <button
+                  type="button"
+                  onClick={() => setShowFilamentOptions(!showFilamentOptions)}
+                  className="collapsible-toggle"
+                >
+                  {showFilamentOptions ? 'Hide' : 'Show'} Filament Options (optional){showFilamentOptions ? '▲' : '▼'}
+                </button>
+
+                {showFilamentOptions && (
+                  <div className="filament-options">
+                    <label 
+                      htmlFor="ppmCenter">PPM
+                      <HoverComponent text="ppm of the initial plume Default: 10ppm" />
+                    </label>
+                    <input
+                      type="number"
+                      step="1"
+                      id="ppmCenter"
+                      name="ppmCenter"
+                      value={ppmCenter}
+                      onChange={(e) => setPpmCenter(e.target.value)}
+                    />
+                    <label 
+                      htmlFor="numFilamentsSec">Number of filaments per second
+                      <HoverComponent text="Number of filaments released each second Default: 10 " />
+                    </label>
+                    <input
+                      type="number"
+                      step="1"
+                      id="numFilamentsSec"
+                      name="numFilamentsSec"
+                      value={numFilamentsSec}
+                      onChange={(e) => setNumFilamentsSec(e.target.value)}
+                    />
+                    <label 
+                      htmlFor="filamentInitialStd">Sigma of the filament 
+                      <HoverComponent text="Sigma of the filament at t=0 in cm Default: 10" />
+                    </label>
+                    <input
+                      type="float"
+                      step="0.1"
+                      id="filamentInitialStd"
+                      name="filamentInitialStd"
+                      value={filamentInitialStd}
+                      onChange={(e) => setFilamentInitialStd(e.target.value)}
+                    />
+                    <label 
+                      htmlFor="filamentGrowth">Filament Growth
+                      <HoverComponent text="Growth ratio of the filament_std in cm²/s Default: 10" />
+                    </label>
+                    <input
+                      type="float"
+                      step="0.1"
+                      id="filamentGrowth"
+                      name="filamentGrowth"
+                      value={filamentGrowth}
+                      onChange={(e) => setFilamentGrowth(e.target.value)}
+                    />
+                    <label 
+                      htmlFor="filamentNoise"> Filament Noise
+                      <HoverComponent text="Range of the white noise added on each iteration in m Default: 0.02" />
+                    </label>
+                    <input
+                      type="float"
+                      step="0.01"
+                      id="filamentNoise"
+                      name="filamentNoise"
+                      value={filamentNoise}
+                      onChange={(e) => setFilamentNoise(e.target.value)}
+                    />
+
+                  </div>
+                )}
+              </div>
+
+            
             <button type="submit" className={`submit-button ${fadeOut ? 'fade-out' : ''}`} >Submit</button>
             <button type="button" onClick={handleGoBackGadenChoise} className={`go-back-button ${fadeOut ? 'fade-out' : ''}`}>
               Go Back

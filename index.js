@@ -612,15 +612,33 @@ app.post('/robotSimulation', async (req, res) => {
 
 
 app.post ('/uploadPlumeLocation', (req, res) => {
-  const{username,simulationNumber,plumeXlocation,plumeYlocation,plumeZlocation} = req.body;
+  const{username,
+    simulationNumber,
+    plumeXlocation,
+    plumeYlocation,
+    plumeZlocation,
+    temperatureInK,
+    ppmCenter,
+    numFilamentsSec,
+    filamentInitialStd,
+    filamentGrowth,
+    filamentNoise} = req.body;
+
   axios.get('http://simulation:8000/set_plume_location', {
     params: {
       username,
       simulationNumber,
       plumeXlocation,
       plumeYlocation,
-      plumeZlocation
+      plumeZlocation,
+      temperatureInK,
+      ppmCenter,
+      numFilamentsSec,
+      filamentInitialStd,
+      filamentGrowth,
+      filamentNoise
     }
+
   })
   .then(response => {
 

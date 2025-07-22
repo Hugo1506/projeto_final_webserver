@@ -1,0 +1,22 @@
+.hover-container {
+  display: inline-block;
+  position: relative;
+}
+
+.hover-icon {
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.hover-tooltip {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background-color: white;
+  border: 1px solid #ccc;
+  padding: 8px;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  z-index: 100;
+  white-space: nowrap;
+}

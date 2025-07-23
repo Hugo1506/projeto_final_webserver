@@ -399,8 +399,8 @@ const Welcome = ({ username, onLogout }) => {
       
 
       const uniqueHeights = [...new Set(gifs.map(gif => gif.height))];
-
-      setSelectedHeight(""); 
+      const minHeight = Math.min(...uniqueHeights);
+      setSelectedHeight(minHeight);
 
       setAvailableHeights(uniqueHeights);
 
@@ -1414,17 +1414,19 @@ const Welcome = ({ username, onLogout }) => {
                   Show contour
                 </label>
               
-                <select value={selectedHeight} onChange={(e) => {
-
-                  setSelectedHeight(e.target.value);
-                }}>
-                  <option value="">All heights</option>
-                  {availableHeights.map((height, idx) => (
-                    <option key={idx} value={height}>
-                      {height ?? 'Unknown'}
-                    </option>
-                  ))}
-                </select>   
+                 <select
+                    value={selectedHeight}
+                    onChange={(e) => setSelectedHeight(e.target.value)}
+                  >
+                    {availableHeights
+                      .map((height) => parseFloat(height)) 
+                      .sort((a, b) => a - b)
+                      .map((height, idx) => (
+                        <option key={idx} value={height}>
+                          {height ?? 'Unknown'}
+                        </option>
+                      ))}
+                  </select>
               </div> 
           )}
           </div>
@@ -1449,9 +1451,6 @@ const Welcome = ({ username, onLogout }) => {
                   return true;
                 })
                 .filter((gifObj) => {
-                  if (!selectedHeight) {
-                    return true;
-                  }
                   return gifObj.height == selectedHeight;
                 })
                 

@@ -1657,21 +1657,25 @@ const Welcome = ({ username, onLogout }) => {
                     </div>
                   </div>
                   <br />
-                  <label>Starting Iteration (optional default = 0)</label>
+                  <label>
+                    Starting Iteration
+                    <HoverComponent text="Iteration of the plume simulation that the robot will start Default: 0" />  
+                  </label>
                     <input 
                       type="integer"
                       value={startingIteration}
                       onChange={e => handleStartingIterationInputChange(e.target.value)}
-                      placeholder="Starting iteration of the simulation"
                     />
                    {['pso'].includes(robotSimulationMode) && (
                         <>
-                          <label>Final iteration</label>
+                          <label>
+                            Final iteration
+                            <HoverComponent text="Iteration when the robot simulation stops" />
+                          </label>
                           <input 
                             type="integer"
                             value={psoSimulationIterations}
                             onChange={e => handlePsoIterationsInputChange(e.target.value)}
-                            placeholder="Iteration when the simulation will stop"
                           />
                         </>
                       )}
@@ -1679,15 +1683,20 @@ const Welcome = ({ username, onLogout }) => {
                     <div key={idx} className="robot-params-input">
                       <h4>Robot {idx + 1}</h4>
 
-                      <label>Robot Speed in meters</label>
+                      <label>
+                        Robot Speed
+                        <HoverComponent text="Speed of the robot in m/s" />
+                      </label>
                       <input
                         type="number"
                         value={robots[idx].robotSpeed}
                         step="0.1"
                         onChange={e => handleRobotInputChange(idx, 'robotSpeed', e.target.value)}
-                        placeholder="Enter a robot speed value X.X"
                       />
-                      <label>Initial robot X coordinate, range: {simulationBounds.xMin}-{simulationBounds.xMax}</label>
+                      <label>
+                        Initial robot X coordinate, range: {simulationBounds.xMin} : {simulationBounds.xMax}
+                        <HoverComponent text="X coordinate where the robot begins the simulation" />
+                      </label>
                       <input
                         type="number"
                         value={robots[idx].robotXlocation}
@@ -1695,9 +1704,11 @@ const Welcome = ({ username, onLogout }) => {
                         min = {simulationBounds.xMin}
                         max = {simulationBounds.xMax}
                         onChange={e => handleRobotInputChange(idx, 'robotXlocation', e.target.value)}
-                        placeholder="Enter a robot X location value X.X"
                       />
-                      <label>Initial robot Y coordinate, range: {simulationBounds.yMin}-{simulationBounds.yMax}</label>
+                      <label>
+                        Initial robot Y coordinate, range: {simulationBounds.yMin} : {simulationBounds.yMax}
+                        <HoverComponent text="Y coordinate where the robot begins the simulation" />
+                      </label>
                       <input
                         type="number"
                         value={robots[idx].robotYlocation}
@@ -1705,12 +1716,14 @@ const Welcome = ({ username, onLogout }) => {
                         min = {simulationBounds.yMin}
                         max = {simulationBounds.yMax}
                         onChange={e => handleRobotInputChange(idx, 'robotYlocation', e.target.value)}
-                        placeholder="Enter a robot Y location value X.X"
                       />
                       
                       {robotSimulationMode === 'linear' && (
                         <>
-                          <label>Final robot X coordinate, range: {simulationBounds.xMin}-{simulationBounds.xMax}</label>
+                          <label>
+                            Final robot X coordinate, range: {simulationBounds.xMin} : {simulationBounds.xMax}
+                            <HoverComponent text="X coordinate where the robot ends the simulation" />
+                          </label>
                           <input
                             type="number"
                             value={robots[idx].finalRobotXlocation}
@@ -1718,9 +1731,11 @@ const Welcome = ({ username, onLogout }) => {
                             min = {simulationBounds.xMin}
                             max = {simulationBounds.xMax}
                             onChange={e => handleRobotInputChange(idx, 'finalRobotXlocation', e.target.value)}
-                            placeholder="Enter final X location value X.X"
                           />
-                          <label>Final robot Y coordinate, range: {simulationBounds.yMin}-{simulationBounds.yMax}</label>
+                          <label>
+                            Final robot Y coordinate, range: {simulationBounds.yMin} : {simulationBounds.yMax}
+                            <HoverComponent text="Y coordinate where the robot ends the simulation" />
+                          </label>
                           <input
                             type="number"
                             value={robots[idx].finalRobotYlocation}
@@ -1728,18 +1743,19 @@ const Welcome = ({ username, onLogout }) => {
                             min = {simulationBounds.yMin}
                             max = {simulationBounds.yMax}
                             onChange={e => handleRobotInputChange(idx, 'finalRobotYlocation', e.target.value)}
-                            placeholder="Enter final Y location value X.X"
                           />
                         </>
                       )}
                       {robotSimulationMode === 'moth' && (
                         <>
-                          <label>Angle (radians)</label>
+                          <label>
+                            Angle
+                            <HoverComponent text="Angle the robot will move in relation with the currrent vector in radians" />
+                          </label>
                           <input
                             type="number"
                             value={robots[idx].angle}
                             onChange={e => handleRobotInputChange(idx, 'angle', e.target.value)}
-                            placeholder="Enter angle in radians"
                             min="0"
                             max={2 * Math.PI}
                             step="0.01"

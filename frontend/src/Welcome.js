@@ -845,7 +845,7 @@ const Welcome = ({ username, onLogout }) => {
             } else if (robotSimulationMode === "moth") {
                 url = "http://localhost:3000/silkworm_moth_simulation";
                 return robot.robotSpeed && robot.robotXlocation && robot.robotYlocation &&
-                    robot.angle !== undefined && robot.angle !== '' && robot.iterations;
+                    robot.angle && robot.iterations;
             } else if (robotSimulationMode === "pso") {
                 url = "http://localhost:3000/pso_simmulation";
                 return robot.robotSpeed && robot.robotXlocation && robot.robotYlocation &&

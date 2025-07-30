@@ -77,6 +77,8 @@ const Welcome = ({ username, onLogout }) => {
   const [filamentInitialStd, setFilamentInitialStd] = useState("");
   const [filamentGrowth, setFilamentGrowth] = useState("");
   const [filamentNoise, setFilamentNoise] = useState("");
+  const [nameSimulationSet, setNameSimulationSet] = useState("");
+  const [numRobotSimulations, setNumRobotSimulations] = useState("");
 
   const [robots, setRobots] = useState([
     { robotSpeed: '', robotXlocation: '', robotYlocation: '', finalRobotXlocation: '', finalRobotYlocation: '' },
@@ -879,9 +881,15 @@ const Welcome = ({ username, onLogout }) => {
       startingIterationToSend = startingIteration
     }
 
+    if (numRobotSimulations === ""){
+      setNumRobotSimulations(1);
+    }
+
     const formData = {
         username,
         simulation: simulation,
+        nameOfSet: nameSimulationSet,
+        numOfSim: numRobotSimulations,
         height: parseFloat(height),
         numberOfRobots: robotsToSend.length,
         robots: robotsToSend,
@@ -965,6 +973,14 @@ const Welcome = ({ username, onLogout }) => {
 
   const toggleGrid = () =>{
     setShowGrid(!showGrid);
+  }
+
+  const  handleNumRobotSimulationsChange = (robotSim) => {
+    setNumRobotSimulations(robotSim);
+  }
+
+  const handleNameSimulationSetChange = (name) => {
+    setNameSimulationSet(name);
   }
 
   
@@ -1451,7 +1467,10 @@ const Welcome = ({ username, onLogout }) => {
                   return true;
                 })
                 .filter((gifObj) => {
-                  return gifObj.height == selectedHeight;
+                  if (gifObj.type !== 'robot') {
+                    return gifObj.height == selectedHeight;
+                  }
+                  return true;
                 })
                 
                 .map((gifObj, index) => (
@@ -1658,13 +1677,31 @@ const Welcome = ({ username, onLogout }) => {
                   </div>
                   <br />
                   <label>
-                    Starting Iteration
+                    Starting ambient Iteration
                     <HoverComponent text="Iteration of the plume simulation that the robot will start Default: 0" />  
                   </label>
                     <input 
                       type="integer"
                       value={startingIteration}
                       onChange={e => handleStartingIterationInputChange(e.target.value)}
+                    />
+                  <label>
+                    Number of simulations
+                    <HoverComponent text="Number of robot Simulations Default: 1" />  
+                  </label>
+                    <input 
+                      type="integer"
+                      value={numRobotSimulations}
+                      onChange={e => handleNumRobotSimulationsChange(e.target.value)}
+                    />
+                  <label>
+                    Name of the simulations set
+                    <HoverComponent text="Name that the set of simulations will have" />  
+                  </label>
+                    <input 
+                      type="text"
+                      value={nameSimulationSet}
+                      onChange={e => handleNameSimulationSetChange(e.target.value)}
                     />
                    {['pso'].includes(robotSimulationMode) && (
                         <>

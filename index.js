@@ -406,7 +406,7 @@ app.get('/getRobotSimulationID', (req, res) => {
 
 app.post('/silkworm_moth_simulation', async (req, res) => {
   try {
-    const { username, simulation, height, robots, startingIteration} = req.body;
+    const { username, simulation, height, robots, startingIteration, nameOfSet, numOfSim} = req.body;
 
     // Validate required parameters
     if (!username || !simulation || !height || !robots) {
@@ -417,6 +417,7 @@ app.post('/silkworm_moth_simulation', async (req, res) => {
 
     const simulationNumber = simulation.toString().split('_')[1];
     const numberOfRobots = robots.length;
+    const simulationSet = nameOfSet + "/" + numOfSim;
 
     const response = await axios.get('http://simulation:8000/silkworm_moth_simulation', {
       params: {
@@ -429,7 +430,7 @@ app.post('/silkworm_moth_simulation', async (req, res) => {
       }
     });
 
-        const message = response.data;
+    const message = response.data;
     const frames = message.frames;
     const robotSim_id = message.robotSim_id;
 
@@ -442,17 +443,17 @@ app.post('/silkworm_moth_simulation', async (req, res) => {
     });
 
     const queries = Object.entries(framesByIteration).map(([iteration, framesArray]) => {
-      const robotPath = JSON.stringify(framesArray);
+    const robotPath = JSON.stringify(framesArray);
       
       return new Promise((resolve, reject) => {
         pool.query(
           `UPDATE simulation_results 
-           SET robot_path = ? 
+           SET robot_path = ?, simulation_set = ?
            WHERE simulation = ? 
            AND type = 'robot'
            AND robotSim_id = ?
            AND iteration = ?`,
-          [robotPath, simulation, robotSim_id, iteration],
+          [robotPath, simulationSet, simulation, robotSim_id, iteration],
           (error, results) => {
             if (error) reject(error);
             else resolve(results);

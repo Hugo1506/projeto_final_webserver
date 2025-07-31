@@ -79,6 +79,7 @@ const Welcome = ({ username, onLogout }) => {
   const [filamentNoise, setFilamentNoise] = useState("");
   const [nameSimulationSet, setNameSimulationSet] = useState("");
   const [numRobotSimulations, setNumRobotSimulations] = useState("");
+  const [robotSetData, setRobotSetData] = useState("");
 
   const [robots, setRobots] = useState([
     { robotSpeed: '', robotXlocation: '', robotYlocation: '', finalRobotXlocation: '', finalRobotYlocation: '' },
@@ -934,6 +935,7 @@ const Welcome = ({ username, onLogout }) => {
       setActiveButton('robot');
       setShowCheckboxes(false);
       setRobotSimulation(false);
+      fetchRobotSetData(clickedGif?.simulation || (filteredGifs[0] && filteredGifs[0].simulation));
     }
   }
 
@@ -982,6 +984,21 @@ const Welcome = ({ username, onLogout }) => {
   const handleNameSimulationSetChange = (name) => {
     setNameSimulationSet(name);
   }
+
+  const fetchRobotSetData = async (simulation) => {
+  try {
+    const response = await fetch(`http://localhost:3000/getRobotSet?simulation=${simulation}`);
+    if (!response.ok) {
+      throw new Error('Failed to fetch robot simulation sets');
+    }
+    const data = await response.json();
+    console.log(data);
+    setRobotSetData(data);
+  } catch (error) {
+    console.error('Error fetching robot simulation sets:', error);
+    setRobotSetData([]);
+  }
+};
 
   
 
@@ -1388,6 +1405,35 @@ const Welcome = ({ username, onLogout }) => {
                 Robot Simulations
               </button>
             </div>
+             {activeButton === 'robot' && robotSetData && robotSetData.length > 0 && (
+              <div className={`saved-simulations-list ${fadeOut ? 'fade-out' : ''}`}>
+                <h3 className="simulation-title">Robot Simulation Sets</h3>
+                <ul>
+                  {robotSetData.map((set, idx) => (
+                    <li
+                      key={idx}
+                      className={`simulation-item ${fadeOut ? 'fade-out' : ''}`}
+                    >
+                      <div className="simulation-content">
+                        <div className="simulation-details">
+                          <strong>Name:</strong> {set.simulation_set ? set.simulation_set.split('/')[0] : 'Unnamed Set'} <br />
+                          <strong>Number of Simulations:</strong> {set.simulation_set ? set.simulation_set.split('/')[1] : '0'}
+                        </div>
+                        <div
+                          className="trash-icon"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openDeleteModal(set);
+                          }}
+                        >
+                          🗑️
+                        </div>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
             {showCheckboxes && (
               <div className="checkbox-filters">
                 <label>
@@ -1448,7 +1494,7 @@ const Welcome = ({ username, onLogout }) => {
           </div>
           <div className="gif-container">
 
-            {!loadingGifs && filteredGifs.length === 0 && (
+            {!loadingGifs && filteredGifs.length === 0 && !activeButton === 'robot' && (
               <p>No GIFs available for the selected options.</p>
             )}
 
@@ -1461,10 +1507,6 @@ const Welcome = ({ username, onLogout }) => {
                   if (activeButton === 'gaden') {
                     return ['heatmap', 'wind', 'contour'].includes(gifObj.type) && gifObj.iteration === currentIteration; 
                   }
-                  if (activeButton === 'robot') {
-                    return gifObj.type === 'robot' && gifObj.iteration === 0;  
-                  }
-                  return true;
                 })
                 .filter((gifObj) => {
                   if (gifObj.type !== 'robot') {

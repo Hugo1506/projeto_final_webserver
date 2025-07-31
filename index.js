@@ -480,11 +480,11 @@ app.post('/silkworm_moth_simulation', async (req, res) => {
 
 
 app.post('/pso_simmulation', async (req, res) => {
-  const { username, simulation, height, robots, startingIteration } = req.body;
+  const { username, simulation, height, robots, startingIteration, nameOfSet, numOfSim } = req.body;
 
   const numberOfRobots = robots.length;
   const simulationNumber = simulation.split('_')[1];
-
+  const simulationSet = nameOfSet + "/" + numOfSim;
   try {
     const response = await axios.get('http://simulation:8000/pso_simmulation', {
       params: {
@@ -515,12 +515,12 @@ app.post('/pso_simmulation', async (req, res) => {
       return new Promise((resolve, reject) => {
         pool.query(
           `UPDATE simulation_results 
-           SET robot_path = ? 
+           SET robot_path = ?, simulation_set = ?
            WHERE simulation = ? 
            AND type = 'robot'
            AND robotSim_id = ?
            AND iteration = ?`,
-          [robotPath, simulation, robotSim_id, iteration],
+          [robotPath,simulationSet, simulation, robotSim_id, iteration],
           (error, results) => {
             if (error) reject(error);
             else resolve(results);
@@ -546,11 +546,11 @@ app.post('/pso_simmulation', async (req, res) => {
 });
 
 app.post('/robotSimulation', async (req, res) => {
-  const { username, simulation, height, robots, startingIteration } = req.body;
+  const { username, simulation, height, robots, startingIteration, nameOfSet, numOfSim } = req.body;
 
   const numberOfRobots = robots.length;
   const simulationNumber = simulation.split('_')[1];
-
+  const simulationSet = nameOfSet + "/" + numOfSim;
   try {
     const response = await axios.get('http://simulation:8000/robot_simulation', {
       params: {
@@ -581,12 +581,12 @@ app.post('/robotSimulation', async (req, res) => {
       return new Promise((resolve, reject) => {
         pool.query(
           `UPDATE simulation_results 
-           SET robot_path = ? 
+           SET robot_path = ?, simulation_set = ?
            WHERE simulation = ? 
            AND type = 'robot'
            AND robotSim_id = ?
            AND iteration = ?`,
-          [robotPath, simulation, robotSim_id, iteration],
+          [robotPath,simulationSet, simulation, robotSim_id, iteration],
           (error, results) => {
             if (error) reject(error);
             else resolve(results);
@@ -753,28 +753,11 @@ app.get('/getEnviromentFrames', (req, res) => {
 app.get('/getSimulationResultsGifs', (req, res) => {
   const simulation = req.query.simulation;
   const queryGetSimulationResults = `
-    (
-      SELECT 
-        MIN(id) as id,
-        MIN(gif) as gif,
-        MIN(height) as height,
-        MIN(type) as type,
-        iteration,
-        robotSim_id,
-        MIN(robot_path) as robot_path
-      FROM simulation_results
-      WHERE simulation = ? AND type = 'robot'
-      GROUP BY iteration, robotSim_id
-    )
-    UNION ALL
-    (
       SELECT 
         id,
         gif, height, type, iteration, robotSim_id, robot_path
       FROM simulation_results
-      WHERE simulation = ? AND type != 'robot'
-    )
-  `;
+      WHERE simulation = ? AND type != 'robot'`;
 
   pool.query(queryGetSimulationResults, [simulation,simulation], (error, results) => {
     if (error) {
@@ -826,6 +809,32 @@ app.get('/getSimulationResultsGifs', (req, res) => {
         }
       });
     });
+  });
+});
+
+app.get('/getRobotSet', (req, res) => {
+  const simulation = req.query.simulation;
+  const queryGetSimulationResults = `
+      SELECT 
+        DISTINCT simulation_set
+      FROM simulation_results
+      WHERE simulation = ? AND type = 'robot'`;
+
+  pool.query(queryGetSimulationResults, [simulation], (error, results) => {
+    if (error) {
+      console.error(error);
+      return res.status(500).send('Internal Server Error');
+    }
+
+    if (results.length === 0) {
+      return res.status(404).send('Set not found');
+    }
+
+    const sets = results.map(result => ({
+      simulation_set: result.simulation_set
+    }));
+
+    res.json(sets); 
   });
 });
 

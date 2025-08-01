@@ -652,6 +652,30 @@ app.post ('/uploadPlumeLocation', (req, res) => {
   });
 });
 
+
+
+app.post('/deleteSimulationSet', (req, res) => {
+  const set = req.query.set;
+  const simulation = req.query.simulation;
+  const nameOfSet = set.split('/')[0].trim();
+
+  const query = `
+    DELETE FROM simulation_results
+    WHERE simulation = ?
+      AND simulation_set LIKE CONCAT(?, '/%')
+  `;
+
+  pool.query(query, [simulation, nameOfSet], (error, results) => {
+    if (error) {
+      console.error(error);
+      return res.status(500).send('Internal Server Error');
+    }
+    res.status(200).send('Simulation set removed successfully');
+  });
+});
+
+
+
 // rota que apaga a simulação
 app.post('/deleteSimulation', (req, res) => {
   const simulation = req.query.simulation;
@@ -816,7 +840,8 @@ app.get('/getRobotSet', (req, res) => {
   const simulation = req.query.simulation;
   const queryGetSimulationResults = `
       SELECT 
-        DISTINCT simulation_set
+        DISTINCT simulation_set,
+        simulation
       FROM simulation_results
       WHERE simulation = ? AND type = 'robot'`;
 
@@ -831,7 +856,8 @@ app.get('/getRobotSet', (req, res) => {
     }
 
     const sets = results.map(result => ({
-      simulation_set: result.simulation_set
+      simulation_set: result.simulation_set,
+      simulation: result.simulation
     }));
 
     res.json(sets); 

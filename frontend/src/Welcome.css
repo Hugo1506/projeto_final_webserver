@@ -528,6 +528,16 @@ select:focus {
   text-align: center;
 }
 
-.collapsible-section{
-  margin-bottom: 10px;
+.robot-sim-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.simulation-title {
+  text-align: center;
+}
+.search-bar {
+  margin: 10px auto 0 auto;
+  display: block;
 }

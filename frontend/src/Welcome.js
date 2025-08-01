@@ -80,6 +80,8 @@ const Welcome = ({ username, onLogout }) => {
   const [nameSimulationSet, setNameSimulationSet] = useState("");
   const [numRobotSimulations, setNumRobotSimulations] = useState("");
   const [robotSetData, setRobotSetData] = useState("");
+  const [robotSetSearch, setRobotSetSearch] = useState('');
+  const [setToDelete, setSetToDelete] = useState('');
 
   const [robots, setRobots] = useState([
     { robotSpeed: '', robotXlocation: '', robotYlocation: '', finalRobotXlocation: '', finalRobotYlocation: '' },
@@ -796,6 +798,16 @@ const Welcome = ({ username, onLogout }) => {
     setShowModal(true);
   };
 
+  const openSetDeleteModal = (set) => {
+    setSetToDelete(set);
+    setShowModal(true);
+  };
+
+  const closeSetModal = () => {
+    setShowModal(false);
+    setSetToDelete(null);
+  };
+
   const closeModal = () => {
     setShowModal(false);
     setSimulationToDelete(null);
@@ -817,6 +829,25 @@ const Welcome = ({ username, onLogout }) => {
       console.error('Error deleting simulation:', error);
       alert('Failed to delete simulation');
     }   
+  };
+
+  const confirmSetDelete = async () => {
+    console.log(setToDelete.simulation_set);
+    try {
+      const response = await fetch(`http://localhost:3000/deleteSimulationSet?set=${setToDelete.simulation_set}&&simulation=${setToDelete.simulation}`, {
+        method: 'POST',
+      });
+
+      if (!response.ok) {
+        const errorMessage = await response.text();
+        alert(`Error: ${errorMessage}`);
+      }
+      closeModal();
+      await fetchRobotSetData(setToDelete.simulation);
+    } catch (error) {
+      console.error('Error deleting simulation:', error);
+      alert('Failed to delete simulation');
+    }  
   };
 
   const handleGoBackSimulationDetails = () => {
@@ -999,6 +1030,15 @@ const Welcome = ({ username, onLogout }) => {
     setRobotSetData([]);
   }
 };
+
+const filteredRobotSets = robotSetData
+  ? robotSetData.filter(set =>
+      set.simulation_set &&
+      set.simulation_set.split('/')[0]
+        .toLowerCase()
+        .includes(robotSetSearch.toLowerCase())
+    )
+  : [];
 
   
 
@@ -1407,9 +1447,20 @@ const Welcome = ({ username, onLogout }) => {
             </div>
              {activeButton === 'robot' && robotSetData && robotSetData.length > 0 && (
               <div className={`saved-simulations-list ${fadeOut ? 'fade-out' : ''}`}>
-                <h3 className="simulation-title">Robot Simulation Sets</h3>
+                <div className="robot-sim-header">
+                  <input
+                    ref={searchInputRef}
+                    type="text"
+                    className="search-bar"
+                    placeholder="Search by name of the set"
+                    value={robotSetSearch}
+                    onChange={e => setRobotSetSearch(e.target.value)}
+                  />
+                  <h3 className="simulation-title">Robot Simulation Sets</h3>
+                </div>
                 <ul>
-                  {robotSetData.map((set, idx) => (
+                  {filteredRobotSets
+                  .map((set, idx) => (
                     <li
                       key={idx}
                       className={`simulation-item ${fadeOut ? 'fade-out' : ''}`}
@@ -1423,7 +1474,7 @@ const Welcome = ({ username, onLogout }) => {
                           className="trash-icon"
                           onClick={(e) => {
                             e.stopPropagation();
-                            openDeleteModal(set);
+                            openSetDeleteModal(set);
                           }}
                         >
                           🗑️
@@ -1433,7 +1484,15 @@ const Welcome = ({ username, onLogout }) => {
                   ))}
                 </ul>
               </div>
+
             )}
+            {showModal && (
+                <ConfirmationModal
+                  message="Are you sure you want to delete this set?"
+                  onConfirm={confirmSetDelete}
+                  onCancel={closeSetModal}
+                />
+              )}
             {showCheckboxes && (
               <div className="checkbox-filters">
                 <label>

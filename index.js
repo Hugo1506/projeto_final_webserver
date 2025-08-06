@@ -405,7 +405,6 @@ app.get('/getRobotSimulationID', (req, res) => {
 
 
 app.post('/silkworm_moth_simulation', async (req, res) => {
-  try {
     const { username, simulation, height, robots, startingIteration, nameOfSet, numOfSim} = req.body;
 
     // Validate required parameters
@@ -417,66 +416,65 @@ app.post('/silkworm_moth_simulation', async (req, res) => {
 
     const simulationNumber = simulation.toString().split('_')[1];
     const numberOfRobots = robots.length;
-    const simulationSet = nameOfSet + "/" + numOfSim;
+    res.status(202).json({ message: 'Simulation started. Processing in background.' });
 
-    const response = await axios.get('http://simulation:8000/silkworm_moth_simulation', {
-      params: {
-        username,
-        simulationNumber,
-        height,
-        numberOfRobots,
-        startingIteration,
-        robots: JSON.stringify(robots)
-      }
-    });
-
-    const message = response.data;
-    const frames = message.frames;
-    const robotSim_id = message.robotSim_id;
-
-    const framesByIteration = {};
-    frames.forEach(frame => {
-      if (!framesByIteration[frame.iteration]) {
-        framesByIteration[frame.iteration] = [];
-      }
-      framesByIteration[frame.iteration].push(frame);
-    });
-
-    const queries = Object.entries(framesByIteration).map(([iteration, framesArray]) => {
-    const robotPath = JSON.stringify(framesArray);
-      
-      return new Promise((resolve, reject) => {
-        pool.query(
-          `UPDATE simulation_results 
-           SET robot_path = ?, simulation_set = ?
-           WHERE simulation = ? 
-           AND type = 'robot'
-           AND robotSim_id = ?
-           AND iteration = ?`,
-          [robotPath, simulationSet, simulation, robotSim_id, iteration],
-          (error, results) => {
-            if (error) reject(error);
-            else resolve(results);
+    (async () => {
+    for (let currentSimulationNumber  = 1; currentSimulationNumber< Number(numOfSim)+1; currentSimulationNumber++){
+      const simulationSet = nameOfSet + "/" + currentSimulationNumber+"/"+numOfSim;
+      console.log(`Running simulation number: ${currentSimulationNumber} / ${numOfSim}`);
+      try {
+        const response = await axios.get('http://simulation:8000/silkworm_moth_simulation', {
+          params: {
+            username,
+            simulationNumber,
+            height,
+            numberOfRobots,
+            startingIteration,
+            robots: JSON.stringify(robots)
           }
-        );
-      });
-    });
+        });
 
-    await Promise.all(queries);
+        const message = response.data;
+        const frames = message.frames;
+        const robotSim_id = message.robotSim_id;
 
-    res.status(200).json({ 
-      message: 'Simulation data saved successfully',
-      robotSim_id: robotSim_id
-    });
+        const framesByIteration = {};
+        frames.forEach(frame => {
+          if (!framesByIteration[frame.iteration]) {
+            framesByIteration[frame.iteration] = [];
+          }
+          framesByIteration[frame.iteration].push(frame);
+        });
 
-  } catch (error) {
-    console.error('Error in silkworm_moth_simulation:', error);
-    res.status(500).json({ 
-      error: 'Failed to process simulation data',
-      details: error.message 
-    });
+            const queries = Object.entries(framesByIteration).map(([iteration, framesArray]) => {
+              const robotPath = JSON.stringify(framesArray);
+              return new Promise((resolve, reject) => {
+                pool.query(
+                  `UPDATE simulation_results 
+                  SET robot_path = ?, simulation_set = ?
+                  WHERE simulation = ? 
+                  AND type = 'robot'
+                  AND robotSim_id = ?
+                  AND iteration = ?`,
+                  [robotPath, simulationSet, simulation, robotSim_id, iteration],
+                  (error, results) => {
+                    if (error) reject(error);
+                    else resolve(results);
+                  }
+                );
+              });
+            });
+
+            await Promise.all(queries);
+
+            console.log(`Robot simulation for ${simulation} completed.`);
+          } catch (error) {
+            console.error('Background robotSimulation error:', error);
+          }
+      }
+    })();
   }
-});
+);
 
 
 app.post('/pso_simmulation', async (req, res) => {
@@ -484,132 +482,133 @@ app.post('/pso_simmulation', async (req, res) => {
 
   const numberOfRobots = robots.length;
   const simulationNumber = simulation.split('_')[1];
-  const simulationSet = nameOfSet + "/" + numOfSim;
-  try {
-    const response = await axios.get('http://simulation:8000/pso_simmulation', {
-      params: {
-        username,
-        simulationNumber,
-        height,
-        numberOfRobots,
-        startingIteration,
-        robots: JSON.stringify(robots)
-      }
-    });
-
-    const message = response.data;
-    const frames = message.frames;
-    const robotSim_id = message.robotSim_id;
-
-    const framesByIteration = {};
-    frames.forEach(frame => {
-      if (!framesByIteration[frame.iteration]) {
-        framesByIteration[frame.iteration] = [];
-      }
-      framesByIteration[frame.iteration].push(frame);
-    });
-
-    const queries = Object.entries(framesByIteration).map(([iteration, framesArray]) => {
-      const robotPath = JSON.stringify(framesArray);
-      
-      return new Promise((resolve, reject) => {
-        pool.query(
-          `UPDATE simulation_results 
-           SET robot_path = ?, simulation_set = ?
-           WHERE simulation = ? 
-           AND type = 'robot'
-           AND robotSim_id = ?
-           AND iteration = ?`,
-          [robotPath,simulationSet, simulation, robotSim_id, iteration],
-          (error, results) => {
-            if (error) reject(error);
-            else resolve(results);
-          }
-        );
+  (async () => {
+  for (let currentSimulationNumber  = 1; currentSimulationNumber< Number(numOfSim)+1; currentSimulationNumber++){
+    const simulationSet = nameOfSet + "/" + currentSimulationNumber+"/"+numOfSim;
+    console.log(`Running simulation number: ${currentSimulationNumber} / ${numOfSim}`);
+    try {
+      const response = await axios.get('http://simulation:8000/pso_simmulation', {
+        params: {
+          username,
+          simulationNumber,
+          height,
+          numberOfRobots,
+          startingIteration,
+          robots: JSON.stringify(robots)
+        }
       });
-    });
 
-    await Promise.all(queries);
+      const message = response.data;
+      const frames = message.frames;
+      const robotSim_id = message.robotSim_id;
 
-    res.status(200).json({ 
-      message: 'Simulation data saved successfully',
-      robotSim_id: robotSim_id
-    });
+      const framesByIteration = {};
+      frames.forEach(frame => {
+        if (!framesByIteration[frame.iteration]) {
+          framesByIteration[frame.iteration] = [];
+        }
+        framesByIteration[frame.iteration].push(frame);
+      });
 
-  } catch (error) {
-    console.error('Error:', error);
-    res.status(500).json({ 
-      error: 'Failed to process simulation data',
-      details: error.message 
-    });
+
+        const queries = Object.entries(framesByIteration).map(([iteration, framesArray]) => {
+          const robotPath = JSON.stringify(framesArray);
+          return new Promise((resolve, reject) => {
+            pool.query(
+              `UPDATE simulation_results 
+              SET robot_path = ?, simulation_set = ?
+              WHERE simulation = ? 
+              AND type = 'robot'
+              AND robotSim_id = ?
+              AND iteration = ?`,
+              [robotPath, simulationSet, simulation, robotSim_id, iteration],
+              (error, results) => {
+                if (error) reject(error);
+                else resolve(results);
+              }
+            );
+          });
+        });
+
+        await Promise.all(queries);
+
+        console.log(`Robot simulation for ${simulation} completed.`);
+      } catch (error) {
+        console.error('Background robotSimulation error:', error);
+      }
+      }
+    })();
   }
-});
+);
+
+
+
 
 app.post('/robotSimulation', async (req, res) => {
   const { username, simulation, height, robots, startingIteration, nameOfSet, numOfSim } = req.body;
-
   const numberOfRobots = robots.length;
   const simulationNumber = simulation.split('_')[1];
-  const simulationSet = nameOfSet + "/" + numOfSim;
-  try {
-    const response = await axios.get('http://simulation:8000/robot_simulation', {
-      params: {
-        username,
-        simulationNumber,
-        height,
-        numberOfRobots,
-        startingIteration,  
-        robots: JSON.stringify(robots)
+  
+
+  res.status(202).json({ message: 'Simulation started. Processing in background.' });
+  
+    (async () => {
+      for (let currentSimulationNumber  = 1; currentSimulationNumber< Number(numOfSim)+1; currentSimulationNumber++){
+        const simulationSet = nameOfSet + "/" + currentSimulationNumber+"/"+numOfSim;
+        console.log(`Running simulation number: ${currentSimulationNumber} / ${numOfSim}`);
+        try {
+          const response = await axios.get('http://simulation:8000/robot_simulation', {
+            params: {
+              username,
+              simulationNumber,
+              height,
+              numberOfRobots,
+              startingIteration,  
+              robots: JSON.stringify(robots)
+            }
+          });
+
+          const message = response.data;
+          const frames = message.frames;
+          const robotSim_id = message.robotSim_id;
+
+          const framesByIteration = {};
+          frames.forEach(frame => {
+            if (!framesByIteration[frame.iteration]) {
+              framesByIteration[frame.iteration] = [];
+            }
+            framesByIteration[frame.iteration].push(frame);
+          });
+
+          const queries = Object.entries(framesByIteration).map(([iteration, framesArray]) => {
+            const robotPath = JSON.stringify(framesArray);
+            return new Promise((resolve, reject) => {
+              pool.query(
+                `UPDATE simulation_results 
+                SET robot_path = ?, simulation_set = ?
+                WHERE simulation = ? 
+                AND type = 'robot'
+                AND robotSim_id = ?
+                AND iteration = ?`,
+                [robotPath, simulationSet, simulation, robotSim_id, iteration],
+                (error, results) => {
+                  if (error) reject(error);
+                  else resolve(results);
+                }
+              );
+            });
+          });
+
+          await Promise.all(queries);
+
+          console.log(`Robot simulation for ${simulation} completed.`);
+        } catch (error) {
+          console.error('Background robotSimulation error:', error);
+        }
       }
-    });
-
-    const message = response.data;
-    const frames = message.frames;
-    const robotSim_id = message.robotSim_id;
-
-    const framesByIteration = {};
-    frames.forEach(frame => {
-      if (!framesByIteration[frame.iteration]) {
-        framesByIteration[frame.iteration] = [];
-      }
-      framesByIteration[frame.iteration].push(frame);
-    });
-
-    const queries = Object.entries(framesByIteration).map(([iteration, framesArray]) => {
-      const robotPath = JSON.stringify(framesArray);
-      
-      return new Promise((resolve, reject) => {
-        pool.query(
-          `UPDATE simulation_results 
-           SET robot_path = ?, simulation_set = ?
-           WHERE simulation = ? 
-           AND type = 'robot'
-           AND robotSim_id = ?
-           AND iteration = ?`,
-          [robotPath,simulationSet, simulation, robotSim_id, iteration],
-          (error, results) => {
-            if (error) reject(error);
-            else resolve(results);
-          }
-        );
-      });
-    });
-
-    await Promise.all(queries);
-
-    res.status(200).json({ 
-      message: 'Simulation data saved successfully',
-      robotSim_id: robotSim_id
-    });
-
-  } catch (error) {
-    console.error('Error:', error);
-    res.status(500).json({ 
-      error: 'Failed to process simulation data',
-      details: error.message 
-    });
+    })();
   }
-});
+);
 
 
 app.post ('/uploadPlumeLocation', (req, res) => {

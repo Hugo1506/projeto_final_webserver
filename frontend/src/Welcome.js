@@ -82,6 +82,8 @@ const Welcome = ({ username, onLogout }) => {
   const [robotSetData, setRobotSetData] = useState("");
   const [robotSetSearch, setRobotSetSearch] = useState('');
   const [setToDelete, setSetToDelete] = useState('');
+  const [filteredRobotSets, setFilteredRobotSets] = useState([]);
+
 
   const [robots, setRobots] = useState([
     { robotSpeed: '', robotXlocation: '', robotYlocation: '', finalRobotXlocation: '', finalRobotYlocation: '' },
@@ -1031,15 +1033,102 @@ const Welcome = ({ username, onLogout }) => {
   }
 };
 
-const filteredRobotSets = robotSetData
-  ? robotSetData.filter(set =>
-      set.simulation_set &&
-      set.simulation_set.split('/')[0]
-        .toLowerCase()
-        .includes(robotSetSearch.toLowerCase())
-    )
-  : [];
+useEffect(() => {
+  if (!robotSetData || !Array.isArray(robotSetData)) {
+    setFilteredRobotSets([]);
+    return;
+  }
 
+  const setMap = {};
+
+  robotSetData.forEach(set => {
+    if (!set.simulation_set) return;
+    const [base, rest] = set.simulation_set.split('/');
+    if (!base || !rest) return;
+
+    let numberStr = rest.split(/[:/]/)[0];
+    let number = parseInt(numberStr, 10);
+    if (isNaN(number)) number = -Infinity;
+
+    if (!setMap[base] || setMap[base].number < number) {
+      setMap[base] = {
+        ...set,
+        number,
+        simulation_set: set.simulation_set 
+      };
+    }
+  });
+
+  const sets = Object.values(setMap)
+    .filter(set =>
+      set.simulation_set &&
+      set.simulation_set.split('/')[0].toLowerCase().includes(robotSetSearch.toLowerCase())
+    )
+    .sort((a, b) => b.number - a.number);
+
+  setFilteredRobotSets(sets);
+}, [robotSetData, robotSetSearch]);
+
+useEffect(() => {
+  // Always clear previous interval
+  if (intervalRef.current) {
+    clearInterval(intervalRef.current);
+    intervalRef.current = null;
+  }
+
+  if (!robotSetData || !Array.isArray(robotSetData) || filteredRobotSets.length === 0) return;
+
+  // Find the largest set for each base
+  let shouldPoll = false;
+  let pollSimulation = null;
+
+  filteredRobotSets.forEach(set => {
+    if (!set.simulation_set) return;
+    const parts = set.simulation_set.split('/');
+    if (parts.length < 2) return;
+    // Support "x/y" or "x:y"
+    const [xStr, yStr] = parts[1].includes(':') ? parts[1].split(':') : parts[1].split('/');
+    const x = parseInt(xStr, 10);
+    const y = parseInt(yStr, 10);
+    if (x < y) {
+      shouldPoll = true;
+      pollSimulation = set.simulation;
+    }
+  });
+
+  if (shouldPoll && pollSimulation) {
+    intervalRef.current = setInterval(() => {
+      fetchRobotSetData(pollSimulation);
+    }, 5000);
+  }
+
+  return () => {
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+  };
+}, [robotSetData, filteredRobotSets]);
+
+
+useEffect(() => {
+  if (activeButton === 'robot' && simulationDetail) {
+    intervalRef.current = setInterval(() => {
+      const simulation =
+        clickedGif?.simulation ||
+        (filteredGifs[0] && filteredGifs[0].simulation);
+      if (simulation) {
+        fetchRobotSetData(simulation);
+      }
+    }, 5000);
+  }
+  return () => {
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+  };
+}, [activeButton, simulationDetail, clickedGif, filteredGifs]);
   
 
   return (
@@ -1468,8 +1557,7 @@ const filteredRobotSets = robotSetData
                       <div className="simulation-content">
                         <div className="simulation-details">
                           <strong>Name:</strong> {set.simulation_set ? set.simulation_set.split('/')[0] : 'Unnamed Set'} <br />
-                          <strong>Number of Simulations:</strong> {set.simulation_set ? set.simulation_set.split('/')[1] : '0'}
-                        </div>
+                          <strong>Number of Simulations:</strong> {set.simulation_set ? set.simulation_set.split('/').slice(1).join('/') : '0'}                        </div>
                         <div
                           className="trash-icon"
                           onClick={(e) => {

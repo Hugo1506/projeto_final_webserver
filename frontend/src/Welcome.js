@@ -83,6 +83,9 @@ const Welcome = ({ username, onLogout }) => {
   const [robotSetSearch, setRobotSetSearch] = useState('');
   const [setToDelete, setSetToDelete] = useState('');
   const [filteredRobotSets, setFilteredRobotSets] = useState([]);
+  const [gifsInSet, setGifsInSet] = useState([]); 
+  const [selectedSetSimId, setSelectedSetSimId] = useState(null); 
+  const [showRobotSetDetail, setShowRobotSetDetail] = useState(false);
 
 
   const [robots, setRobots] = useState([
@@ -356,6 +359,73 @@ const Welcome = ({ username, onLogout }) => {
       setLoadingGifs(false); 
     }
   };
+
+ const fetchGifsFromSet = async (set) => {
+  try {
+    setLoadingGifs(true);
+
+    const response = await fetch(`http://localhost:3000/getGifsFromSimulation?set=${set.simulation_set}&&simulation=${set.simulation}`);
+    if (!response.ok) {
+      throw new Error('Failed to fetch GIFs');
+    }
+
+    const gifsData = await response.json();
+
+    const gifs = gifsData.map(({ gif, height, type, iteration, robotSim_id, robot_path }) => {
+      const byteCharacters = atob(gif);
+      const byteArrays = [];
+
+      for (let offset = 0; offset < byteCharacters.length; offset += 1024) {
+        const byteArray = new Uint8Array(Math.min(byteCharacters.length - offset, 1024));
+        for (let i = 0; i < byteArray.length; i++) {
+          byteArray[i] = byteCharacters.charCodeAt(offset + i);
+        }
+        byteArrays.push(byteArray);
+      }
+
+      const blob = new Blob(byteArrays, { type: 'image/gif' });
+      const url = URL.createObjectURL(blob);
+
+      return {
+        url,
+        height,
+        type,
+        simulation: set.simulation,
+        iteration,
+        robotSim_id,
+        robot_path: (() => {
+          try {
+            return typeof robot_path === 'string' ? JSON.parse(robot_path) : robot_path;
+          } catch (e) {
+            console.warn("Failed to parse robot_path:", e);
+            return [];
+          }
+        })()
+      };
+    });
+
+    const uniqueHeights = [...new Set(gifs.map(gif => gif.height))];
+    const minHeight = Math.min(...uniqueHeights);
+    setSelectedHeight(minHeight);
+    setAvailableHeights(uniqueHeights);
+
+    const gifTypes = gifs.map(g => g.type);
+    setCheckedOptions({
+      all: true,
+      heatmap: gifTypes.includes('heatmap'),
+      wind: gifTypes.includes('wind'),
+      contour: gifTypes.includes('contour'),
+      [minHeight]: true,
+    });
+
+    return gifs; 
+  } catch (error) {
+    console.error('Error fetching GIFs:', error);
+    return []; 
+  } finally {
+    setLoadingGifs(false);
+  }
+};
 
   const fetchGifsFromResults = async (simulation) => {
     try {
@@ -689,6 +759,29 @@ const Welcome = ({ username, onLogout }) => {
     }, 500);
   };
 
+
+  const handleSetClick = async (set) => {
+    setGifs([]);
+    setGifsInSet([]); 
+    setSelectedSetSimId(null);
+    setShowRobotSetDetail(true); 
+    setSimulationDetail(false);
+
+    const newGifs = await fetchGifsFromSet(set);
+    setGifsInSet(newGifs);
+
+    if (newGifs.length > 0) {
+      setSelectedSetSimId(newGifs[0].robotSim_id);
+      setGifs(newGifs.filter(g => g.robotSim_id === newGifs[0].robotSim_id));
+    }
+  };
+
+  const handleGoBackRobotSetDetail = () => {
+    setShowRobotSetDetail(false);
+    setGifsInSet([]);
+    setGifs([]);
+    setSelectedSetSimId(null);
+  };
 
   const handleSimulationClick = async (simulation) => {
     setGifs([]);
@@ -1151,7 +1244,7 @@ useEffect(() => {
         />
       </div>
       <div className="main-content">
-        {!gadenSimulationClickVisible && !fileInputVisible && !GadenChoiseVisible && !isNewSimulation && !savedSimulationsVisible && !simulationDetail? (
+        {!showRobotSetDetail && !gadenSimulationClickVisible && !fileInputVisible && !GadenChoiseVisible && !isNewSimulation && !savedSimulationsVisible && !simulationDetail? (
           <button
             className={`gaden-button ${fadeOut ? 'fade-out' : ''}`}
             onClick={handleGadenClick}
@@ -1555,7 +1648,10 @@ useEffect(() => {
                       className={`simulation-item ${fadeOut ? 'fade-out' : ''}`}
                     >
                       <div className="simulation-content">
-                        <div className="simulation-details">
+                        <div 
+                          className="simulation-details"
+                          onClick={() => handleSetClick(set)}
+                        >
                           <strong>Name:</strong> {set.simulation_set ? set.simulation_set.split('/')[0] : 'Unnamed Set'} <br />
                           <strong>Number of Simulations:</strong> {set.simulation_set ? set.simulation_set.split('/').slice(1).join('/') : '0'}                        </div>
                         <div
@@ -1640,7 +1736,6 @@ useEffect(() => {
           )}
           </div>
           <div className="gif-container">
-
             {!loadingGifs && filteredGifs.length === 0 && !activeButton === 'robot' && (
               <p>No GIFs available for the selected options.</p>
             )}
@@ -1681,6 +1776,57 @@ useEffect(() => {
       </>
       )}
       </div>
+      {showRobotSetDetail && (
+        <div className="robot-set-detail">
+          <button
+            className={`go-back-simulation-details ${fadeOut ? 'fade-out' : ''}`}
+            onClick={handleGoBackRobotSetDetail}
+          >
+            Go Back
+          </button>
+          <div className="robot-set-simulations">
+            <label>
+              Select Simulation in Set:&nbsp;
+              <select
+                value={selectedSetSimId}
+                onChange={e => {
+                  setSelectedSetSimId(Number(e.target.value));
+                  setGifs(gifsInSet.filter(g => g.robotSim_id === Number(e.target.value)));
+                }}
+              >
+                {[...new Set(gifsInSet.map(g => g.robotSim_id))]
+                  .filter(id => id !== undefined && id !== null)
+                  .map(id => (
+                    <option key={id} value={id}>
+                      Simulation {id}
+                    </option>
+                  ))}
+              </select>
+            </label>
+            <div className="gif-container">
+              {gifs.map((gifObj, idx) => (
+                <div key={idx} className="gif-description">
+                  <h3>Height: {gifObj.height ?? 'Unknown'}</h3>
+                  <img src={gifObj.url} alt={`Simulation GIF ${idx + 1}`} className="gif-image" />
+                  <div>
+                    <h4>Robot Path:</h4>
+                    <ul>
+                      {(gifObj.robot_path || []).map((point, i) => (
+                        <li key={i}>
+                          <strong>Robot:</strong> {point.robot} <br />
+                          <strong>Position:</strong> (x: {point.robot_position.x}, y: {point.robot_position.y}, z: {point.robot_position.z})<br />
+                          <strong>Concentration:</strong> {point.concentration}<br />
+                          <strong>Current:</strong> (x: {point.wind_speed.x}, y: {point.wind_speed.y}, z: {point.wind_speed.z})
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
       {gadenSimulationClickVisible && clickedGif && robotSimulation && (
         <div className="gaden-simulation-click">
           <button

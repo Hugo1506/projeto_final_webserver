@@ -86,7 +86,7 @@ const Welcome = ({ username, onLogout }) => {
   const [gifsInSet, setGifsInSet] = useState([]); 
   const [selectedSetSimId, setSelectedSetSimId] = useState(null); 
   const [showRobotSetDetail, setShowRobotSetDetail] = useState(false);
-
+  const [parentSimulationOfSet, setParentSimulationOfSet] = useState("");
 
   const [robots, setRobots] = useState([
     { robotSpeed: '', robotXlocation: '', robotYlocation: '', finalRobotXlocation: '', finalRobotYlocation: '' },
@@ -95,65 +95,6 @@ const Welcome = ({ username, onLogout }) => {
     { robotSpeed: '', robotXlocation: '', robotYlocation: '', finalRobotXlocation: '', finalRobotYlocation: '' },
   ]);
 
-
-
-
-
-  const handleRobotInputChange = (idx, field, value) => {
-    setRobots(prev =>
-      prev.map((robot, i) =>
-        i === idx ? { ...robot, [field]: value } : robot
-      )
-    );
-  };
-
-  useEffect(() => {
-    if (!relatedGifs || relatedGifs.length === 0) {
-      setRobotNumbers([]);
-      return;
-    }
-    const robotsAtZero = relatedGifs
-      .filter(gifObj => gifObj.iteration === 0 && Array.isArray(gifObj.robot_path))
-      .flatMap(gifObj => gifObj.robot_path.map(point => point.robot));
-    const uniqueRobots = Array.from(new Set(robotsAtZero));
-    setRobotNumbers(uniqueRobots);
-  }, [relatedGifs]);
-
-
-  const handleImageLoaded = (url) => {
-    setImageLoaded((prevState) => ({
-      ...prevState,
-      [url]: true,
-    }));
-  };
-  
-  useEffect(() => {
-    if (isPausedGaden) {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-      }
-      return; 
-    }
-
-    const speed = gadenSimulationOriginalSpeed / gadenSimulationSpeed;
-
-    if (maxIteration > 0) {
-      intervalRef.current = setInterval(() => {
-        setCurrentIteration(prev => {
-          if (prev < maxIteration) {
-            return prev + 1; 
-          } else {
-            return minIteration;
-          }
-        });
-      }, speed); 
-    }
-    return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current); 
-      }
-    };
-  }, [relatedGifs, maxIteration, isPausedGaden, gadenSimulationSpeed, gadenSimulationOriginalSpeed]);
 
 
   const [checkedOptions, setCheckedOptions] = useState({
@@ -169,6 +110,102 @@ const Welcome = ({ username, onLogout }) => {
     ? gifs
     : gifs
         .filter((gif) => checkedOptions[gif.type])
+  
+
+
+
+
+  const handleRobotInputChange = (idx, field, value) => {
+    setRobots(prev =>
+      prev.map((robot, i) =>
+        i === idx ? { ...robot, [field]: value } : robot
+      )
+    );
+  };
+
+useEffect(() => {
+  let sourceGifs = [];
+  if (showRobotSetDetail && gifsInSet && gifsInSet.length > 0) {
+    // Use only gifs from the selected set
+    sourceGifs = gifsInSet.filter(gifObj => gifObj.robotSim_id === selectedSetSimId);
+  } else if (relatedGifs && relatedGifs.length > 0) {
+    sourceGifs = relatedGifs;
+  } else {
+    setRobotNumbers([]);
+    return;
+  }
+
+  const robotsAtZero = sourceGifs
+    .filter(gifObj => gifObj.iteration === 0 && Array.isArray(gifObj.robot_path))
+    .flatMap(gifObj => gifObj.robot_path.map(point => point.robot));
+  const uniqueRobots = Array.from(new Set(robotsAtZero));
+  setRobotNumbers(uniqueRobots);
+}, [relatedGifs, gifsInSet, selectedSetSimId, showRobotSetDetail]);
+
+
+  const handleImageLoaded = (url) => {
+    setImageLoaded((prevState) => ({
+      ...prevState,
+      [url]: true,
+    }));
+  };
+  
+useEffect(() => {
+  // Always clear previous interval
+  if (intervalRef.current) {
+    clearInterval(intervalRef.current);
+    intervalRef.current = null;
+  }
+
+  // Only run if not paused
+  if (isPausedGaden) return;
+
+  let minIter, maxIter;
+  if (showRobotSetDetail) {
+    const simGifs = gifsInSet.filter(g => g.robotSim_id === selectedSetSimId);
+    if (!simGifs.length) return;
+    minIter = Math.min(...simGifs.map(g => g.iteration));
+    maxIter = Math.max(...simGifs.map(g => g.iteration));
+  } else if (gadenSimulationClickVisible || simulationDetail) {
+    if (!filteredGifs.length) return;
+    minIter = Math.min(...filteredGifs.map(g => g.iteration));
+    maxIter = Math.max(...filteredGifs.map(g => g.iteration));
+  } else {
+    return;
+  }
+
+  const speed = gadenSimulationOriginalSpeed / gadenSimulationSpeed;
+
+  intervalRef.current = setInterval(() => {
+    setCurrentIteration(prev => {
+      if (prev < maxIter) {
+        return prev + 1;
+      } else {
+        return minIter;
+      }
+    });
+  }, speed);
+
+  return () => {
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+  };
+}, [
+  isPausedGaden,
+  gadenSimulationSpeed,
+  gadenSimulationOriginalSpeed,
+  showRobotSetDetail,
+  gifsInSet,
+  selectedSetSimId,
+  filteredGifs,
+  gadenSimulationClickVisible,
+  simulationDetail
+]);
+
+
+
   
 
   // verifica qual é a iteração máxima 
@@ -766,6 +803,7 @@ const Welcome = ({ username, onLogout }) => {
     setSelectedSetSimId(null);
     setShowRobotSetDetail(true); 
     setSimulationDetail(false);
+    setParentSimulationOfSet(set.simulation)
 
     const newGifs = await fetchGifsFromSet(set);
     setGifsInSet(newGifs);
@@ -776,11 +814,13 @@ const Welcome = ({ username, onLogout }) => {
     }
   };
 
-  const handleGoBackRobotSetDetail = () => {
+  const handleGoBackRobotSetDetail = async () => {
     setShowRobotSetDetail(false);
     setGifsInSet([]);
     setGifs([]);
     setSelectedSetSimId(null);
+    setSimulationDetail(true);
+    await fetchGifsFromResults(parentSimulationOfSet);
   };
 
   const handleSimulationClick = async (simulation) => {
@@ -1775,58 +1815,141 @@ useEffect(() => {
 
       </>
       )}
-      </div>
       {showRobotSetDetail && (
-        <div className="robot-set-detail">
+        <div className="gaden-simulation-click">
           <button
             className={`go-back-simulation-details ${fadeOut ? 'fade-out' : ''}`}
             onClick={handleGoBackRobotSetDetail}
           >
             Go Back
           </button>
-          <div className="robot-set-simulations">
-            <label>
-              Select Simulation in Set:&nbsp;
-              <select
-                value={selectedSetSimId}
-                onChange={e => {
-                  setSelectedSetSimId(Number(e.target.value));
-                  setGifs(gifsInSet.filter(g => g.robotSim_id === Number(e.target.value)));
-                }}
-              >
-                {[...new Set(gifsInSet.map(g => g.robotSim_id))]
-                  .filter(id => id !== undefined && id !== null)
-                  .map(id => (
-                    <option key={id} value={id}>
-                      Simulation {id}
+          <div className="content-container">
+            <div className="gif-description-robot">
+              {gifsInSet
+                .filter(gifObj => gifObj.robotSim_id === selectedSetSimId && gifObj.iteration === currentIteration)
+                .map((gifObj, index) => (
+                  <div key={index} className="gif-description">
+                    <div className="Simulation-set-select-container">
+                      <label>
+                        Select Simulation in Set:&nbsp;
+                        <select
+                          value={selectedSetSimId}
+                          onChange={e => {
+                            const simId = Number(e.target.value);
+                            setSelectedSetSimId(simId);
+                            setCurrentIteration(0);
+                            setGifs(gifsInSet.filter(g => g.robotSim_id === simId));
+                          }}
+                        >
+                          {[...new Set(gifsInSet.map(g => g.robotSim_id))]
+                            .filter(id => id !== undefined && id !== null)
+                            .map(id => (
+                              <option key={id} value={id}>
+                                Simulation {id}
+                              </option>
+                            ))}
+                        </select>
+                      </label>
+                    </div>
+                    <h3>Height: {gifObj.height ?? 'Unknown'}</h3>
+                    <h3>Iteration: {gifObj.iteration}</h3>
+                    <GifWithGrid
+                      gifObj={gifObj}
+                      simulationBounds={simulationBounds}
+                      robots={robots}
+                      selectedRobotIdx={selectedRobotIdx}
+                      grid={showGrid}
+                      numberOfRobots={selectedRobotNumber}
+                      type={robotSimulationMode}
+                      onSetRobotCoords={() => {}}
+                    />
+                    <div className="button-container-gaden-gif">
+                      <div>
+                        <button onClick={handleIterationBackGaden}>
+                          {currentIteration > minIteration && isPausedGaden ? '⏮️' : '🚫'}
+                        </button>
+                        <button onClick={handlePauseResume}>
+                          {isPausedGaden ? '▶️' : '⏸️'}
+                        </button>
+                        <button onClick={handleIterationForwardGaden}>
+                          {currentIteration < maxIteration && isPausedGaden ? '⏭️' : '🚫'}
+                        </button>
+                      </div>
+                      <div>
+                        <button onClick={handleChangeSimulationSpeedGaden}>
+                          {gadenSimulationSpeed}x
+                        </button>
+                        <button onClick={() => setCurrentIteration(minIteration)}>
+                          ↻
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+            </div>
+            <div className="robot-path-list-container">
+              <h4>Robot Path:</h4>
+              <div className="checkbox-filters">
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={showTotalStatsRobotSim}
+                    onChange={() => setShowTotalStatsRobotSim((prev) => !prev)}
+                  />
+                  show total stats
+                </label>
+                <br />
+                <select
+                  value={selectedRobotFilter}
+                  onChange={e => setSelectedRobotFilter(e.target.value)}
+                >
+                  <option value="all">All Robots</option>
+                  {robotNumbers.map(robotNum => (
+                    <option key={robotNum} value={robotNum}>
+                      Robot {robotNum}
                     </option>
                   ))}
-              </select>
-            </label>
-            <div className="gif-container">
-              {gifs.map((gifObj, idx) => (
-                <div key={idx} className="gif-description">
-                  <h3>Height: {gifObj.height ?? 'Unknown'}</h3>
-                  <img src={gifObj.url} alt={`Simulation GIF ${idx + 1}`} className="gif-image" />
-                  <div>
-                    <h4>Robot Path:</h4>
-                    <ul>
-                      {(gifObj.robot_path || []).map((point, i) => (
-                        <li key={i}>
-                          <strong>Robot:</strong> {point.robot} <br />
-                          <strong>Position:</strong> (x: {point.robot_position.x}, y: {point.robot_position.y}, z: {point.robot_position.z})<br />
-                          <strong>Concentration:</strong> {point.concentration}<br />
-                          <strong>Current:</strong> (x: {point.wind_speed.x}, y: {point.wind_speed.y}, z: {point.wind_speed.z})
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
-              ))}
+                </select>
+              </div>
+              <ul className="robot-path-list">
+                {(() => {
+                  const seen = new Set();
+                  // Get all gifs for this simId
+                  const simGifs = gifsInSet.filter(g => g.robotSim_id === selectedSetSimId);
+                  return (showTotalStatsRobotSim
+                    ? simGifs.filter(gifObj => Array.isArray(gifObj.robot_path))
+                    : simGifs.filter(gifObj => gifObj.iteration === currentIteration)
+                  )
+                    .flatMap(gifObj =>
+                      (gifObj.robot_path || [])
+                        .filter(point =>
+                          selectedRobotFilter === 'all' ? true : String(point.robot) === String(selectedRobotFilter)
+                        )
+                        .filter(point => {
+                          const key = `${gifObj.iteration}-${point.robot}`;
+                          if (seen.has(key)) return false;
+                          seen.add(key);
+                          return true;
+                        })
+                        .map((point, idx) => (
+                          <li
+                            key={`${gifObj.iteration}-${point.robot}-${point.robot_position.x}-${point.robot_position.y}-${point.robot_position.z}-${idx}`}
+                            className="robot-path-item"
+                          >
+                            <strong>Robot:</strong> {point.robot} <br />
+                            <strong>Position:</strong> (x: {point.robot_position.x.toFixed(2)}, y: {point.robot_position.y.toFixed(2)}, z: {point.robot_position.z})<br />
+                            <strong>Concentration:</strong> {Number(point.concentration).toFixed(7)}<br />
+                            <strong>Current:</strong> (x: {point.wind_speed.x.toFixed(3)}, y: {point.wind_speed.y.toFixed(3)}, z: {point.wind_speed.z.toFixed(3)})
+                          </li>
+                        ))
+                    );
+                })()}
+              </ul>
             </div>
           </div>
         </div>
       )}
+      </div>
       {gadenSimulationClickVisible && clickedGif && robotSimulation && (
         <div className="gaden-simulation-click">
           <button

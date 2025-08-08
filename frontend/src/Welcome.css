@@ -541,3 +541,7 @@ select:focus {
   margin: 10px auto 0 auto;
   display: block;
 }
+
+.Simulation-set-select-container{
+  margin-top: 20px;
+}

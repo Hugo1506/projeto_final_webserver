@@ -405,7 +405,7 @@ app.get('/getRobotSimulationID', (req, res) => {
 
 
 app.post('/silkworm_moth_simulation', async (req, res) => {
-    const { username, simulation, height, robots, startingIteration, nameOfSet, numOfSim} = req.body;
+    const { username, simulation, height, robots, startingIteration, nameOfSet, numOfSim, deviation} = req.body;
 
     // Validate required parameters
     if (!username || !simulation || !height || !robots) {
@@ -430,6 +430,7 @@ app.post('/silkworm_moth_simulation', async (req, res) => {
             height,
             numberOfRobots,
             startingIteration,
+            deviation,
             robots: JSON.stringify(robots)
           }
         });
@@ -478,10 +479,12 @@ app.post('/silkworm_moth_simulation', async (req, res) => {
 
 
 app.post('/pso_simmulation', async (req, res) => {
-  const { username, simulation, height, robots, startingIteration, nameOfSet, numOfSim } = req.body;
+  const { username, simulation, height, robots, startingIteration, nameOfSet, numOfSim, deviation } = req.body;
 
   const numberOfRobots = robots.length;
   const simulationNumber = simulation.split('_')[1];
+  res.status(202).json({ message: 'Simulation started. Processing in background.' });
+  
   (async () => {
   for (let currentSimulationNumber  = 1; currentSimulationNumber< Number(numOfSim)+1; currentSimulationNumber++){
     const simulationSet = nameOfSet + "/" + currentSimulationNumber+"/"+numOfSim;
@@ -494,6 +497,7 @@ app.post('/pso_simmulation', async (req, res) => {
           height,
           numberOfRobots,
           startingIteration,
+          deviation,
           robots: JSON.stringify(robots)
         }
       });
@@ -545,7 +549,7 @@ app.post('/pso_simmulation', async (req, res) => {
 
 
 app.post('/robotSimulation', async (req, res) => {
-  const { username, simulation, height, robots, startingIteration, nameOfSet, numOfSim } = req.body;
+  const { username, simulation, height, robots, startingIteration, nameOfSet, numOfSim, deviation} = req.body;
   const numberOfRobots = robots.length;
   const simulationNumber = simulation.split('_')[1];
   
@@ -563,7 +567,8 @@ app.post('/robotSimulation', async (req, res) => {
               simulationNumber,
               height,
               numberOfRobots,
-              startingIteration,  
+              startingIteration,
+              deviation,
               robots: JSON.stringify(robots)
             }
           });

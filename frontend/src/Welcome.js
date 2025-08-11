@@ -87,6 +87,7 @@ const Welcome = ({ username, onLogout }) => {
   const [selectedSetSimId, setSelectedSetSimId] = useState(null); 
   const [showRobotSetDetail, setShowRobotSetDetail] = useState(false);
   const [parentSimulationOfSet, setParentSimulationOfSet] = useState("");
+  const [deviationSet, setDeviationSet] = useState("");
 
   const [robots, setRobots] = useState([
     { robotSpeed: '', robotXlocation: '', robotYlocation: '', finalRobotXlocation: '', finalRobotYlocation: '' },
@@ -1061,7 +1062,8 @@ useEffect(() => {
         numberOfRobots: robotsToSend.length,
         robots: robotsToSend,
         simulationMode: robotSimulationMode,
-        startingIteration: startingIterationToSend
+        startingIteration: startingIterationToSend,
+        deviation: parseFloat(deviationSet)
     };
 
     try {
@@ -1151,6 +1153,10 @@ useEffect(() => {
     setNameSimulationSet(name);
   }
 
+  const handleDeviationSetChange = (deviation) => {
+    setDeviationSet(deviation);
+  }
+
   const fetchRobotSetData = async (simulation) => {
   try {
     const response = await fetch(`http://localhost:3000/getRobotSet?simulation=${simulation}`);
@@ -1203,7 +1209,6 @@ useEffect(() => {
 }, [robotSetData, robotSetSearch]);
 
 useEffect(() => {
-  // Always clear previous interval
   if (intervalRef.current) {
     clearInterval(intervalRef.current);
     intervalRef.current = null;
@@ -1211,7 +1216,6 @@ useEffect(() => {
 
   if (!robotSetData || !Array.isArray(robotSetData) || filteredRobotSets.length === 0) return;
 
-  // Find the largest set for each base
   let shouldPoll = false;
   let pollSimulation = null;
 
@@ -1219,7 +1223,6 @@ useEffect(() => {
     if (!set.simulation_set) return;
     const parts = set.simulation_set.split('/');
     if (parts.length < 2) return;
-    // Support "x/y" or "x:y"
     const [xStr, yStr] = parts[1].includes(':') ? parts[1].split(':') : parts[1].split('/');
     const x = parseInt(xStr, 10);
     const y = parseInt(yStr, 10);
@@ -1914,7 +1917,6 @@ useEffect(() => {
               <ul className="robot-path-list">
                 {(() => {
                   const seen = new Set();
-                  // Get all gifs for this simId
                   const simGifs = gifsInSet.filter(g => g.robotSim_id === selectedSetSimId);
                   return (showTotalStatsRobotSim
                     ? simGifs.filter(gifObj => Array.isArray(gifObj.robot_path))
@@ -2160,6 +2162,16 @@ useEffect(() => {
                       type="text"
                       value={nameSimulationSet}
                       onChange={e => handleNameSimulationSetChange(e.target.value)}
+                    />
+                    <label>
+                    Deviation from selected points
+                    <HoverComponent text="Random deviation from the point that the simulation will have Default: 0" />  
+                  </label>
+                    <input 
+                      type="number"
+                      step="0.1"
+                      value={deviationSet}
+                      onChange={e => handleDeviationSetChange(e.target.value)}
                     />
                    {['pso'].includes(robotSimulationMode) && (
                         <>

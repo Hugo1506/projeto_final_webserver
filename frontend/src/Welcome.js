@@ -1862,6 +1862,7 @@ useEffect(() => {
                       robots={robots}
                       selectedRobotIdx={selectedRobotIdx}
                       grid={showGrid}
+                      deviation={deviationSet}
                       numberOfRobots={selectedRobotNumber}
                       type={robotSimulationMode}
                       onSetRobotCoords={() => {}}
@@ -2009,6 +2010,7 @@ useEffect(() => {
                     robots={robots}
                     selectedRobotIdx={selectedRobotIdx}
                     grid={false}
+                    deviation={deviationSet}
                     numberOfRobots={selectedRobotNumber}
                     type={robotSimulationMode}
                     onSetRobotCoords={(x, y, xFinal, yFinal) => {
@@ -2057,6 +2059,7 @@ useEffect(() => {
                         grid={true}
                         numberOfRobots={selectedRobotNumber}
                         type={robotSimulationMode}
+                        deviation={deviationSet}
                         onSetRobotCoords={(x, y, xFinal, yFinal) => {
                           if (selectedRobotIdx !== null) {
                             if (x !== null) {

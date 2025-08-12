@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 
-const GifWithGrid = ({ gifObj, simulationBounds, robots, onSetRobotCoords,selectedRobotIdx, numberOfRobots,  grid, type }) => {
+const GifWithGrid = ({ gifObj, simulationBounds, robots, onSetRobotCoords, selectedRobotIdx, numberOfRobots, grid, type, deviation }) => {
   const canvasRef = useRef(null);
   const [finalInputFlag, setFinalInputFlag] = useState(false);
   const robotColors = [
@@ -13,15 +13,15 @@ const GifWithGrid = ({ gifObj, simulationBounds, robots, onSetRobotCoords,select
     const ctx = canvas.getContext('2d');
     const width = canvas.width;
     const height = canvas.height;
+    const aspectRatio = width / height;
 
     ctx.clearRect(0, 0, width, height);
 
     const { xMin, xMax, yMin, yMax } = simulationBounds;
     const xRange = xMax - xMin;
     const yRange = yMax - yMin;
-    
+
     if (grid) {
-      // Draw horizontal lines for x (height)
       for (let x = xMin; x <= xMax; x += 0.1) {
         const py = ((x - xMin) / xRange) * height;
         ctx.beginPath();
@@ -32,7 +32,6 @@ const GifWithGrid = ({ gifObj, simulationBounds, robots, onSetRobotCoords,select
         ctx.stroke();
       }
 
-      // Draw vertical lines for y (width)
       for (let y = yMin; y <= yMax; y += 0.1) {
         const px = ((y - yMin) / yRange) * width;
         ctx.beginPath();
@@ -45,13 +44,13 @@ const GifWithGrid = ({ gifObj, simulationBounds, robots, onSetRobotCoords,select
     }
 
     robots.forEach((robot, idx) => {
-      if (idx < numberOfRobots){
+      if (idx < numberOfRobots) {
         const robotX = parseFloat(robot?.robotXlocation);
         const robotY = parseFloat(robot?.robotYlocation);
         let finalRobotX = parseFloat(robot?.finalRobotXlocation);
         let finalRobotY = parseFloat(robot?.finalRobotYlocation);
 
-        if(type != "linear"){
+        if (type !== "linear") {
           finalRobotX = finalRobotY = null;
         }
 
@@ -66,9 +65,24 @@ const GifWithGrid = ({ gifObj, simulationBounds, robots, onSetRobotCoords,select
           const markerX = ((robotY - yMin) / yRange) * width;
           const markerY = ((robotX - xMin) / xRange) * height;
 
+          // Draw deviation circle if provided
+          if (deviation && !isNaN(Number(deviation))) {
+            const deviationRadiusX = (deviation / yRange) * width;
+            const deviationRadiusY = (deviation / xRange) * height;
+            ctx.beginPath();
+            ctx.ellipse(markerX, markerY, deviationRadiusX, deviationRadiusY, 0, 0, 2 * Math.PI);
+            ctx.strokeStyle = robotColor;
+            ctx.lineWidth = 2;
+            ctx.setLineDash([6, 4]);
+            ctx.stroke();
+            ctx.setLineDash([]);
+          }
+          
+          const adjustedRadiusX = (0.1 / yRange) * width;  
+          const adjustedRadiusY = (0.1 / xRange) * height; 
           // Draw the robot's initial position marker
           ctx.beginPath();
-          ctx.arc(markerX, markerY, 8, 0, 2 * Math.PI);
+          ctx.ellipse(markerX, markerY, adjustedRadiusX, adjustedRadiusY, 0, 0, 2 * Math.PI);
           ctx.fillStyle = robotColor;
           ctx.fill();
           ctx.strokeStyle = 'black';
@@ -83,10 +97,12 @@ const GifWithGrid = ({ gifObj, simulationBounds, robots, onSetRobotCoords,select
             const finalMarkerX = ((finalRobotY - yMin) / yRange) * width;
             const finalMarkerY = ((finalRobotX - xMin) / xRange) * height;
 
-            // Draw final robot position with 50% opacity
+            const adjustedRadiusX = (0.1 / yRange) * width;  
+            const adjustedRadiusY = (0.1 / xRange) * height; 
+
             ctx.beginPath();
-            ctx.arc(finalMarkerX, finalMarkerY, 8, 0, 2 * Math.PI);
-            ctx.fillStyle = robotColor; 
+            ctx.ellipse(finalMarkerX, finalMarkerY, adjustedRadiusX,adjustedRadiusY, 0, 0, 2 * Math.PI);
+            ctx.fillStyle = robotColor;
             ctx.fill();
             ctx.strokeStyle = 'black';
             ctx.lineWidth = 2;
@@ -95,11 +111,21 @@ const GifWithGrid = ({ gifObj, simulationBounds, robots, onSetRobotCoords,select
             ctx.font = "20px arial bold";
             ctx.fillStyle = "black";
             ctx.fillText("R" + (idx + 1) + " Final", finalMarkerX + 20, finalMarkerY - 20);
+
+            const deviationRadiusX = (deviation / yRange) * width;
+            const deviationRadiusY = (deviation / xRange) * height;
+            ctx.beginPath();
+            ctx.ellipse(finalMarkerX, finalMarkerY, deviationRadiusX, deviationRadiusY, 0, 0, 2 * Math.PI);
+            ctx.strokeStyle = robotColor;
+            ctx.lineWidth = 2;
+            ctx.setLineDash([6, 4]);
+            ctx.stroke();
+            ctx.setLineDash([]);            
           }
         }
-      }  
+      }
     });
-  }, [simulationBounds, gifObj.url, robots, grid]);
+  }, [simulationBounds, gifObj.url, robots, grid, deviation, numberOfRobots, type]);
 
   const handleCanvasClick = (e) => {
     if (!simulationBounds || !onSetRobotCoords) return;

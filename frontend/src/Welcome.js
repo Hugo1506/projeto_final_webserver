@@ -88,6 +88,7 @@ const Welcome = ({ username, onLogout }) => {
   const [showRobotSetDetail, setShowRobotSetDetail] = useState(false);
   const [parentSimulationOfSet, setParentSimulationOfSet] = useState("");
   const [deviationSet, setDeviationSet] = useState("");
+  const [useRos, setUseRos] = useState(false);
 
   const [robots, setRobots] = useState([
     { robotSpeed: '', robotXlocation: '', robotYlocation: '', finalRobotXlocation: '', finalRobotYlocation: '' },
@@ -1032,7 +1033,8 @@ useEffect(() => {
                 ? parseInt(psoSimulationIterations)
                 : robot.iterations !== undefined
                     ? parseInt(robot.iterations)
-                    : undefined
+                    : undefined,
+
         }));
 
     if (robotsToSend.length === 0) {
@@ -1063,7 +1065,8 @@ useEffect(() => {
         robots: robotsToSend,
         simulationMode: robotSimulationMode,
         startingIteration: startingIterationToSend,
-        deviation: parseFloat(deviationSet)
+        deviation: parseFloat(deviationSet),
+        useRos
     };
 
     try {
@@ -1172,100 +1175,104 @@ useEffect(() => {
   }
 };
 
-useEffect(() => {
-  if (!robotSetData || !Array.isArray(robotSetData)) {
-    setFilteredRobotSets([]);
-    return;
-  }
-
-  const setMap = {};
-
-  robotSetData.forEach(set => {
-    if (!set.simulation_set) return;
-    const [base, rest] = set.simulation_set.split('/');
-    if (!base || !rest) return;
-
-    let numberStr = rest.split(/[:/]/)[0];
-    let number = parseInt(numberStr, 10);
-    if (isNaN(number)) number = -Infinity;
-
-    if (!setMap[base] || setMap[base].number < number) {
-      setMap[base] = {
-        ...set,
-        number,
-        simulation_set: set.simulation_set 
-      };
+  useEffect(() => {
+    if (!robotSetData || !Array.isArray(robotSetData)) {
+      setFilteredRobotSets([]);
+      return;
     }
-  });
+
+    const setMap = {};
+
+    robotSetData.forEach(set => {
+      if (!set.simulation_set) return;
+      const [base, rest] = set.simulation_set.split('/');
+      if (!base || !rest) return;
+
+      let numberStr = rest.split(/[:/]/)[0];
+      let number = parseInt(numberStr, 10);
+      if (isNaN(number)) number = -Infinity;
+
+      if (!setMap[base] || setMap[base].number < number) {
+        setMap[base] = {
+          ...set,
+          number,
+          simulation_set: set.simulation_set 
+        };
+      }
+    });
 
   const sets = Object.values(setMap)
-    .filter(set =>
-      set.simulation_set &&
-      set.simulation_set.split('/')[0].toLowerCase().includes(robotSetSearch.toLowerCase())
-    )
-    .sort((a, b) => b.number - a.number);
+      .filter(set =>
+        set.simulation_set &&
+        set.simulation_set.split('/')[0].toLowerCase().includes(robotSetSearch.toLowerCase())
+      )
+      .sort((a, b) => b.number - a.number);
 
-  setFilteredRobotSets(sets);
-}, [robotSetData, robotSetSearch]);
+    setFilteredRobotSets(sets);
+  }, [robotSetData, robotSetSearch]);
 
-useEffect(() => {
-  if (intervalRef.current) {
-    clearInterval(intervalRef.current);
-    intervalRef.current = null;
-  }
-
-  if (!robotSetData || !Array.isArray(robotSetData) || filteredRobotSets.length === 0) return;
-
-  let shouldPoll = false;
-  let pollSimulation = null;
-
-  filteredRobotSets.forEach(set => {
-    if (!set.simulation_set) return;
-    const parts = set.simulation_set.split('/');
-    if (parts.length < 2) return;
-    const [xStr, yStr] = parts[1].includes(':') ? parts[1].split(':') : parts[1].split('/');
-    const x = parseInt(xStr, 10);
-    const y = parseInt(yStr, 10);
-    if (x < y) {
-      shouldPoll = true;
-      pollSimulation = set.simulation;
-    }
-  });
-
-  if (shouldPoll && pollSimulation) {
-    intervalRef.current = setInterval(() => {
-      fetchRobotSetData(pollSimulation);
-    }, 5000);
-  }
-
-  return () => {
+  useEffect(() => {
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
       intervalRef.current = null;
     }
-  };
-}, [robotSetData, filteredRobotSets]);
 
+    if (!robotSetData || !Array.isArray(robotSetData) || filteredRobotSets.length === 0) return;
 
-useEffect(() => {
-  if (activeButton === 'robot' && simulationDetail) {
-    intervalRef.current = setInterval(() => {
-      const simulation =
-        clickedGif?.simulation ||
-        (filteredGifs[0] && filteredGifs[0].simulation);
-      if (simulation) {
-        fetchRobotSetData(simulation);
+    let shouldPoll = false;
+    let pollSimulation = null;
+
+    filteredRobotSets.forEach(set => {
+      if (!set.simulation_set) return;
+      const parts = set.simulation_set.split('/');
+      if (parts.length < 2) return;
+      const [xStr, yStr] = parts[1].includes(':') ? parts[1].split(':') : parts[1].split('/');
+      const x = parseInt(xStr, 10);
+      const y = parseInt(yStr, 10);
+      if (x < y) {
+        shouldPoll = true;
+        pollSimulation = set.simulation;
       }
-    }, 5000);
-  }
-  return () => {
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
+    });
+
+    if (shouldPoll && pollSimulation) {
+      intervalRef.current = setInterval(() => {
+        fetchRobotSetData(pollSimulation);
+      }, 5000);
     }
-  };
-}, [activeButton, simulationDetail, clickedGif, filteredGifs]);
+
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    };
+  }, [robotSetData, filteredRobotSets]);
+
+
+  useEffect(() => {
+    if (activeButton === 'robot' && simulationDetail) {
+      intervalRef.current = setInterval(() => {
+        const simulation =
+          clickedGif?.simulation ||
+          (filteredGifs[0] && filteredGifs[0].simulation);
+        if (simulation) {
+          fetchRobotSetData(simulation);
+        }
+      }, 5000);
+    }
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    };
+  }, [activeButton, simulationDetail, clickedGif, filteredGifs]);
   
+
+  const toggleRos = () =>{
+    setUseRos(!useRos);
+  }
 
   return (
     <div className="welcome-container">
@@ -2187,6 +2194,15 @@ useEffect(() => {
                             value={psoSimulationIterations}
                             onChange={e => handlePsoIterationsInputChange(e.target.value)}
                           />
+                          <div className="ros-checkbox-label">
+                            <input 
+                              className="toggle-button"
+                              type="checkbox"
+                              checked={useRos}  
+                              onChange={() => toggleRos()} 
+                            />
+                            <label className="ros-lable">ROS <HoverComponent text="Use ROS in the communication between robots (slower)" /></label>
+                          </div>
                         </>
                       )}
                   {[...Array(selectedRobotNumber)].map((_, idx) => (

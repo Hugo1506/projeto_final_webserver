@@ -329,6 +329,7 @@ body {
 .toggle-button {
   padding: 10px 20px;
   font-size: 16px;
+  display: inline;
   cursor: pointer;
   border: 2px solid #333;
   border-radius: 5px;
@@ -544,4 +545,10 @@ select:focus {
 
 .Simulation-set-select-container{
   margin-top: 20px;
+}
+
+.ros-checkbox-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
 }

@@ -1,5 +1,5 @@
 .hover-container {
-  display: inline-block;
+  display:  inline-flex;
   position: relative;
 }
 

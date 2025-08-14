@@ -272,11 +272,12 @@ app.post('/uploadSimulationResults', (req, res) => {
   const height = req.body.height;
   const compressedGif = req.body.gif;
   const iteration = req.body.iteration;
+  const time = req.body.time;
   const robotSim_id = req.body.robotSim_id !== undefined ? req.body.robotSim_id : -1;
 
-  const queryInsertSimulationResult = 'INSERT INTO simulation_results (simulation,type,gif,height,iteration, robotSim_id) VALUES (?, ?, ?, ?, ?, ?)';
+  const queryInsertSimulationResult = 'INSERT INTO simulation_results (simulation,type,gif,height,iteration, time, robotSim_id) VALUES (?, ?, ?, ?, ?, ?, ?)';
 
-  pool.query(queryInsertSimulationResult, [simulation, simulationResultType, compressedGif,height, iteration, robotSim_id], (error, results) => {
+  pool.query(queryInsertSimulationResult, [simulation, simulationResultType, compressedGif,height, iteration, time, robotSim_id], (error, results) => {
     if (error) {
       console.error(error);
       return res.status(500).send('Internal Server Error');
@@ -559,7 +560,9 @@ app.post('/robotSimulation', async (req, res) => {
   res.status(202).json({ message: 'Simulation started. Processing in background.' });
   
     (async () => {
+      
       for (let currentSimulationNumber  = 1; currentSimulationNumber< Number(numOfSim)+1; currentSimulationNumber++){
+        var startTime = performance.now()
         const simulationSet = nameOfSet + "/" + currentSimulationNumber+"/"+numOfSim;
         console.log(`Running simulation number: ${currentSimulationNumber} / ${numOfSim}`);
         try {
@@ -607,8 +610,10 @@ app.post('/robotSimulation', async (req, res) => {
           });
 
           await Promise.all(queries);
+          var endTime = performance.now()
 
           console.log(`Robot simulation for ${simulation} completed.`);
+          console.log(`took ${endTime - startTime} milliseconds`)
         } catch (error) {
           console.error('Background robotSimulation error:', error);
         }

@@ -796,7 +796,7 @@ app.get('/getGifsFromSimulation', (req, res) => {
   const queryGetSimulationResults = `
       SELECT 
         id,
-        gif, height, type, iteration, robotSim_id, robot_path
+        gif, height, type, iteration, robotSim_id, robot_path, time
       FROM simulation_results
       WHERE simulation = ? AND simulation_set LIKE CONCAT(?, '/%')`;
 
@@ -837,6 +837,7 @@ app.get('/getGifsFromSimulation', (req, res) => {
           type: result.type,
           iteration: result.iteration,
           robotSim_id: robotSim_id_to_send,
+          time: result.time,
           robot_path: result.robot_path
         });
 

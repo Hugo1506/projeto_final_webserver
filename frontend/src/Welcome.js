@@ -89,6 +89,7 @@ const Welcome = ({ username, onLogout }) => {
   const [parentSimulationOfSet, setParentSimulationOfSet] = useState("");
   const [deviationSet, setDeviationSet] = useState("");
   const [useRos, setUseRos] = useState(false);
+  const [medianTime, setMedianTime] = useState(null);
 
   const [robots, setRobots] = useState([
     { robotSpeed: '', robotXlocation: '', robotYlocation: '', finalRobotXlocation: '', finalRobotYlocation: '' },
@@ -410,7 +411,7 @@ useEffect(() => {
 
     const gifsData = await response.json();
 
-    const gifs = gifsData.map(({ gif, height, type, iteration, robotSim_id, robot_path }) => {
+    const gifs = gifsData.map(({ gif, height, type, iteration, robotSim_id,time, robot_path }) => {
       const byteCharacters = atob(gif);
       const byteArrays = [];
 
@@ -432,6 +433,7 @@ useEffect(() => {
         simulation: set.simulation,
         iteration,
         robotSim_id,
+        time,
         robot_path: (() => {
           try {
             return typeof robot_path === 'string' ? JSON.parse(robot_path) : robot_path;
@@ -477,7 +479,7 @@ useEffect(() => {
       
       const gifsData = await response.json();
 
-      const gifs = gifsData.map(({ gif, height,type,iteration,robotSim_id,robot_path }) => {
+      const gifs = gifsData.map(({ gif, height,type,iteration,robotSim_id,time,robot_path }) => {
   
 
         const byteCharacters = atob(gif);  
@@ -502,6 +504,7 @@ useEffect(() => {
           simulation,
           iteration,
           robotSim_id,
+          time,
           robot_path: (() => {
           try {
             return typeof robot_path === 'string' ? JSON.parse(robot_path) : robot_path;
@@ -1274,6 +1277,21 @@ useEffect(() => {
     setUseRos(!useRos);
   }
 
+  const getMedianTime = (objs) => {
+    const times = objs.map(obj => obj.time).sort((a, b) => a - b);
+    const mid = Math.floor(times.length / 2);
+    return times.length % 2 === 0
+      ? (times[mid - 1] + times[mid]) / 2
+      : times[mid];
+  };
+
+  useEffect(() => {
+    if (gifsInSet && gifsInSet.length > 0) {
+      const median = getMedianTime(gifsInSet);
+      setMedianTime(median);  
+    }
+  }, [gifsInSet]);
+
   return (
     <div className="welcome-container">
       <div className="welcome-banner">
@@ -1839,30 +1857,31 @@ useEffect(() => {
                 .filter(gifObj => gifObj.robotSim_id === selectedSetSimId && gifObj.iteration === currentIteration)
                 .map((gifObj, index) => (
                   <div key={index} className="gif-description">
-                    <div className="Simulation-set-select-container">
-                      <label>
-                        Select Simulation in Set:&nbsp;
-                        <select
-                          value={selectedSetSimId}
-                          onChange={e => {
-                            const simId = Number(e.target.value);
-                            setSelectedSetSimId(simId);
-                            setCurrentIteration(0);
-                            setGifs(gifsInSet.filter(g => g.robotSim_id === simId));
-                          }}
-                        >
-                          {[...new Set(gifsInSet.map(g => g.robotSim_id))]
-                            .filter(id => id !== undefined && id !== null)
-                            .map(id => (
-                              <option key={id} value={id}>
-                                Simulation {id}
-                              </option>
-                            ))}
-                        </select>
-                      </label>
-                    </div>
+                  <div className="Simulation-set-select-container">
+                    <label>
+                      Select Simulation in Set:&nbsp;
+                      <select
+                        value={selectedSetSimId}
+                        onChange={e => {
+                          const simId = Number(e.target.value);
+                          setSelectedSetSimId(simId);
+                          setCurrentIteration(0);
+                          setGifs(gifsInSet.filter(g => g.robotSim_id === simId));
+                        }}
+                      >
+                        {Array.from(new Set(gifsInSet.map(g => g.robotSim_id)))
+                          .filter(id => id !== undefined && id !== null)
+                          .map((id, index, array) => (
+                            <option key={id} value={id}>
+                              Simulation {index + 1}
+                            </option>
+                          ))}
+                      </select>
+                    </label>
+                  </div>
                     <h3>Height: {gifObj.height ?? 'Unknown'}</h3>
-                    <h3>Iteration: {gifObj.iteration}</h3>
+                    <h3>Median time per iteration: {medianTime} </h3>
+                    <h3>Iteration: {gifObj.iteration} - took: {gifObj.time} s</h3>
                     <GifWithGrid
                       gifObj={gifObj}
                       simulationBounds={simulationBounds}
@@ -1949,7 +1968,7 @@ useEffect(() => {
                             <strong>Robot:</strong> {point.robot} <br />
                             <strong>Position:</strong> (x: {point.robot_position.x.toFixed(2)}, y: {point.robot_position.y.toFixed(2)}, z: {point.robot_position.z})<br />
                             <strong>Concentration:</strong> {Number(point.concentration).toFixed(7)}<br />
-                            <strong>Current:</strong> (x: {point.wind_speed.x.toFixed(3)}, y: {point.wind_speed.y.toFixed(3)}, z: {point.wind_speed.z.toFixed(3)})
+                            <strong>Current:</strong> (x: {point.wind_speed.x.toFixed(3)}, y: {point.wind_speed.y.toFixed(3)}, z: {point.wind_speed.z.toFixed(3)})<br />
                           </li>
                         ))
                     );

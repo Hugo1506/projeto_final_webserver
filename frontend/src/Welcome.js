@@ -28,6 +28,7 @@ const Welcome = ({ username, onLogout }) => {
   const [simulationDetail, setSimulationDetail] = useState(false);
   const [simulationStatus, setSimulationStatus] = useState('');
   const [showModal, setShowModal] = useState(false);
+  const [showInfoModal, setShowInfoModal] = useState(false);
   const [simulationToDelete, setSimulationToDelete] = useState(null);
   const [clickedGif, setClickedGif] = useState(null);
   const [robotXlocation, setRobotXLocation] = useState('');
@@ -264,6 +265,27 @@ useEffect(() => {
             <button onClick={onConfirm}>YES</button>
             <button onClick={onCancel}>NO</button>
           </div>
+        </div>
+      </div>
+    );
+  };
+
+
+  const InfoModal = ({ message }) => {
+    const [dotCount, setDotCount] = useState(0);
+
+    useEffect(() => {
+      const interval = setInterval(() => {
+        setDotCount((prev) => (prev + 1) % 4); 
+      }, 500);
+
+      return () => clearInterval(interval); 
+    }, []);
+
+    return (
+      <div className="modal-overlay">
+        <div className="modal">
+          <p>{message}{'.'.repeat(dotCount)}</p>
         </div>
       </div>
     );
@@ -810,8 +832,10 @@ useEffect(() => {
     setSimulationDetail(false);
     setParentSimulationOfSet(set.simulation)
 
+    setShowInfoModal(true);
     const newGifs = await fetchGifsFromSet(set);
     setGifsInSet(newGifs);
+    setShowInfoModal(false);
 
     if (newGifs.length > 0) {
       setSelectedSetSimId(newGifs[0].robotSim_id);
@@ -830,8 +854,10 @@ useEffect(() => {
 
   const handleSimulationClick = async (simulation) => {
     setGifs([]);
+
+    setShowInfoModal(true);
     await fetchGifsFromResults(simulation);
-  
+    setShowInfoModal(false);
     setFadeOut(true);
   
     setTimeout(() => {
@@ -1669,6 +1695,11 @@ useEffect(() => {
                   onCancel={closeModal}
                 />
               )}
+              {showInfoModal && (
+                  <InfoModal
+                    message="Loading Enviroment Simulation "
+                  />
+              )}
             </div>
           </div>
         )}
@@ -1976,6 +2007,11 @@ useEffect(() => {
               </ul>
             </div>
           </div>
+          {showInfoModal && (
+            <InfoModal
+              message="Loading Set "
+            />
+         )}
         </div>
       )}
       </div>

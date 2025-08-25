@@ -4,7 +4,8 @@ import './Welcome.css';
 import logo from './flyrobotics_logo.png'; 
 import GifWithGrid from './GifWithGrid';
 import EnviromentGrid from './enviromentGrid';
-import HoverComponent from './HoverComponent'
+import HoverComponent from './HoverComponent';
+import PagePath from './PagePath';
 
 const Welcome = ({ username, onLogout }) => {
   const [dropdownVisible, setDropdownVisible] = useState(false);
@@ -91,6 +92,7 @@ const Welcome = ({ username, onLogout }) => {
   const [deviationSet, setDeviationSet] = useState("");
   const [useRos, setUseRos] = useState(false);
   const [medianTime, setMedianTime] = useState(null);
+  const [pagePath, setPagePath] = useState(["Home"]);
 
   const [robots, setRobots] = useState([
     { robotSpeed: '', robotXlocation: '', robotYlocation: '', finalRobotXlocation: '', finalRobotYlocation: '' },
@@ -617,6 +619,7 @@ useEffect(() => {
   };
 
   const handleGadenClick = () => {
+    setPagePath([...pagePath,"Gaden"])
     setFadeOut(true);
     setTimeout(() => {
       setGadenChoiseVisible(true);
@@ -627,6 +630,7 @@ useEffect(() => {
 
 
   const handleNewSimulationClick = () => {
+    setPagePath([...pagePath,"New Simulation"])
     setFadeOut(true); 
     setTimeout(() => {
       setGadenChoiseVisible(false);
@@ -789,31 +793,29 @@ useEffect(() => {
   };
 
   const handleGoBack = () => {
-    setFadeOut(true); 
-    setTimeout(() => {
-      setFileInputVisible(false);
-      setGadenChoiseVisible(false);
-      setIsNewSimulation(false);
-      setSavedSimulationsVisible(false);
-      setAmbientSimulator("");
-      setFadeOut(false); 
-    }, 500);
+    setFileInputVisible(false);
+    setGadenChoiseVisible(false);
+    setIsNewSimulation(false);
+    setSavedSimulationsVisible(false);
+    setAmbientSimulator("");
+    setSimulationDetail(false);
+    setShowRobotSetDetail(false);
   };
 
   const handleGoBackGadenChoise = () => {
-    setFadeOut(true); 
-    setTimeout(() => {
-      setGadenChoiseVisible(true);
-      setIsNewSimulation(false);
-      setSavedSimulationsVisible(false);
-      setShowPlumeLocation(false);
-      setFadeOut(false); 
-    }, 500);
- 
+    setGadenChoiseVisible(true);
+    setIsNewSimulation(false);
+    setSavedSimulationsVisible(false);
+    setShowPlumeLocation(false);
+    setFadeOut(false); 
+    setSimulationDetail(false);
+    setShowRobotSetDetail(false);
   };
 
   const handleSavedSimulationsClick = async () => {
     await fetchSavedSimulations();
+    setPagePath([...pagePath, "Saved Simulations"]);
+
     setFadeOut(true); 
     setTimeout(() => {
       setGadenChoiseVisible(false); 
@@ -837,6 +839,8 @@ useEffect(() => {
     setGifsInSet(newGifs);
     setShowInfoModal(false);
 
+    setPagePath([...pagePath,"Simulation Set"])
+
     if (newGifs.length > 0) {
       setSelectedSetSimId(newGifs[0].robotSim_id);
       setGifs(newGifs.filter(g => g.robotSim_id === newGifs[0].robotSim_id));
@@ -859,7 +863,8 @@ useEffect(() => {
     await fetchGifsFromResults(simulation);
     setShowInfoModal(false);
     setFadeOut(true);
-  
+    
+    setPagePath([...pagePath,"Enviroment Simulation"])
     setTimeout(() => {
       setSavedSimulationsVisible(false);
       setSimulationDetail(true);
@@ -898,14 +903,12 @@ useEffect(() => {
   
 
   const handleGoBackSavedSimulations = () => {
-    setFadeOut(true);
-    setTimeout(() => {  
-      setSavedSimulationsVisible(true);
-      setSimulationDetail(false);
-      setFadeOut(false)
-      setSearchQuery('');
-      setFilteredSimulations(savedSimulations);
-    }, 500);
+    setSavedSimulationsVisible(true);
+    setSimulationDetail(false);
+    setFadeOut(false)
+    setSearchQuery('');
+    setFilteredSimulations(savedSimulations);
+    setShowRobotSetDetail(false);
   } 
 
 
@@ -932,7 +935,7 @@ useEffect(() => {
       setGadenSimulationClickVisible(true);
       setSimulationDetail(false);
 
-
+      setPagePath([...pagePath,"Clicked Gaden Simulation"])
       setCurrentIteration(0);
 
   };
@@ -1318,6 +1321,33 @@ useEffect(() => {
     }
   }, [gifsInSet]);
 
+    const handlePathClick = (index) => {
+        setPagePath(pagePath.slice(0, index + 1));
+
+        switch (pagePath[index]) {
+                case "Home":
+                    handleGoBack();
+                    break;
+                
+                case "Gaden":
+                    handleGoBackGadenChoise();
+                    break;
+
+                case "Saved Simulations":
+                    handleGoBackSavedSimulations();
+                    break;
+
+                case "Enviroment Simulation":
+                    handleGoBackRobotSetDetail();
+                    handleGoBackSimulationDetails();
+                    break;
+                
+                default:
+                    break;
+
+        };
+    }
+
   return (
     <div className="welcome-container">
       <div className="welcome-banner">
@@ -1331,6 +1361,10 @@ useEffect(() => {
             <button onClick={onLogout}>Logout</button>
           </div>
         )}
+        <PagePath
+          path={pagePath}
+          onPathClick={handlePathClick}
+        />
         <img
           src={logo}
           alt="FlyRobotics Logo"
@@ -1363,7 +1397,10 @@ useEffect(() => {
            </button>
            <button
                 className={`go-back-button ${fadeOut ? 'fade-out' : ''}`}
-                onClick={handleGoBack}
+                onClick={() => {
+                  handleGoBack();
+                  setPagePath(pagePath.slice(0, -1));
+                }}
               >
                 Go Back
             </button>
@@ -1414,7 +1451,13 @@ useEffect(() => {
             />
           </div>
           <button type="submit" className={`submit-button ${fadeOut ? 'fade-out' : ''}`} >Submit</button>
-          <button type="button" onClick={handleGoBackGadenChoise} className={`go-back-button ${fadeOut ? 'fade-out' : ''}`}>
+          <button type="button" 
+          onClick={() => {
+            handleGoBackGadenChoise();
+            setPagePath(pagePath.slice(0, -1));
+          }}
+          className={`go-back-button ${fadeOut ? 'fade-out' : ''}`}>
+
             Go Back
           </button>
         </form> 
@@ -1624,7 +1667,13 @@ useEffect(() => {
 
             
             <button type="submit" className={`submit-button ${fadeOut ? 'fade-out' : ''}`} >Submit</button>
-            <button type="button" onClick={handleGoBackGadenChoise} className={`go-back-button ${fadeOut ? 'fade-out' : ''}`}>
+            <button type="button" 
+            onClick={() => {
+              handleGoBackGadenChoise();
+              setPagePath(pagePath.slice(0, -1));
+            }}
+            className={`go-back-button ${fadeOut ? 'fade-out' : ''}`}>
+
               Go Back
             </button>
           </form>
@@ -1650,7 +1699,10 @@ useEffect(() => {
               />
               <button
                 className={`go-back-saved-simulations ${fadeOut ? 'fade-out' : ''}`}
-                onClick={handleGoBackGadenChoise}
+                onClick={() => {
+                  handleGoBackGadenChoise();
+                  setPagePath(pagePath.slice(0, -1));
+                }}
               >
                 Go Back
             </button>
@@ -1708,7 +1760,10 @@ useEffect(() => {
           <div className="control-simulation-details">
             <button
               className={`go-back-simulation-details ${fadeOut ? 'fade-out' : ''}`}
-              onClick={handleGoBackSavedSimulations}
+              onClick={() => {
+                handleGoBackSavedSimulations();
+                setPagePath(pagePath.slice(0, -1));
+              }}
             >
               Go Back
             </button>
@@ -1878,7 +1933,10 @@ useEffect(() => {
         <div className="gaden-simulation-click">
           <button
             className={`go-back-simulation-details ${fadeOut ? 'fade-out' : ''}`}
-            onClick={handleGoBackRobotSetDetail}
+            onClick={() => {
+                handleGoBackRobotSetDetail();
+                setPagePath(pagePath.slice(0, -1));
+              }}
           >
             Go Back
           </button>
@@ -2019,7 +2077,10 @@ useEffect(() => {
         <div className="gaden-simulation-click">
           <button
             className={`go-back-simulation-details ${fadeOut ? 'fade-out' : ''}`}
-            onClick={handleGoBackSimulationDetails}
+            onClick={() => {
+                handleGoBackSimulationDetails();
+                setPagePath(pagePath.slice(0, -1));
+              }}
           >
             Go Back
           </button>
@@ -2376,7 +2437,10 @@ useEffect(() => {
         <div className="gaden-simulation-click">
           <button
             className={`go-back-simulation-details ${fadeOut ? 'fade-out' : ''}`}
-            onClick={handleGoBackSimulationDetails}
+            onClick={() => {
+              handleGoBackSimulationDetails();
+              setPagePath(pagePath.slice(0, -1));
+            }}
           >
             Go Back
           </button>

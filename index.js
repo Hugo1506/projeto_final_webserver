@@ -481,7 +481,6 @@ app.post('/silkworm_moth_simulation', async (req, res) => {
 
 app.post('/pso_simmulation', async (req, res) => {
   const { username, simulation, height, robots, startingIteration, nameOfSet, numOfSim, deviation, useRos } = req.body;
-  console.log(useRos);
 
   const numberOfRobots = robots.length;
   const simulationNumber = simulation.split('_')[1];
@@ -792,7 +791,6 @@ app.get('/getGifsFromSimulation', (req, res) => {
   const simulation = req.query.simulation;
 
   set = raw_set.split('/')[0];
-  console.log(set);
   const queryGetSimulationResults = `
       SELECT 
         id,

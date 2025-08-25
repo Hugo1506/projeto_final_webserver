@@ -1,0 +1,13 @@
+.page-path span {
+    margin-left: 4px;
+    cursor: pointer;
+}
+
+.page-path{
+    margin-left: 30px;
+}
+
+.separator {
+    color: #888;
+    margin: 0 4px;
+}

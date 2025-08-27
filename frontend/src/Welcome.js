@@ -1036,7 +1036,7 @@ useEffect(() => {
   const handleRobotSimulationSubmit = async (e, simulation) => {
     e.preventDefault();
     setRobotSimulationIsLoading(true);
-
+    
     let url = "";
     const robotsToSend = robots
         .slice(0, selectedRobotNumber)
@@ -1313,13 +1313,13 @@ useEffect(() => {
       ? (times[mid - 1] + times[mid]) / 2
       : times[mid];
   };
-
   useEffect(() => {
-    if (gifsInSet && gifsInSet.length > 0) {
-      const median = getMedianTime(gifsInSet);
-      setMedianTime(median);  
+    if (gifsInSet && gifsInSet.length > 0 && selectedSetSimId != null) {
+      const selectedGifs = gifsInSet.filter(g => g.robotSim_id === selectedSetSimId);
+      const median = getMedianTime(selectedGifs);
+      setMedianTime(median);
     }
-  }, [gifsInSet]);
+  }, [gifsInSet, selectedSetSimId]);
 
     const handlePathClick = (index) => {
         setPagePath(pagePath.slice(0, index + 1));

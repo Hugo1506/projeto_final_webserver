@@ -409,7 +409,7 @@ app.post('/silkworm_moth_simulation', async (req, res) => {
     const { username, simulation, height, robots, startingIteration, nameOfSet, numOfSim, deviation} = req.body;
 
     // Validate required parameters
-    if (!username || !simulation || !height || !robots) {
+    if (!username || !simulation || !robots) {
       return res.status(400).json({ 
         error: 'Missing required parameters. Need username, simulation, height, and robots.'
       });

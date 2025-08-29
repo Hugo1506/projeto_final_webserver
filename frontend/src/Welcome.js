@@ -366,7 +366,6 @@ useEffect(() => {
       
       if (!response.ok) {
         throw new Error('Failed to fetch Enviroment frames');
-        console.log(response)
       }
       
       const gifsData = await response.json();
@@ -711,6 +710,7 @@ useEffect(() => {
   };
 
   const handlePlumeSubmit = async (e) => {
+
     e.preventDefault();
     setPlumeSimulationIsLoading(true);
 
@@ -789,6 +789,7 @@ useEffect(() => {
       setIsNewSimulation(false);
       setShowPlumeLocation(false);
       setSavedSimulationsVisible(true);
+      setPagePath([...pagePath, "Saved Simulations"]);
     }
   };
 
@@ -1001,7 +1002,6 @@ useEffect(() => {
   };
 
   const confirmSetDelete = async () => {
-    console.log(setToDelete.simulation_set);
     try {
       const response = await fetch(`http://localhost:3000/deleteSimulationSet?set=${setToDelete.simulation_set}&&simulation=${setToDelete.simulation}`, {
         method: 'POST',
@@ -1115,15 +1115,16 @@ useEffect(() => {
       }
 
       const result = await response.json();
-      console.log('Simulation result:', result);
     } catch (error) {
         console.error('Error during simulation:', error);
     } finally {
         setRobotSimulationIsLoading(false);
         setGadenSimulationClickVisible(false);
-        handleToggleButton('robot');
+        handleToggleButton('robot');   
         setSimulationDetail(true);
-        await handleSimulationClick(simulation);
+        await handleSimulationClick(simulation); 
+        setPagePath(pagePath.slice(0, -1));  
+         
     }
     
 }
@@ -1134,11 +1135,13 @@ useEffect(() => {
       setActiveButton('gaden');
       setShowCheckboxes(true);
       setRobotSimulation(true);
+      setPagePath(prevPath => [...prevPath.slice(0, -1), "Enviroment Simulation"]);
     } else {
       setActiveButton('robot');
       setShowCheckboxes(false);
       setRobotSimulation(false);
       fetchRobotSetData(clickedGif?.simulation || (filteredGifs[0] && filteredGifs[0].simulation));
+      setPagePath(prevPath => [...prevPath.slice(0, -1), "Robot Simulations"]);
     }
   }
 
@@ -1199,7 +1202,6 @@ useEffect(() => {
       throw new Error('Failed to fetch robot simulation sets');
     }
     const data = await response.json();
-    console.log(data);
     setRobotSetData(data);
   } catch (error) {
     console.error('Error fetching robot simulation sets:', error);
@@ -1770,7 +1772,8 @@ useEffect(() => {
             <div className="toggle-buttons">
               <button
                 className={`toggle-button ${activeButton === 'gaden' ? 'active' : 'inactive'}`}
-                onClick={() => handleToggleButton('gaden')}
+                onClick={
+                  () => handleToggleButton('gaden')}
               >
                 Gaden Simulations
               </button>

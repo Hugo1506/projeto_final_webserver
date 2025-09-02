@@ -1320,6 +1320,7 @@ useEffect(() => {
       const selectedGifs = gifsInSet.filter(g => g.robotSim_id === selectedSetSimId);
       const median = getMedianTime(selectedGifs);
       setMedianTime(median);
+      setMaxIteration(Math.max(...filteredGifs.map(g => g.iteration)))
     }
   }, [gifsInSet, selectedSetSimId]);
 

@@ -6,6 +6,7 @@ import GifWithGrid from './GifWithGrid';
 import EnviromentGrid from './enviromentGrid';
 import HoverComponent from './HoverComponent';
 import PagePath from './PagePath';
+import PlumeOrExperiences from './PlumeOrExperiences';
 
 const Welcome = ({ username, onLogout }) => {
   const [dropdownVisible, setDropdownVisible] = useState(false);
@@ -93,6 +94,7 @@ const Welcome = ({ username, onLogout }) => {
   const [useRos, setUseRos] = useState(false);
   const [medianTime, setMedianTime] = useState(null);
   const [pagePath, setPagePath] = useState(["Home"]);
+  const [plumeOrExperienciesVisible, setPlumeOrExperienciesVisible] = useState(false);
 
   const [robots, setRobots] = useState([
     { robotSpeed: '', robotXlocation: '', robotYlocation: '', finalRobotXlocation: '', finalRobotYlocation: '' },
@@ -621,8 +623,9 @@ useEffect(() => {
     setPagePath([...pagePath,"Gaden"])
     setFadeOut(true);
     setTimeout(() => {
-      setGadenChoiseVisible(true);
-      setAmbientSimulator("Simulatior: Gaden version 2.5.0");
+      //setGadenChoiseVisible(true);
+      setPlumeOrExperienciesVisible(true);
+      setAmbientSimulator("Simulator: Gaden version 2.5.0");
       setFadeOut(false);
     }, 500);
   };
@@ -826,6 +829,19 @@ useEffect(() => {
     }, 500);
   };
 
+
+  const handlePlumeClick = async () => {
+    await fetchSavedSimulations();
+    setPagePath([...pagePath, "Plume Simulation"]);
+    setFadeOut(true); 
+    setTimeout(() => {
+      setGadenChoiseVisible(false); 
+      setIsNewSimulation(false); 
+      setPlumeOrExperienciesVisible(false);
+      setSavedSimulationsVisible(true);
+      setFadeOut(false)
+    }, 500);
+  }
 
   const handleSetClick = async (set) => {
     setGifs([]);
@@ -1375,7 +1391,7 @@ useEffect(() => {
         />
       </div>
       <div className="main-content">
-        {!showRobotSetDetail && !gadenSimulationClickVisible && !fileInputVisible && !GadenChoiseVisible && !isNewSimulation && !savedSimulationsVisible && !simulationDetail? (
+        {!plumeOrExperienciesVisible && !showRobotSetDetail && !gadenSimulationClickVisible && !fileInputVisible && !GadenChoiseVisible && !isNewSimulation && !savedSimulationsVisible && !simulationDetail? (
           <button
             className={`gaden-button ${fadeOut ? 'fade-out' : ''}`}
             onClick={handleGadenClick}
@@ -1383,6 +1399,17 @@ useEffect(() => {
             Gaden <br /> version: 2.5.0
           </button>
         ) : null}
+        {plumeOrExperienciesVisible && (
+          <PlumeOrExperiences
+            ambientSimulator={ambientSimulator}
+            fadeOut={fadeOut}
+            handlePlumeClick={handlePlumeClick}
+            handleSavedSimulationsClick={handleSavedSimulationsClick}
+            setPlumeOrExperienciesVisible={setPlumeOrExperienciesVisible}
+            pagePath={pagePath}
+            setPagePath={setPagePath}
+          />
+        )}
        {GadenChoiseVisible && (
          <div className="gaden-choice-buttons">
           <h1 className={'info-header'}>{ambientSimulator}</h1>
@@ -1692,7 +1719,7 @@ useEffect(() => {
         {savedSimulationsVisible && (
           <div className="saved-simulations-list" >
             <div className="saved-simulations-header">
-              <h3>Saved Simulations</h3>
+              <h3>Saved Plume Simulations</h3>
               <input
                 ref={searchInputRef}
                 type="text"

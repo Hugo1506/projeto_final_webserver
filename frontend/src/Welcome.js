@@ -3,10 +3,16 @@ import { useNavigate } from 'react-router-dom';
 import './Welcome.css';
 import logo from './flyrobotics_logo.png'; 
 import GifWithGrid from './GifWithGrid';
-import EnviromentGrid from './enviromentGrid';
 import HoverComponent from './HoverComponent';
 import PagePath from './PagePath';
 import PlumeOrExperiences from './PlumeOrExperiences';
+import GadenChoiseButtons from './GadenChoiseButtons';
+import AmbientSubmit from './AmbientSubmit';
+import PlumeLocationForm from './PlumeLocationForm';
+import SavedSimulationsPage from './SavedSimulations';
+import SimulationDetail from './SimulationDetail';
+import RobotSetDetail from './RobotSetDetail';
+import GadenSimulationClick from './GadenSimulationClick';
 
 const Welcome = ({ username, onLogout }) => {
   const [dropdownVisible, setDropdownVisible] = useState(false);
@@ -257,44 +263,6 @@ useEffect(() => {
 
     return () => clearInterval(interval);
   }, [robotSimulationIsLoading]);
-
-
-  // modal que para confirmar algo
-  const ConfirmationModal = ({ message, onConfirm, onCancel }) => {
-    return (
-      <div className="modal-overlay">
-        <div className="modal">
-          <p>{message}</p>
-          <div className="modal-buttons">
-            <button onClick={onConfirm}>YES</button>
-            <button onClick={onCancel}>NO</button>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-
-  const InfoModal = ({ message }) => {
-    const [dotCount, setDotCount] = useState(0);
-
-    useEffect(() => {
-      const interval = setInterval(() => {
-        setDotCount((prev) => (prev + 1) % 4); 
-      }, 500);
-
-      return () => clearInterval(interval); 
-    }, []);
-
-    return (
-      <div className="modal-overlay">
-        <div className="modal">
-          <p>{message}{'.'.repeat(dotCount)}</p>
-        </div>
-      </div>
-    );
-  };
-
 
 
 
@@ -804,6 +772,7 @@ useEffect(() => {
     setAmbientSimulator("");
     setSimulationDetail(false);
     setShowRobotSetDetail(false);
+    setPlumeOrExperienciesVisible(true)
   };
 
   const handleGoBackGadenChoise = () => {
@@ -835,10 +804,9 @@ useEffect(() => {
     setPagePath([...pagePath, "Plume Simulation"]);
     setFadeOut(true); 
     setTimeout(() => {
-      setGadenChoiseVisible(false); 
       setIsNewSimulation(false); 
       setPlumeOrExperienciesVisible(false);
-      setSavedSimulationsVisible(true);
+      setGadenChoiseVisible(true);
       setFadeOut(false)
     }, 500);
   }
@@ -1411,1171 +1379,202 @@ useEffect(() => {
           />
         )}
        {GadenChoiseVisible && (
-         <div className="gaden-choice-buttons">
-          <h1 className={'info-header'}>{ambientSimulator}</h1>
-          <button
-           className={`new-simulation-button ${fadeOut ? 'fade-out' : ''}`}
-           onClick={handleNewSimulationClick}
-          >
-            New Simulation
-          </button>
-          <button
-             className={`saved-simulations-button ${fadeOut ? 'fade-out' : ''}`}
-             onClick={handleSavedSimulationsClick} 
-          >
-              Saved Simulations
-           </button>
-           <button
-                className={`go-back-button ${fadeOut ? 'fade-out' : ''}`}
-                onClick={() => {
-                  handleGoBack();
-                  setPagePath(pagePath.slice(0, -1));
-                }}
-              >
-                Go Back
-            </button>
-           <br />
-  	 </div>
+        <GadenChoiseButtons 
+          ambientSimulator={ambientSimulator}
+          fadeOut={fadeOut}
+          handleNewSimulationClick={handleNewSimulationClick}
+          handleSavedSimulationsClick={handleSavedSimulationsClick}
+          handleGoBack={handleGoBack}
+          setPagePath={setPagePath}
+          pagePath={pagePath}
+        />
     )}
       {isNewSimulation && !showPlumeLocation && (
-        <>
-        <form onSubmit={handleFileSubmit} className="file-upload-form">
-          <div>
-            <label htmlFor="simulationName">Name of the simulation (optional):</label>
-            <input
-              type="text"
-              id="simulationName"
-              name="simulationName"
-              value={simulationName}
-              onChange={(e) => setSimulationName(e.target.value)}
-              placeholder="Enter simulation name"
-            />
-          </div>
-          <div>
-            <label htmlFor="innerCadFiles">Inner CAD Files:</label>
-            <input
-              type="file"
-              id="innerCadFiles"
-              name="innerCadFiles"
-              multiple
-              onChange={handleFileChange}
-            />
-          </div>
-          <div>
-            <label htmlFor="outerCadFiles">Outer CAD Files:</label>
-            <input
-              type="file"
-              id="outerCadFiles"
-              name="outerCadFiles"
-              multiple
-              onChange={handleFileChange}
-            />
-          </div>
-          <div>
-            <label htmlFor="windFiles">Wind Files:</label>
-            <input 
-            type="file" 
-            multiple webkitdirectory="true" 
-            directory="" 
-            onChange={(e) => setFiles({ ...files, windFiles: e.target.files })} 
-            />
-          </div>
-          <button type="submit" className={`submit-button ${fadeOut ? 'fade-out' : ''}`} >Submit</button>
-          <button type="button" 
-          onClick={() => {
-            handleGoBackGadenChoise();
-            setPagePath(pagePath.slice(0, -1));
-          }}
-          className={`go-back-button ${fadeOut ? 'fade-out' : ''}`}>
-
-            Go Back
-          </button>
-        </form> 
-         {enviromentIsLoading && (
-          <div className="popup-overlay">
-            <div className="popup">
-              <p>{plumeSimulationLoadingText}</p>
-            </div>
-          </div>
-        )}
-        </>
+        <AmbientSubmit
+          simulationName={simulationName}
+          setSimulationName={setSimulationName}
+          handleFileSubmit={handleFileSubmit}
+          handleFileChange={handleFileChange}
+          handleGoBackGadenChoise={handleGoBackGadenChoise}
+          setPagePath={setPagePath}
+          pagePath={pagePath}
+          fadeOut={fadeOut}
+          enviromentIsLoading={enviromentIsLoading}
+          plumeSimulationLoadingText={plumeSimulationLoadingText}
+          setFiles={setFiles}
+          files={files} 
+      />
       )}
       {isNewSimulation && showPlumeLocation && (
-        <div className="content-container">
-          {filteredGifs.length > 0 && (
-            filteredGifs
-              .slice()
-              .sort((a, b) => a.type.localeCompare(b.type))
-              .filter((gifObj) => {
-                return gifObj.height == selectedHeight;
-              })
-              .map((gifObj, index) => (
-                <div key={index} className="gif-description">
-                  <div>
-                  <h3>Height: </h3>
-                   <select
-                    value={selectedHeight}
-                    onChange={(e) => setSelectedHeight(e.target.value)}
-                  >
-                    {availableHeights
-                      .map((height) => parseFloat(height)) 
-                      .sort((a, b) => a - b)
-                      .map((height, idx) => (
-                        <option key={idx} value={height}>
-                          {height ?? 'Unknown'}
-                        </option>
-                      ))}
-                  </select>
-                  <div className="grid-toggle-div">
-                  <label>
-                        <input
-                          type="checkbox"
-                          className = "toggle-button"
-                          checked={showGrid}
-                          onChange={() => toggleGrid()}
-                        />
-                        Show Grid
-                  </label>
-                  </div>
-                  </div> 
-                  {showGrid ? (
-                    <EnviromentGrid
-                        gifObj={gifObj}
-                        simulationBounds={simulationBounds}
-                        grid={true}
-                        height={selectedHeight}
-                        onSetPlumeCoords={(x, y, z) => {
-                          setPlumeXLocation(x.toFixed(1));
-                          setPlumeYLocation(y.toFixed(1));
-                          setPlumeZLocation(z.toFixed(1));
-                        }}
-                  />
-
-                  ):(
-                    <EnviromentGrid
-                        gifObj={gifObj}
-                        simulationBounds={simulationBounds}
-                        grid={false}
-                        height={selectedHeight}
-                        onSetPlumeCoords={(x, y, z) => {
-                          setPlumeXLocation(x.toFixed(1));
-                          setPlumeYLocation(y.toFixed(1));
-                          setPlumeZLocation(z.toFixed(1));
-                        }}
-                  />
-                  )} 
-                  
-                </div>
-              ))
-          )}
-          <form onSubmit={handlePlumeSubmit} className="file-upload-form">
-            <div>
-              <h4 htmlFor="plumeXLocation">Plume location </h4>
-              <label 
-                htmlFor="plumeXLocation">X coord Range: {simulationBounds.xMin} and {simulationBounds.xMax}
-                <HoverComponent text="X value X.X for the plume location"/>
-              </label>
-              <input
-                type="float"
-                id="plumeXLocation"
-                name="plumeXLocation"
-                value={plumeXLocation}
-                onChange={(e) => setPlumeXLocation(e.target.value)}
-              />
-              <label 
-                htmlFor="plumeYLocation">Y coord Range: {simulationBounds.yMin} and {simulationBounds.yMax}
-                <HoverComponent text="Y value X.X for the plume location"/>
-              </label>
-              <input
-                type="float"
-                id="plumeYLocation"
-                name="plumeYLocation"
-                value={plumeYLocation}
-                onChange={(e) => setPlumeYLocation(e.target.value)}
-              />
-              <label 
-                htmlFor="plumeZLocation"> Z coord Range: {simulationBounds.zMin} and {simulationBounds.zMax} 
-                <HoverComponent text="Z value X.X for the plume location "/>
-              </label>
-              <input
-                type="float"
-                id="plumeZLocation"
-                name="plumeZLocation"
-                value={plumeZLocation}
-                onChange={(e) => setPlumeZLocation(e.target.value)}
-              />
-              <label 
-                htmlFor="temperatureInC">temperature
-                <HoverComponent text="temperature in Celsius Default: 24.85" />
-              </label>
-              <input
-                type="float"
-                id="temperatureInC"
-                step="0.01"
-                min="−273.15"
-                name="temperatureInC"
-                value={temperatureInC}
-                onChange={(e) => setTemperatureInC(e.target.value)}
-              />
-              </div>
-
-              <div className="collapsible-section">
-                <button
-                  type="button"
-                  onClick={() => setShowFilamentOptions(!showFilamentOptions)}
-                  className="collapsible-toggle"
-                >
-                  {showFilamentOptions ? 'Hide' : 'Show'} Filament Options (optional){showFilamentOptions ? '▲' : '▼'}
-                </button>
-
-                {showFilamentOptions && (
-                  <div className="filament-options">
-                    <label 
-                      htmlFor="ppmCenter">PPM
-                      <HoverComponent text="ppm of the initial plume Default: 10ppm" />
-                    </label>
-                    <input
-                      type="number"
-                      step="1"
-                      id="ppmCenter"
-                      name="ppmCenter"
-                      value={ppmCenter}
-                      onChange={(e) => setPpmCenter(e.target.value)}
-                    />
-                    <label 
-                      htmlFor="numFilamentsSec">Number of filaments per second
-                      <HoverComponent text="Number of filaments released each second Default: 10 " />
-                    </label>
-                    <input
-                      type="number"
-                      step="1"
-                      id="numFilamentsSec"
-                      name="numFilamentsSec"
-                      value={numFilamentsSec}
-                      onChange={(e) => setNumFilamentsSec(e.target.value)}
-                    />
-                    <label 
-                      htmlFor="filamentInitialStd">Sigma of the filament 
-                      <HoverComponent text="Sigma of the filament at t=0 in cm Default: 10" />
-                    </label>
-                    <input
-                      type="float"
-                      step="0.1"
-                      id="filamentInitialStd"
-                      name="filamentInitialStd"
-                      value={filamentInitialStd}
-                      onChange={(e) => setFilamentInitialStd(e.target.value)}
-                    />
-                    <label 
-                      htmlFor="filamentGrowth">Filament Growth
-                      <HoverComponent text="Growth ratio of the filament_std in cm²/s Default: 10" />
-                    </label>
-                    <input
-                      type="float"
-                      step="0.1"
-                      id="filamentGrowth"
-                      name="filamentGrowth"
-                      value={filamentGrowth}
-                      onChange={(e) => setFilamentGrowth(e.target.value)}
-                    />
-                    <label 
-                      htmlFor="filamentNoise"> Filament Noise
-                      <HoverComponent text="Range of the white noise added on each iteration in m Default: 0.02" />
-                    </label>
-                    <input
-                      type="float"
-                      step="0.01"
-                      id="filamentNoise"
-                      name="filamentNoise"
-                      value={filamentNoise}
-                      onChange={(e) => setFilamentNoise(e.target.value)}
-                    />
-
-                  </div>
-                )}
-              </div>
-
-            
-            <button type="submit" className={`submit-button ${fadeOut ? 'fade-out' : ''}`} >Submit</button>
-            <button type="button" 
-            onClick={() => {
-              handleGoBackGadenChoise();
-              setPagePath(pagePath.slice(0, -1));
-            }}
-            className={`go-back-button ${fadeOut ? 'fade-out' : ''}`}>
-
-              Go Back
-            </button>
-          </form>
-          {plumeSimulationIsLoading && (
-        <div className="popup-overlay">
-            <div className="popup">
-              <p>{plumeSimulationLoadingText}</p>
-        </div>
-      </div>
-    )}
-    </div>
+        <PlumeLocationForm
+          filteredGifs={filteredGifs}
+          selectedHeight={selectedHeight}
+          setSelectedHeight={setSelectedHeight}
+          availableHeights={availableHeights}
+          showGrid={showGrid}
+          toggleGrid={toggleGrid}
+          simulationBounds={simulationBounds}
+          setPlumeXLocation={setPlumeXLocation}
+          setPlumeYLocation={setPlumeYLocation}
+          setPlumeZLocation={setPlumeZLocation}
+          plumeXLocation={plumeXLocation}
+          plumeYLocation={plumeYLocation}
+          plumeZLocation={plumeZLocation}
+          temperatureInC={temperatureInC}
+          setTemperatureInC={setTemperatureInC}
+          handlePlumeSubmit={handlePlumeSubmit}
+          showFilamentOptions={showFilamentOptions}
+          setShowFilamentOptions={setShowFilamentOptions}
+          ppmCenter={ppmCenter}
+          setPpmCenter={setPpmCenter}
+          numFilamentsSec={numFilamentsSec}
+          setNumFilamentsSec={setNumFilamentsSec}
+          filamentInitialStd={filamentInitialStd}
+          setFilamentInitialStd={setFilamentInitialStd}
+          filamentGrowth={filamentGrowth}
+          setFilamentGrowth={setFilamentGrowth}
+          filamentNoise={filamentNoise}
+          setFilamentNoise={setFilamentNoise}
+          fadeOut={fadeOut}
+          plumeSimulationIsLoading={plumeSimulationIsLoading}
+          plumeSimulationLoadingText={plumeSimulationLoadingText}
+          handleGoBackGadenChoise={handleGoBackGadenChoise}
+          setPagePath={setPagePath}
+          pagePath={pagePath}
+        />
       )}
         {savedSimulationsVisible && (
-          <div className="saved-simulations-list" >
-            <div className="saved-simulations-header">
-              <h3>Saved Plume Simulations</h3>
-              <input
-                ref={searchInputRef}
-                type="text"
-                className="search-bar"
-                placeholder="Search by name or simulation"
-                onChange={handleSearch}
-              />
-              <button
-                className={`go-back-saved-simulations ${fadeOut ? 'fade-out' : ''}`}
-                onClick={() => {
-                  handleGoBackGadenChoise();
-                  setPagePath(pagePath.slice(0, -1));
-                }}
-              >
-                Go Back
-            </button>
-            </div>
-            <div className="saved-simulations-list">
-              {filteredSimulations.length > 0 ? (
-                <ul>
-                {filteredSimulations.map((simulation, index) => (
-                  <li
-                    key={index}
-                    className={`simulation-item ${fadeOut ? 'fade-out' : ''}`}
-                  >
-                    <div className="simulation-content">
-                      <div
-                        className="simulation-details"
-                        onClick={() => handleSimulationClick(simulation.simulation)}
-                      >
-                        <strong>Simulation Name:</strong> {simulation.simulationName || 'Unnamed Simulation'} <br />
-                        <strong>Simulation:</strong> {simulation.simulation || 'No simulation description'}
-                      </div>
-                      <div
-                        className="trash-icon"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          openDeleteModal(simulation);
-                        }}
-                      >
-                        🗑️
-                      </div>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-              
-              ) : (
-                <p>No simulations found</p>
-              )}
-              {showModal && (
-                <ConfirmationModal
-                  message="Are you sure you want to delete this simulation?"
-                  onConfirm={confirmDelete}
-                  onCancel={closeModal}
-                />
-              )}
-              {showInfoModal && (
-                  <InfoModal
-                    message="Loading Enviroment Simulation "
-                  />
-              )}
-            </div>
-          </div>
+          <SavedSimulationsPage
+            fadeOut={fadeOut}
+            filteredSimulations={filteredSimulations}
+            handleSearch={handleSearch}
+            handleGoBackGadenChoise={handleGoBackGadenChoise}
+            setPagePath={setPagePath}
+            pagePath={pagePath}
+            handleSimulationClick={handleSimulationClick}
+            openDeleteModal={openDeleteModal}
+            showModal={showModal}
+            confirmDelete={confirmDelete}
+            closeModal={closeModal}
+            showInfoModal={showInfoModal}
+          />
         )}
         {simulationDetail && (
-        <>
-          <div className="control-simulation-details">
-            <button
-              className={`go-back-simulation-details ${fadeOut ? 'fade-out' : ''}`}
-              onClick={() => {
-                handleGoBackSavedSimulations();
-                setPagePath(pagePath.slice(0, -1));
-              }}
-            >
-              Go Back
-            </button>
-            <div className="toggle-buttons">
-              <button
-                className={`toggle-button ${activeButton === 'gaden' ? 'active' : 'inactive'}`}
-                onClick={
-                  () => handleToggleButton('gaden')}
-              >
-                Gaden Simulations
-              </button>
-              <button
-                className={`toggle-button ${activeButton === 'robot' ? 'active' : 'inactive'}`}
-                onClick={() => handleToggleButton('robot')}
-              >
-                Robot Simulations
-              </button>
-            </div>
-             {activeButton === 'robot' && robotSetData && robotSetData.length > 0 && (
-              <div className={`saved-simulations-list ${fadeOut ? 'fade-out' : ''}`}>
-                <div className="robot-sim-header">
-                  <input
-                    ref={searchInputRef}
-                    type="text"
-                    className="search-bar"
-                    placeholder="Search by name of the set"
-                    value={robotSetSearch}
-                    onChange={e => setRobotSetSearch(e.target.value)}
-                  />
-                  <h3 className="simulation-title">Robot Simulation Sets</h3>
-                </div>
-                <ul>
-                  {filteredRobotSets
-                  .map((set, idx) => (
-                    <li
-                      key={idx}
-                      className={`simulation-item ${fadeOut ? 'fade-out' : ''}`}
-                    >
-                      <div className="simulation-content">
-                        <div 
-                          className="simulation-details"
-                          onClick={() => handleSetClick(set)}
-                        >
-                          <strong>Name:</strong> {set.simulation_set ? set.simulation_set.split('/')[0] : 'Unnamed Set'} <br />
-                          <strong>Number of Simulations:</strong> {set.simulation_set ? set.simulation_set.split('/').slice(1).join('/') : '0'}                        </div>
-                        <div
-                          className="trash-icon"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            openSetDeleteModal(set);
-                          }}
-                        >
-                          🗑️
-                        </div>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-            )}
-            {showModal && (
-                <ConfirmationModal
-                  message="Are you sure you want to delete this set?"
-                  onConfirm={confirmSetDelete}
-                  onCancel={closeSetModal}
-                />
-              )}
-            {showCheckboxes && (
-              <div className="checkbox-filters">
-                <label>
-                  <input
-                    type="checkbox"
-                    name="all"
-                    checked={checkedOptions.all}
-                    onChange={handleCheckboxChange}
-                  />
-                  Show all simulations
-                </label>
-
-                <label>
-                  <input
-                    type="checkbox"
-                    name="heatmap"
-                    checked={checkedOptions.heatmap}
-                    onChange={handleCheckboxChange}
-                  />
-                  Show heatmap
-                </label>
-
-                <label>
-                  <input
-                    type="checkbox"
-                    name="wind"
-                    checked={checkedOptions.wind}
-                    onChange={handleCheckboxChange}
-                  />
-                  Show wind vectors
-                </label>
-
-                <label>
-                  <input
-                    type="checkbox"
-                    name="contour"
-                    checked={checkedOptions.contour}
-                    onChange={handleCheckboxChange}
-                  />
-                  Show contour
-                </label>
-              
-                 <select
-                    value={selectedHeight}
-                    onChange={(e) => setSelectedHeight(e.target.value)}
-                  >
-                    {availableHeights
-                      .map((height) => parseFloat(height)) 
-                      .sort((a, b) => a - b)
-                      .map((height, idx) => (
-                        <option key={idx} value={height}>
-                          {height ?? 'Unknown'}
-                        </option>
-                      ))}
-                  </select>
-              </div> 
-          )}
-          </div>
-          <div className="gif-container">
-            {!loadingGifs && filteredGifs.length === 0 && !activeButton === 'robot' && (
-              <p>No GIFs available for the selected options.</p>
-            )}
-
-            {filteredGifs.length > 0 && (
-              
-              filteredGifs
-                .slice()
-                .sort((a, b) => {a.type.localeCompare(b.type)})
-                .filter((gifObj) => {
-                  if (activeButton === 'gaden') {
-                    return ['heatmap', 'wind', 'contour'].includes(gifObj.type) && gifObj.iteration === currentIteration; 
-                  }
-                })
-                .filter((gifObj) => {
-                  if (gifObj.type !== 'robot') {
-                    return gifObj.height == selectedHeight;
-                  }
-                  return true;
-                })
-                
-                .map((gifObj, index) => (
-                  <div key={index} className="gif-description">
-                    <h3>Height: {gifObj.height ?? 'Unknown'}</h3>
-                    <img
-                      src={gifObj.url}
-                      alt={`Simulation GIF ${index + 1}`}
-                      className="gif-image"
-                      onClick={() => {handleGifClick(gifObj)}}
-                      onLoad={() => handleImageLoaded(gifObj.url)}
-                      style={{ cursor: 'pointer' }}
-                    />
-                  </div>
-                ))
-            )}
-          </div>
-
-      </>
-      )}
+          <SimulationDetail
+            simulationDetail={simulationDetail}
+            fadeOut={fadeOut}
+            activeButton={activeButton}
+            setActiveButton={setActiveButton}
+            robotSetData={robotSetData}
+            filteredRobotSets={filteredRobotSets}
+            filteredGifs={filteredGifs}
+            checkedOptions={checkedOptions}
+            selectedHeight={selectedHeight}
+            availableHeights={availableHeights}
+            loadingGifs={loadingGifs}
+            currentIteration={currentIteration}
+            robotSetSearch={robotSetSearch}
+            setRobotSetSearch={setRobotSetSearch}
+            showModal={showModal}
+            showCheckboxes={showCheckboxes}
+            setPagePath={setPagePath}
+            setSelectedHeight={setSelectedHeight}
+            handleGoBackSavedSimulations={handleGoBackSavedSimulations}
+            handleSetClick={handleSetClick}
+            openSetDeleteModal={openDeleteModal}
+            confirmSetDelete={confirmSetDelete}
+            closeSetModal={closeSetModal}
+            handleCheckboxChange={handleCheckboxChange}
+            handleGifClick={handleGifClick}
+            handleImageLoaded={handleImageLoaded}
+            handleToggleButton={handleToggleButton}
+          />
+        )}
       {showRobotSetDetail && (
-        <div className="gaden-simulation-click">
-          <button
-            className={`go-back-simulation-details ${fadeOut ? 'fade-out' : ''}`}
-            onClick={() => {
-                handleGoBackRobotSetDetail();
-                setPagePath(pagePath.slice(0, -1));
-              }}
-          >
-            Go Back
-          </button>
-          <div className="content-container">
-            <div className="gif-description-robot">
-              {gifsInSet
-                .filter(gifObj => gifObj.robotSim_id === selectedSetSimId && gifObj.iteration === currentIteration)
-                .map((gifObj, index) => (
-                  <div key={index} className="gif-description">
-                  <div className="Simulation-set-select-container">
-                    <label>
-                      Select Simulation in Set:&nbsp;
-                      <select
-                        value={selectedSetSimId}
-                        onChange={e => {
-                          const simId = Number(e.target.value);
-                          setSelectedSetSimId(simId);
-                          setCurrentIteration(0);
-                          setGifs(gifsInSet.filter(g => g.robotSim_id === simId));
-                        }}
-                      >
-                        {Array.from(new Set(gifsInSet.map(g => g.robotSim_id)))
-                          .filter(id => id !== undefined && id !== null)
-                          .map((id, index, array) => (
-                            <option key={id} value={id}>
-                              Simulation {index + 1}
-                            </option>
-                          ))}
-                      </select>
-                    </label>
-                  </div>
-                    <h3>Height: {gifObj.height ?? 'Unknown'}</h3>
-                    <h3>Median time per iteration: {medianTime} </h3>
-                    <h3>Iteration: {gifObj.iteration} - took: {gifObj.time} s</h3>
-                    <GifWithGrid
-                      gifObj={gifObj}
-                      simulationBounds={simulationBounds}
-                      robots={robots}
-                      selectedRobotIdx={selectedRobotIdx}
-                      grid={showGrid}
-                      deviation={deviationSet}
-                      numberOfRobots={selectedRobotNumber}
-                      type={robotSimulationMode}
-                      onSetRobotCoords={() => {}}
-                    />
-                    <div className="button-container-gaden-gif">
-                      <div>
-                        <button onClick={handleIterationBackGaden}>
-                          {currentIteration > minIteration && isPausedGaden ? '⏮️' : '🚫'}
-                        </button>
-                        <button onClick={handlePauseResume}>
-                          {isPausedGaden ? '▶️' : '⏸️'}
-                        </button>
-                        <button onClick={handleIterationForwardGaden}>
-                          {currentIteration < maxIteration && isPausedGaden ? '⏭️' : '🚫'}
-                        </button>
-                      </div>
-                      <div>
-                        <button onClick={handleChangeSimulationSpeedGaden}>
-                          {gadenSimulationSpeed}x
-                        </button>
-                        <button onClick={() => setCurrentIteration(minIteration)}>
-                          ↻
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-            </div>
-            <div className="robot-path-list-container">
-              <h4>Robot Path:</h4>
-              <div className="checkbox-filters">
-                <label>
-                  <input
-                    type="checkbox"
-                    checked={showTotalStatsRobotSim}
-                    onChange={() => setShowTotalStatsRobotSim((prev) => !prev)}
-                  />
-                  show total stats
-                </label>
-                <br />
-                <select
-                  value={selectedRobotFilter}
-                  onChange={e => setSelectedRobotFilter(e.target.value)}
-                >
-                  <option value="all">All Robots</option>
-                  {robotNumbers.map(robotNum => (
-                    <option key={robotNum} value={robotNum}>
-                      Robot {robotNum}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <ul className="robot-path-list">
-                {(() => {
-                  const seen = new Set();
-                  const simGifs = gifsInSet.filter(g => g.robotSim_id === selectedSetSimId);
-                  return (showTotalStatsRobotSim
-                    ? simGifs.filter(gifObj => Array.isArray(gifObj.robot_path))
-                    : simGifs.filter(gifObj => gifObj.iteration === currentIteration)
-                  )
-                    .flatMap(gifObj =>
-                      (gifObj.robot_path || [])
-                        .filter(point =>
-                          selectedRobotFilter === 'all' ? true : String(point.robot) === String(selectedRobotFilter)
-                        )
-                        .filter(point => {
-                          const key = `${gifObj.iteration}-${point.robot}`;
-                          if (seen.has(key)) return false;
-                          seen.add(key);
-                          return true;
-                        })
-                        .map((point, idx) => (
-                          <li
-                            key={`${gifObj.iteration}-${point.robot}-${point.robot_position.x}-${point.robot_position.y}-${point.robot_position.z}-${idx}`}
-                            className="robot-path-item"
-                          >
-                            <strong>Robot:</strong> {point.robot} <br />
-                            <strong>Position:</strong> (x: {point.robot_position.x.toFixed(2)}, y: {point.robot_position.y.toFixed(2)}, z: {point.robot_position.z})<br />
-                            <strong>Concentration:</strong> {Number(point.concentration).toFixed(7)}<br />
-                            <strong>Current:</strong> (x: {point.wind_speed.x.toFixed(3)}, y: {point.wind_speed.y.toFixed(3)}, z: {point.wind_speed.z.toFixed(3)})<br />
-                          </li>
-                        ))
-                    );
-                })()}
-              </ul>
-            </div>
-          </div>
-          {showInfoModal && (
-            <InfoModal
-              message="Loading Set "
-            />
-         )}
-        </div>
+        <RobotSetDetail
+          showRobotSetDetail={showRobotSetDetail}
+          fadeOut={fadeOut}
+          handleGoBackRobotSetDetail={handleGoBackRobotSetDetail}
+          pagePath={pagePath}
+          gifsInSet={gifsInSet}
+          selectedSetSimId={selectedSetSimId}
+          setSelectedSetSimId={setSelectedSetSimId}
+          currentIteration={currentIteration}
+          handleIterationBackGaden={handleIterationBackGaden}
+          handlePauseResume={handlePauseResume}
+          handleIterationForwardGaden={handleIterationForwardGaden}
+          handleChangeSimulationSpeedGaden={handleChangeSimulationSpeedGaden}
+          gadenSimulationSpeed={gadenSimulationSpeed}
+          minIteration={minIteration}
+          maxIteration={maxIteration}
+          isPausedGaden={isPausedGaden}
+          showGrid={showGrid}
+          deviationSet={deviationSet}
+          robots={robots}
+          selectedRobotIdx={selectedRobotIdx}
+          selectedRobotNumber={selectedRobotNumber}
+          robotSimulationMode={robotSimulationMode}
+          selectedRobotFilter={selectedRobotFilter}
+          setSelectedRobotFilter={setSelectedRobotFilter}
+          robotNumbers={robotNumbers}
+          showTotalStatsRobotSim={showTotalStatsRobotSim}
+          setShowTotalStatsRobotSim={setShowTotalStatsRobotSim}
+          showInfoModal={showInfoModal}
+          setPagePath={setPagePath}
+          setCurrentIteration={setCurrentIteration}
+          setGifs={setGifs}
+          medianTime={medianTime}
+          simulationBounds={simulationBounds}
+        />
       )}
       </div>
       {gadenSimulationClickVisible && clickedGif && robotSimulation && (
-        <div className="gaden-simulation-click">
-          <button
-            className={`go-back-simulation-details ${fadeOut ? 'fade-out' : ''}`}
-            onClick={() => {
-                handleGoBackSimulationDetails();
-                setPagePath(pagePath.slice(0, -1));
-              }}
-          >
-            Go Back
-          </button>
-          <div className="content-container">
-            <div className="gif-description-robot">
-              {relatedGifs
-                .filter(gifObj => gifObj.iteration === currentIteration)
-                .map((gifObj, index) => (
-                  <div key={index} className="gif-description">
-                    <h3>Height: {gifObj.height ?? 'Unknown'}</h3>
-                    <h3>Iteration: {gifObj.iteration}</h3>
-                    <div className="grid-toggle-div">
-                      <label>
-                        <input
-                          type="checkbox"
-                          className = "toggle-button"
-                          checked={showGrid}
-                          onChange={() => toggleGrid()}
-                        />
-                        Show Grid
-                      </label>
-                    </div>
-                    {!showGrid ? (
-                    <>
-                      <div className="robot-simulation-inputs">
-                        <label>Select the robot to set the coordinates</label>
-                        <br />
-                        {robots.map((robot, idx) => {
-                          if (selectedRobotNumber > idx) {
-                            return (
-                              <button
-                                className="number-of-robots-button"
-                                key={idx}
-                                onClick={() => setSelectedRobotIdx(idx)}
-                                style={{
-                                  background: selectedRobotIdx === idx ? 'lightblue' : 'white',
-                                }}
-                              >
-                              {idx + 1} 
-                              </button>
-                            );
-                          }
-                          return null; 
-                        })}
-                      </div>
- 
-                   <GifWithGrid
-                    gifObj={gifObj}
-                    simulationBounds={simulationBounds}
-                    robots={robots}
-                    selectedRobotIdx={selectedRobotIdx}
-                    grid={false}
-                    deviation={deviationSet}
-                    numberOfRobots={selectedRobotNumber}
-                    type={robotSimulationMode}
-                    onSetRobotCoords={(x, y, xFinal, yFinal) => {
-                      if (selectedRobotIdx !== null) {
-                        if (x !== null) {
-                          handleRobotInputChange(selectedRobotIdx, 'robotXlocation', x.toFixed(1));
-                          handleRobotInputChange(selectedRobotIdx, 'robotYlocation', y.toFixed(1));
-                          
-                        } else {
-                          handleRobotInputChange(selectedRobotIdx, 'finalRobotXlocation', xFinal.toFixed(1));
-                          handleRobotInputChange(selectedRobotIdx, 'finalRobotYlocation', yFinal.toFixed(1));
-                        }
-                      }
-                    }}
-                  />
-                  </>
-                    ) : (
-                      <>
-                      <div className="robot-simulation-inputs">
-                        <label>Select the robot to set the coordinates</label>
-                        <br />
-                        {robots.map((robot, idx) => {
-                          if (selectedRobotNumber > idx) {
-                            return (
-                              <button
-                                className="number-of-robots-button"
-                                key={idx}
-                                onClick={() => setSelectedRobotIdx(idx)}
-                                style={{
-                                  background: selectedRobotIdx === idx ? 'lightblue' : 'white',
-                                }}
-                              >
-                              {idx + 1} 
-                              </button>
-                            );
-                          }
-                          return null; 
-                        })}
-                      </div>
- 
-                      <GifWithGrid
-                        gifObj={gifObj}
-                        simulationBounds={simulationBounds}
-                        robots={robots}
-                        selectedRobotIdx={selectedRobotIdx}
-                        grid={true}
-                        numberOfRobots={selectedRobotNumber}
-                        type={robotSimulationMode}
-                        deviation={deviationSet}
-                        onSetRobotCoords={(x, y, xFinal, yFinal) => {
-                          if (selectedRobotIdx !== null) {
-                            if (x !== null) {
-                              handleRobotInputChange(selectedRobotIdx, 'robotXlocation', x.toFixed(1));
-                              handleRobotInputChange(selectedRobotIdx, 'robotYlocation', y.toFixed(1));
-                              
-                            } else {
-                              handleRobotInputChange(selectedRobotIdx, 'finalRobotXlocation', xFinal.toFixed(1));
-                              handleRobotInputChange(selectedRobotIdx, 'finalRobotYlocation', yFinal.toFixed(1));
-                            }
-                          }
-                        }}
-                      />
-                 </>
-                    )}
-                    
-                    <div className="button-container-gaden-gif">
-                      <div>
-                      <button onClick={handleIterationBackGaden}>
-                        {currentIteration > minIteration && isPausedGaden ? '⏮️' : '🚫'}
-                      </button>
-                      <button onClick={handlePauseResume}> 
-                        {isPausedGaden ? '▶️' : '⏸️'} 
-                      </button>
-                      <button onClick={handleIterationForwardGaden}>
-                        {currentIteration < maxIteration && isPausedGaden ? '⏭️' : '🚫'}
-                      </button>
-                      </div>
-                      <div>
-                        <button onClick={handleChangeSimulationSpeedGaden}>
-                          {gadenSimulationSpeed}x
-                        </button>
-                        <button onClick={() => setCurrentIteration(minIteration)}>
-                          ↻
-                        </button>
-                        </div>
-                    </div>
-                  </div>
-                ))}
-            </div>
-            <div className="robot-simulation-form-container">
-              <form onSubmit={(e) => handleRobotSimulationSubmit(e, clickedGif.simulation)} className="robot-simulation-form">              <div className="robot-simulation-inputs">
-                <div className="robot-simulation-inputs">
-                  <label>Number of robots</label>
-                  {[1, 2, 3, 4].map((num) => (
-                    <button
-                      key={num}
-                      type="button"
-                      className={`number-of-robots-button${selectedRobotNumber === num ? ' selected' : ''}`}
-                      onClick={() => setSelectedRobotNumber(num)}
-                    >
-                      {num}
-                    </button>
-                  ))}
-                  <div className="robot-simulation-modes">
-                      <button
-                        type="button"
-                        className={`simulation-mode-button ${robotSimulationMode === 'linear' ? 'selected' : ''}`}
-                        onClick={() => setRobotSimulationMode('linear')}
-                      >
-                        Linear Simulation
-                      </button>
-                      <button
-                        type="button"
-                        className={`simulation-mode-button ${robotSimulationMode === 'moth' ? 'selected' : ''}`}
-                        onClick={() => setRobotSimulationMode('moth')}
-                      >
-                        Silkworm Moth Simulation
-                      </button>
-                      <button
-                        type="button"
-                        className={`simulation-mode-button ${robotSimulationMode === 'pso' ? 'selected' : ''}`}
-                        onClick={() => setRobotSimulationMode('pso')}
-                      >
-                        Particle swarm optimization
-                      </button>
-                    </div>
-                  </div>
-                  <br />
-                  <label>
-                    Starting ambient Iteration
-                    <HoverComponent text="Iteration of the plume simulation that the robot will start Default: 0" />  
-                  </label>
-                    <input 
-                      type="integer"
-                      value={startingIteration}
-                      onChange={e => handleStartingIterationInputChange(e.target.value)}
-                    />
-                  <label>
-                    Number of simulations
-                    <HoverComponent text="Number of robot Simulations Default: 1" />  
-                  </label>
-                    <input 
-                      type="integer"
-                      value={numRobotSimulations}
-                      onChange={e => handleNumRobotSimulationsChange(e.target.value)}
-                    />
-                  <label>
-                    Name of the simulations set
-                    <HoverComponent text="Name that the set of simulations will have" />  
-                  </label>
-                    <input 
-                      type="text"
-                      value={nameSimulationSet}
-                      onChange={e => handleNameSimulationSetChange(e.target.value)}
-                    />
-                    <label>
-                    Deviation from selected points
-                    <HoverComponent text="Random deviation from the point that the simulation will have Default: 0" />  
-                  </label>
-                    <input 
-                      type="number"
-                      step="0.1"
-                      value={deviationSet}
-                      onChange={e => handleDeviationSetChange(e.target.value)}
-                    />
-                   {['pso'].includes(robotSimulationMode) && (
-                        <>
-                          <label>
-                            Final iteration
-                            <HoverComponent text="Iteration when the robot simulation stops" />
-                          </label>
-                          <input 
-                            type="integer"
-                            value={psoSimulationIterations}
-                            onChange={e => handlePsoIterationsInputChange(e.target.value)}
-                          />
-                          <div className="ros-checkbox-label">
-                            <input 
-                              className="toggle-button"
-                              type="checkbox"
-                              checked={useRos}  
-                              onChange={() => toggleRos()} 
-                            />
-                            <label className="ros-lable">ROS <HoverComponent text="Use ROS in the communication between robots (slower)" /></label>
-                          </div>
-                        </>
-                      )}
-                  {[...Array(selectedRobotNumber)].map((_, idx) => (
-                    <div key={idx} className="robot-params-input">
-                      <h4>Robot {idx + 1}</h4>
-
-                      <label>
-                        Robot Speed
-                        <HoverComponent text="Speed of the robot in m/s" />
-                      </label>
-                      <input
-                        type="number"
-                        value={robots[idx].robotSpeed}
-                        step="0.1"
-                        onChange={e => handleRobotInputChange(idx, 'robotSpeed', e.target.value)}
-                      />
-                      <label>
-                        Initial robot X coordinate, range: {simulationBounds.xMin} : {simulationBounds.xMax}
-                        <HoverComponent text="X coordinate where the robot begins the simulation" />
-                      </label>
-                      <input
-                        type="number"
-                        value={robots[idx].robotXlocation}
-                        step="0.1"
-                        min = {simulationBounds.xMin}
-                        max = {simulationBounds.xMax}
-                        onChange={e => handleRobotInputChange(idx, 'robotXlocation', e.target.value)}
-                      />
-                      <label>
-                        Initial robot Y coordinate, range: {simulationBounds.yMin} : {simulationBounds.yMax}
-                        <HoverComponent text="Y coordinate where the robot begins the simulation" />
-                      </label>
-                      <input
-                        type="number"
-                        value={robots[idx].robotYlocation}
-                        step="0.1"
-                        min = {simulationBounds.yMin}
-                        max = {simulationBounds.yMax}
-                        onChange={e => handleRobotInputChange(idx, 'robotYlocation', e.target.value)}
-                      />
-                      
-                      {robotSimulationMode === 'linear' && (
-                        <>
-                          <label>
-                            Final robot X coordinate, range: {simulationBounds.xMin} : {simulationBounds.xMax}
-                            <HoverComponent text="X coordinate where the robot ends the simulation" />
-                          </label>
-                          <input
-                            type="number"
-                            value={robots[idx].finalRobotXlocation}
-                            step="0.1"
-                            min = {simulationBounds.xMin}
-                            max = {simulationBounds.xMax}
-                            onChange={e => handleRobotInputChange(idx, 'finalRobotXlocation', e.target.value)}
-                          />
-                          <label>
-                            Final robot Y coordinate, range: {simulationBounds.yMin} : {simulationBounds.yMax}
-                            <HoverComponent text="Y coordinate where the robot ends the simulation" />
-                          </label>
-                          <input
-                            type="number"
-                            value={robots[idx].finalRobotYlocation}
-                            step="0.1"
-                            min = {simulationBounds.yMin}
-                            max = {simulationBounds.yMax}
-                            onChange={e => handleRobotInputChange(idx, 'finalRobotYlocation', e.target.value)}
-                          />
-                        </>
-                      )}
-                      {robotSimulationMode === 'moth' && (
-                        <>
-                          <label>
-                            Angle
-                            <HoverComponent text="Angle the robot will move in relation with the currrent vector in radians" />
-                          </label>
-                          <input
-                            type="number"
-                            value={robots[idx].angle}
-                            onChange={e => handleRobotInputChange(idx, 'angle', e.target.value)}
-                            min="0"
-                            max={2 * Math.PI}
-                            step="0.01"
-                          />
-                        </>
-                      )}
-                      {['moth'].includes(robotSimulationMode) && (
-                        <>
-                          <label>Final iteration</label>
-                          <input 
-                            type="integer"
-                            value={robots[idx].iterations}
-                            onChange={e => handleRobotInputChange(idx, 'iterations', e.target.value)}
-                            placeholder="Iteration when the robot will stop"
-                          />
-                        </>
-                      )}
-                    </div>
-                  ))}      
-                  <button type="submit" className={`submit-button ${fadeOut ? 'fade-out' : ''}`} >Submit</button>
-                </div>
-                
-                
-              </form>
-            </div>
-          </div>
-          {robotSimulationIsLoading && (
-        <div className="popup-overlay">
-            <div className="popup">
-              <p>{robotSimulationLoadingText}</p>
-        </div>
-        </div>
-      )}
-        </div>
-      )}
-      {gadenSimulationClickVisible && clickedGif && !robotSimulation && (
-        <div className="gaden-simulation-click">
-          <button
-            className={`go-back-simulation-details ${fadeOut ? 'fade-out' : ''}`}
-            onClick={() => {
-              handleGoBackSimulationDetails();
-              setPagePath(pagePath.slice(0, -1));
-            }}
-          >
-            Go Back
-          </button>
-
-          <div className="content-container">
-            <div className="gif-description-robot">
-              
-              {relatedGifs
-                .filter(gifObj => gifObj.iteration === currentIteration)
-              
-                .map((gifObj, index) => (
-                    <div key={index} className="gif-description">
-                      <h3>Height: {gifObj.height ?? 'Unknown'}</h3>
-                      <h3>Iteration: {gifObj.iteration}</h3>
-                      <img
-                        src={gifObj.url}
-                        alt={`Related GIF ${index + 1}`}
-                        className="gif-image"
-                        style={{ cursor: 'pointer' }}
-                      />
-                      <div className="button-container-gaden-gif">
-                        <div>
-                        <button onClick={handleIterationBackGaden}>
-                          {currentIteration > minIteration && isPausedGaden ? '⏮️' : '🚫'}
-                        </button>
-                        <button onClick={handlePauseResume}> 
-                          {isPausedGaden ? '▶️' : '⏸️'} 
-                        </button>
-                        <button onClick={handleIterationForwardGaden}>
-                          {currentIteration < maxIteration && isPausedGaden ? '⏭️' : '🚫'}
-                        </button>
-                        </div>
-                        <div>
-                          <button onClick={handleChangeSimulationSpeedGaden}>
-                            {gadenSimulationSpeed}x
-                          </button>
-                          <button onClick={() => setCurrentIteration(minIteration)}>
-                            ↻
-                          </button>
-                          </div>
-                      </div>
-                    </div>
-                ))
-              }
-            </div>
-            <div className="robot-path-list-container">
-              <h4>Robot Path:</h4>
-              <div className="checkbox-filters">
-              <label>
-                <input
-                  type="checkbox"
-                  checked={showTotalStatsRobotSim}
-                  onChange={() => setShowTotalStatsRobotSim((prev) => !prev)}
-                />
-                show total stats
-              </label>
-              <br />
-              <select
-                value={selectedRobotFilter}
-                onChange={e => setSelectedRobotFilter(e.target.value)}
-              >
-                <option value="all">All Robots</option>
-                {robotNumbers.map(robotNum => (
-                  <option key={robotNum} value={robotNum}>
-                    Robot {robotNum}
-                  </option>
-                ))}
-              </select>
-              </div>
-              <ul className="robot-path-list">
-                {(() => {
-                  const seen = new Set();
-                  return (showTotalStatsRobotSim
-                    ? relatedGifs.filter(gifObj => Array.isArray(gifObj.robot_path))
-                    : relatedGifs.filter(gifObj => gifObj.iteration === currentIteration)
-                  )
-                    .flatMap(gifObj =>
-                      gifObj.robot_path
-                        .filter(point =>
-                          selectedRobotFilter === 'all' ? true : String(point.robot) === String(selectedRobotFilter)
-                        )
-                        .filter(point => {
-                          const key = `${gifObj.iteration}-${point.robot}`;
-                          if (seen.has(key)) return false;
-                          seen.add(key);
-                          return true;
-                        })
-                        .map((point, idx) => (
-                          <li
-                            key={`${gifObj.iteration}-${point.robot}-${point.robot_position.x}-${point.robot_position.y}-${point.robot_position.z}-${idx}`}
-                            className="robot-path-item"
-                          >
-                            <strong>Robot:</strong> {point.robot} <br />
-                            <strong>Position:</strong> (x: {point.robot_position.x.toFixed(2)}, y: {point.robot_position.y.toFixed(2)}, z: {point.robot_position.z})<br />
-                            <strong>Concentration:</strong> {Number(point.concentration).toFixed(7)}<br />
-                            <strong>Current:</strong> (x: {point.wind_speed.x.toFixed(3)}, y: {point.wind_speed.y.toFixed(3)}, z: {point.wind_speed.z.toFixed(3)})
-                          </li>
-                        ))
-                    );
-                })()}
-              </ul>
-            </div>
-          </div>
-        </div>
+        <GadenSimulationClick
+          gadenSimulationClickVisible={gadenSimulationClickVisible}
+          clickedGif={clickedGif}
+          robotSimulation={robotSimulation}
+          fadeOut={fadeOut}
+          handleGoBackSimulationDetails={handleGoBackSimulationDetails}
+          pagePath={pagePath}
+          setPagePath={setPagePath}
+          relatedGifs={relatedGifs}
+          currentIteration={currentIteration}
+          minIteration={minIteration}
+          maxIteration={maxIteration}
+          showGrid={showGrid}
+          toggleGrid={toggleGrid}
+          robots={robots}
+          selectedRobotNumber={selectedRobotNumber}
+          selectedRobotIdx={selectedRobotIdx}
+          setSelectedRobotIdx={setSelectedRobotIdx}
+          simulationBounds={simulationBounds}
+          deviationSet={deviationSet}
+          robotSimulationMode={robotSimulationMode}
+          handleRobotInputChange={handleRobotInputChange}
+          handleIterationBackGaden={handleIterationBackGaden}
+          isPausedGaden={isPausedGaden}
+          handlePauseResume={handlePauseResume}
+          handleIterationForwardGaden={handleIterationForwardGaden}
+          gadenSimulationSpeed={gadenSimulationSpeed}
+          handleChangeSimulationSpeedGaden={handleChangeSimulationSpeedGaden}
+          setCurrentIteration={setCurrentIteration}
+          robotSimulationIsLoading={robotSimulationIsLoading}
+          robotSimulationLoadingText={robotSimulationLoadingText}
+          handleRobotSimulationSubmit={handleRobotSimulationSubmit}
+          startingIteration={startingIteration}
+          handleStartingIterationInputChange={handleStartingIterationInputChange}
+          numRobotSimulations={numRobotSimulations}
+          handleNumRobotSimulationsChange={handleNumRobotSimulationsChange}
+          nameSimulationSet={nameSimulationSet}
+          handleNameSimulationSetChange={handleNameSimulationSetChange}
+          handleDeviationSetChange={handleDeviationSetChange}
+          psoSimulationIterations={psoSimulationIterations}
+          handlePsoIterationsInputChange={handlePsoIterationsInputChange}
+          useRos={useRos}
+          toggleRos={toggleRos}
+          setSelectedRobotNumber={setSelectedRobotNumber}
+          setRobotSimulationMode={setRobotSimulationMode}
+        />
       )}
     </div>
   

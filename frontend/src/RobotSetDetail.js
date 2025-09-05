@@ -35,7 +35,9 @@ const RobotSetDetail = ({
   setCurrentIteration,
   setGifs,
   medianTime,
-  simulationBounds
+  simulationBounds,
+  activeRobotButton,
+  handleRobotToggleButton
 }) => {
 
   return (
@@ -51,7 +53,28 @@ const RobotSetDetail = ({
           >
             Go Back
           </button>
+          <div className="toggle-buttons">
+            <button
+              className={`toggle-button ${activeRobotButton === 'visual' ? 'active' : 'inactive'}`}
+              onClick={() => handleRobotToggleButton('visual')}
+            >
+              Visual Path
+            </button>
+            <button
+              className={`toggle-button ${activeRobotButton === 'path' ? 'active' : 'inactive'}`}
+              onClick={() => handleRobotToggleButton('path')}
+            >
+              Path
+            </button>
+            <button
+              className={`toggle-button ${activeRobotButton === 'stats' ? 'active' : 'inactive'}`}
+              onClick={() => handleRobotToggleButton('stats')}
+            >
+              Stats
+            </button>
+          </div>
           <div className="content-container">
+            
             <div className="gif-description-robot">
               {gifsInSet
                 .filter(gifObj => gifObj.robotSim_id === selectedSetSimId && gifObj.iteration === currentIteration)
@@ -79,9 +102,12 @@ const RobotSetDetail = ({
                         </select>
                       </label>
                     </div>
+                    
                     <h3>Height: {gifObj.height ?? 'Unknown'}</h3>
                     <h3>Median time per iteration: {medianTime}</h3>
                     <h3>Iteration: {gifObj.iteration} - took: {gifObj.time} s</h3>
+                    {activeRobotButton == "visual" &&(
+                      <>
                     <GifWithGrid
                       gifObj={gifObj}
                       simulationBounds={simulationBounds}
@@ -114,9 +140,13 @@ const RobotSetDetail = ({
                         </button>
                       </div>
                     </div>
+                    </>
+                    )}
                   </div>
                 ))}
             </div>
+            
+            {activeRobotButton == "path" && (
             <div className="robot-path-list-container">
               <h4>Robot Path:</h4>
               <div className="checkbox-filters">
@@ -175,6 +205,7 @@ const RobotSetDetail = ({
                 })()}
               </ul>
             </div>
+            )}
           </div>
           {showInfoModal && (
             <InfoModal

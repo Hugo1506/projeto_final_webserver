@@ -13,6 +13,8 @@ import SavedSimulationsPage from './SavedSimulations';
 import SimulationDetail from './SimulationDetail';
 import RobotSetDetail from './RobotSetDetail';
 import GadenSimulationClick from './GadenSimulationClick';
+import SimulationDetailNoRobot from './SimulationDetailNoRobot'
+import GadenSimulationClickNoRobot from './GadenSimulationClickNoRobot';
 
 const Welcome = ({ username, onLogout }) => {
   const [dropdownVisible, setDropdownVisible] = useState(false);
@@ -101,6 +103,8 @@ const Welcome = ({ username, onLogout }) => {
   const [medianTime, setMedianTime] = useState(null);
   const [pagePath, setPagePath] = useState(["Home"]);
   const [plumeOrExperienciesVisible, setPlumeOrExperienciesVisible] = useState(false);
+  const [showRobotSimulationsSet, setShowRobotSimulationSet] = useState(false);
+  const [activeRobotButton, setActiveRobotButton] = useState("");
 
   const [robots, setRobots] = useState([
     { robotSpeed: '', robotXlocation: '', robotYlocation: '', finalRobotXlocation: '', finalRobotYlocation: '' },
@@ -588,10 +592,9 @@ useEffect(() => {
   };
 
   const handleGadenClick = () => {
-    setPagePath([...pagePath,"Gaden"])
+    setPagePath(prev => [...prev, "Gaden"])
     setFadeOut(true);
     setTimeout(() => {
-      //setGadenChoiseVisible(true);
       setPlumeOrExperienciesVisible(true);
       setAmbientSimulator("Simulator: Gaden version 2.5.0");
       setFadeOut(false);
@@ -776,7 +779,13 @@ useEffect(() => {
   };
 
   const handleGoBackGadenChoise = () => {
-    setGadenChoiseVisible(true);
+    if(pagePath.includes("Experiences")){
+      setPlumeOrExperienciesVisible(true);   
+      setPagePath(prev => [...prev.slice(0, -2)]);
+    }else{
+      setGadenChoiseVisible(true);
+    }
+    
     setIsNewSimulation(false);
     setSavedSimulationsVisible(false);
     setShowPlumeLocation(false);
@@ -787,12 +796,12 @@ useEffect(() => {
 
   const handleSavedSimulationsClick = async () => {
     await fetchSavedSimulations();
-    setPagePath([...pagePath, "Saved Simulations"]);
-
+    setPagePath(prev => [...prev, "Saved Simulations"]);
     setFadeOut(true); 
     setTimeout(() => {
       setGadenChoiseVisible(false); 
       setIsNewSimulation(false); 
+      setPlumeOrExperienciesVisible(false);
       setSavedSimulationsVisible(true);
       setFadeOut(false)
     }, 500);
@@ -801,7 +810,8 @@ useEffect(() => {
 
   const handlePlumeClick = async () => {
     await fetchSavedSimulations();
-    setPagePath([...pagePath, "Plume Simulation"]);
+    setPagePath(prev => [...prev, "Plume Simulation"]);
+    setShowRobotSimulationSet(false);
     setFadeOut(true); 
     setTimeout(() => {
       setIsNewSimulation(false); 
@@ -811,6 +821,17 @@ useEffect(() => {
     }, 500);
   }
 
+  const handleExperiencesClick = async () => {
+    setPagePath(prev => [...prev, "Experiences"]);
+    await fetchSavedSimulations();
+    setShowRobotSimulationSet(true);
+    setFadeOut(true); 
+    setTimeout(() => {
+      setIsNewSimulation(false); 
+      handleSavedSimulationsClick();
+      setFadeOut(false)
+    }, 500);
+  }
   const handleSetClick = async (set) => {
     setGifs([]);
     setGifsInSet([]); 
@@ -823,8 +844,7 @@ useEffect(() => {
     const newGifs = await fetchGifsFromSet(set);
     setGifsInSet(newGifs);
     setShowInfoModal(false);
-
-    setPagePath([...pagePath,"Simulation Set"])
+    setPagePath(prev => [...prev, "Simulation Set"]);
 
     if (newGifs.length > 0) {
       setSelectedSetSimId(newGifs[0].robotSim_id);
@@ -848,11 +868,12 @@ useEffect(() => {
     await fetchGifsFromResults(simulation);
     setShowInfoModal(false);
     setFadeOut(true);
-    
-    setPagePath([...pagePath,"Enviroment Simulation"])
+    setPagePath(prev => [...prev, "Enviroment Simulation"]);
     setTimeout(() => {
       setSavedSimulationsVisible(false);
+      setPlumeOrExperienciesVisible(false);
       setSimulationDetail(true);
+      
       setFadeOut(false);
   
       let previousGifs = [];
@@ -920,7 +941,7 @@ useEffect(() => {
       setGadenSimulationClickVisible(true);
       setSimulationDetail(false);
 
-      setPagePath([...pagePath,"Clicked Gaden Simulation"])
+      setPagePath(prev => [...prev, "Clicked Gaden Simulation"]);
       setCurrentIteration(0);
 
   };
@@ -1107,7 +1128,8 @@ useEffect(() => {
         handleToggleButton('robot');   
         setSimulationDetail(true);
         await handleSimulationClick(simulation); 
-        setPagePath(pagePath.slice(0, -1));  
+        
+        setPagePath(prev => [...prev.slice(0, -1)]);  
          
     }
     
@@ -1127,6 +1149,10 @@ useEffect(() => {
       fetchRobotSetData(clickedGif?.simulation || (filteredGifs[0] && filteredGifs[0].simulation));
       setPagePath(prevPath => [...prevPath.slice(0, -1), "Robot Simulations"]);
     }
+  }
+
+  const handleRobotToggleButton = (button) => {
+    setActiveRobotButton(button);
   }
 
   const handlePauseResume = () => {
@@ -1372,10 +1398,11 @@ useEffect(() => {
             ambientSimulator={ambientSimulator}
             fadeOut={fadeOut}
             handlePlumeClick={handlePlumeClick}
-            handleSavedSimulationsClick={handleSavedSimulationsClick}
+            handleExperiencesClick={handleExperiencesClick}
             setPlumeOrExperienciesVisible={setPlumeOrExperienciesVisible}
             pagePath={pagePath}
             setPagePath={setPagePath}
+            setShowRobotSimulationSet={setShowRobotSimulationSet}
           />
         )}
        {GadenChoiseVisible && (
@@ -1386,7 +1413,6 @@ useEffect(() => {
           handleSavedSimulationsClick={handleSavedSimulationsClick}
           handleGoBack={handleGoBack}
           setPagePath={setPagePath}
-          pagePath={pagePath}
         />
     )}
       {isNewSimulation && !showPlumeLocation && (
@@ -1459,7 +1485,38 @@ useEffect(() => {
             showInfoModal={showInfoModal}
           />
         )}
-        {simulationDetail && (
+        {simulationDetail && !showRobotSimulationsSet && (
+          <SimulationDetailNoRobot
+            simulationDetail={simulationDetail}
+            fadeOut={fadeOut}
+            activeButton={activeButton}
+            setActiveButton={setActiveButton}
+            robotSetData={robotSetData}
+            filteredRobotSets={filteredRobotSets}
+            filteredGifs={filteredGifs}
+            checkedOptions={checkedOptions}
+            selectedHeight={selectedHeight}
+            availableHeights={availableHeights}
+            loadingGifs={loadingGifs}
+            currentIteration={currentIteration}
+            robotSetSearch={robotSetSearch}
+            setRobotSetSearch={setRobotSetSearch}
+            showModal={showModal}
+            showCheckboxes={showCheckboxes}
+            setPagePath={setPagePath}
+            setSelectedHeight={setSelectedHeight}
+            handleGoBackSavedSimulations={handleGoBackSavedSimulations}
+            handleSetClick={handleSetClick}
+            openSetDeleteModal={openDeleteModal}
+            confirmSetDelete={confirmSetDelete}
+            closeSetModal={closeSetModal}
+            handleCheckboxChange={handleCheckboxChange}
+            handleGifClick={handleGifClick}
+            handleImageLoaded={handleImageLoaded}
+            handleToggleButton={handleToggleButton}
+          />
+        )}
+        {simulationDetail && showRobotSimulationsSet && (
           <SimulationDetail
             simulationDetail={simulationDetail}
             fadeOut={fadeOut}
@@ -1525,10 +1582,60 @@ useEffect(() => {
           setGifs={setGifs}
           medianTime={medianTime}
           simulationBounds={simulationBounds}
+          activeRobotButton={activeRobotButton}
+          handleRobotToggleButton={handleRobotToggleButton}
         />
       )}
       </div>
-      {gadenSimulationClickVisible && clickedGif && robotSimulation && (
+      {gadenSimulationClickVisible && clickedGif && robotSimulation && !showRobotSimulationsSet &&(
+        <GadenSimulationClickNoRobot
+          gadenSimulationClickVisible={gadenSimulationClickVisible}
+          clickedGif={clickedGif}
+          robotSimulation={robotSimulation}
+          fadeOut={fadeOut}
+          handleGoBackSimulationDetails={handleGoBackSimulationDetails}
+          pagePath={pagePath}
+          setPagePath={setPagePath}
+          relatedGifs={relatedGifs}
+          currentIteration={currentIteration}
+          minIteration={minIteration}
+          maxIteration={maxIteration}
+          showGrid={showGrid}
+          toggleGrid={toggleGrid}
+          robots={robots}
+          selectedRobotNumber={selectedRobotNumber}
+          selectedRobotIdx={selectedRobotIdx}
+          setSelectedRobotIdx={setSelectedRobotIdx}
+          simulationBounds={simulationBounds}
+          deviationSet={deviationSet}
+          robotSimulationMode={robotSimulationMode}
+          handleRobotInputChange={handleRobotInputChange}
+          handleIterationBackGaden={handleIterationBackGaden}
+          isPausedGaden={isPausedGaden}
+          handlePauseResume={handlePauseResume}
+          handleIterationForwardGaden={handleIterationForwardGaden}
+          gadenSimulationSpeed={gadenSimulationSpeed}
+          handleChangeSimulationSpeedGaden={handleChangeSimulationSpeedGaden}
+          setCurrentIteration={setCurrentIteration}
+          robotSimulationIsLoading={robotSimulationIsLoading}
+          robotSimulationLoadingText={robotSimulationLoadingText}
+          handleRobotSimulationSubmit={handleRobotSimulationSubmit}
+          startingIteration={startingIteration}
+          handleStartingIterationInputChange={handleStartingIterationInputChange}
+          numRobotSimulations={numRobotSimulations}
+          handleNumRobotSimulationsChange={handleNumRobotSimulationsChange}
+          nameSimulationSet={nameSimulationSet}
+          handleNameSimulationSetChange={handleNameSimulationSetChange}
+          handleDeviationSetChange={handleDeviationSetChange}
+          psoSimulationIterations={psoSimulationIterations}
+          handlePsoIterationsInputChange={handlePsoIterationsInputChange}
+          useRos={useRos}
+          toggleRos={toggleRos}
+          setSelectedRobotNumber={setSelectedRobotNumber}
+          setRobotSimulationMode={setRobotSimulationMode}
+        />
+      )}
+       {gadenSimulationClickVisible && clickedGif && robotSimulation && showRobotSimulationsSet &&(
         <GadenSimulationClick
           gadenSimulationClickVisible={gadenSimulationClickVisible}
           clickedGif={clickedGif}

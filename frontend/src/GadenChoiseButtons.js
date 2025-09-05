@@ -1,6 +1,6 @@
 import React from 'react';
 
-const GadenChoiceButtons = ({ ambientSimulator, fadeOut, handleNewSimulationClick, handleSavedSimulationsClick, handleGoBack, setPagePath, pagePath }) => {
+const GadenChoiceButtons = ({ ambientSimulator, fadeOut, handleNewSimulationClick, handleSavedSimulationsClick, handleGoBack, setPagePath }) => {
   return (
       <div className="gaden-choice-buttons">
         <h1 className={'info-header'}>{ambientSimulator}</h1>
@@ -20,7 +20,7 @@ const GadenChoiceButtons = ({ ambientSimulator, fadeOut, handleNewSimulationClic
           className={`go-back-button ${fadeOut ? 'fade-out' : ''}`}
           onClick={() => {
             handleGoBack();
-            setPagePath(pagePath.slice(0, -1));
+            setPagePath(prev => prev.slice(0, -1));
           }}
         >
           Go Back

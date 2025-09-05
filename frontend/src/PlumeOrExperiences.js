@@ -4,10 +4,10 @@ const PlumeOrExperiences = ({
   ambientSimulator,
   fadeOut,
   handlePlumeClick,
-  handleSavedSimulationsClick,
+  handleExperiencesClick,
   setPlumeOrExperienciesVisible,
   pagePath,
-  setPagePath
+  setPagePath,
 }) => {
   return (
     <div className="plumeOrExperiences-choice-buttons">
@@ -20,7 +20,7 @@ const PlumeOrExperiences = ({
       </button>
       <button
         className={`Experience-button ${fadeOut ? 'fade-out' : ''}`}
-        onClick={handleSavedSimulationsClick}
+        onClick={handleExperiencesClick}
       >
         Experiences
       </button>

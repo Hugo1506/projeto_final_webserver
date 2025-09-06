@@ -2,8 +2,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './Welcome.css';
 import logo from './flyrobotics_logo.png'; 
-import GifWithGrid from './GifWithGrid';
-import HoverComponent from './HoverComponent';
 import PagePath from './PagePath';
 import PlumeOrExperiences from './PlumeOrExperiences';
 import GadenChoiseButtons from './GadenChoiseButtons';
@@ -104,7 +102,7 @@ const Welcome = ({ username, onLogout }) => {
   const [pagePath, setPagePath] = useState(["Home"]);
   const [plumeOrExperienciesVisible, setPlumeOrExperienciesVisible] = useState(false);
   const [showRobotSimulationsSet, setShowRobotSimulationSet] = useState(false);
-  const [activeRobotButton, setActiveRobotButton] = useState("");
+  const [activeRobotButton, setActiveRobotButton] = useState("visual");
 
   const [robots, setRobots] = useState([
     { robotSpeed: '', robotXlocation: '', robotYlocation: '', finalRobotXlocation: '', finalRobotYlocation: '' },

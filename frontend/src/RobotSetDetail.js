@@ -1,6 +1,11 @@
 import React, { useState } from 'react';
 import GifWithGrid from './GifWithGrid'; 
 import InfoModal from './InfoModal';  
+import './RobotSetDetail.css'
+import { Line } from 'react-chartjs-2';
+import { Chart, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend } from 'chart.js';
+Chart.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
+
 
 const RobotSetDetail = ({
   showRobotSetDetail,
@@ -39,6 +44,41 @@ const RobotSetDetail = ({
   activeRobotButton,
   handleRobotToggleButton
 }) => {
+
+  const simGifs = gifsInSet.filter(gifObj => gifObj.robotSim_id !== undefined && gifObj.robotSim_id !== null);
+
+  const totalTime = simGifs.reduce((acc, gif) => acc + (gif.time ?? 0), 0);
+  const totalIterations = simGifs.length;
+  const avgTime = totalIterations > 0 ? (totalTime / totalIterations).toFixed(2) : 0;
+
+  const simIds = Array.from(new Set(simGifs.map(g => g.robotSim_id)));
+  const totalIterationsPerSim = simIds.reduce((acc, simId) => {
+    const simIterations = simGifs.filter(g => g.robotSim_id === simId);
+    const maxIteration = Math.max(...simIterations.map(g => g.iteration));
+    return acc + maxIteration;
+  }, 0);
+  const avgIterationsPerSim = simIds.length > 0 ? (totalIterationsPerSim / simIds.length).toFixed(2) : 0;
+
+  const simGifsForSelected = gifsInSet
+  .filter(gifObj => gifObj.robotSim_id === selectedSetSimId)
+  .sort((a, b) => a.iteration - b.iteration);
+
+  const robotDistances = {};
+  if (simGifsForSelected.length > 0) {
+    const firstIteration = simGifsForSelected[0].robot_path || [];
+    const lastIteration = simGifsForSelected[simGifsForSelected.length - 1].robot_path || [];
+
+    firstIteration.forEach(startPoint => {
+      const endPoint = lastIteration.find(p => p.robot === startPoint.robot);
+      if (endPoint) {
+        const dx = endPoint.robot_position.x - startPoint.robot_position.x;
+        const dy = endPoint.robot_position.y - startPoint.robot_position.y;
+        const dz = endPoint.robot_position.z - startPoint.robot_position.z;
+        const distance = Math.sqrt(dx*dx + dy*dy + dz*dz);
+        robotDistances[startPoint.robot] = distance.toFixed(2);
+      }
+    });
+  }
 
   return (
     <>
@@ -81,6 +121,12 @@ const RobotSetDetail = ({
                 .map((gifObj, index) => (
                   <div key={index} className="gif-description">
                     <div className="Simulation-set-select-container">
+                      {activeRobotButton == "stats" && (
+                        <>
+                          <h3>Average Time per Iteration: {avgTime} s</h3>
+                          <h3>Average Iterations per Simulation: {avgIterationsPerSim}</h3>
+                        </>
+                      )}
                       <label>
                         Select Simulation in Set:&nbsp;
                         <select
@@ -104,10 +150,11 @@ const RobotSetDetail = ({
                     </div>
                     
                     <h3>Height: {gifObj.height ?? 'Unknown'}</h3>
-                    <h3>Median time per iteration: {medianTime}</h3>
-                    <h3>Iteration: {gifObj.iteration} - took: {gifObj.time} s</h3>
+                    <h3>Average time per iteration: {medianTime}</h3>
                     {activeRobotButton == "visual" &&(
                       <>
+                    <h3>Iteration: {gifObj.iteration} - took: {gifObj.time} s</h3>
+                    
                     <GifWithGrid
                       gifObj={gifObj}
                       simulationBounds={simulationBounds}
@@ -144,8 +191,7 @@ const RobotSetDetail = ({
                     )}
                   </div>
                 ))}
-            </div>
-            
+            </div>   
             {activeRobotButton == "path" && (
             <div className="robot-path-list-container">
               <h4>Robot Path:</h4>
@@ -158,7 +204,6 @@ const RobotSetDetail = ({
                   />
                   show total stats
                 </label>
-                <br />
                 <select
                   value={selectedRobotFilter}
                   onChange={e => setSelectedRobotFilter(e.target.value)}
@@ -205,6 +250,54 @@ const RobotSetDetail = ({
                 })()}
               </ul>
             </div>
+            )}
+            {activeRobotButton === 'stats' && (
+              <div className="stats-graph-container">
+                <h3>Robot Distances (first → last iteration):</h3>
+                <ul>
+                  {Object.entries(robotDistances).map(([robot, distance]) => (
+                    <li key={robot}>Robot {robot}: {distance} m</li>
+                  ))}
+                </ul>
+                <Line
+                  data={{
+                    labels: gifsInSet
+                      .filter(gifObj => gifObj.robotSim_id === selectedSetSimId)
+                      .sort((a, b) => a.iteration - b.iteration)
+                      .map(gifObj => gifObj.iteration),
+                    datasets: [
+                      {
+                        label: 'Time (s)',
+                        data: gifsInSet
+                          .filter(gifObj => gifObj.robotSim_id === selectedSetSimId)
+                          .map(gifObj => gifObj.time),
+                        borderColor: 'rgba(190, 11, 11, 1)',
+                        backgroundColor: 'rgba(75,192,192,0.2)',
+                        fill: true,
+                        tension: 0.1,
+                      },
+                    ],
+                  }}
+                  options={{
+                    responsive: true,
+                    plugins: {
+                      legend: { display: true },
+                      title: { display: true, text: 'Time per iteration' },
+                    },
+                   scales: {
+                      x: {
+                        title: { display: true, text: 'Iteration' },
+                      },
+                      y: {
+                        title: { display: true, text: 'Time (s)' },
+                        ticks: {
+                          autoSkip: false,   
+                        },
+                      },
+                    },
+                  }}
+                />
+              </div>
             )}
           </div>
           {showInfoModal && (

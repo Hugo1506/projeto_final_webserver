@@ -229,7 +229,6 @@ body {
 }
 
 .checkbox-filters {
-  margin-top: 20px;
   display: flex;
   flex-direction: row;
   gap: 30px;  

@@ -1,0 +1,56 @@
+
+.add-field-button {
+  background-color: #2563eb; 
+  border: none;
+  border-radius: 0.5rem;
+  font-size: 1.25rem;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.add-field-button:hover {
+  background-color: #1e40af;
+}
+
+.add-field-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.add-field-row {
+  display: flex;
+  flex-direction: column;
+}
+
+.add-field-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.add-field-label-input {
+  border: none;
+  background: transparent;
+  font-weight: bold;
+  font-size: 1rem;
+  outline: none;
+  width: 100%;
+}
+
+.add-field-input {
+  border: 1px solid #d1d5db;
+  border-radius: 0.25rem;
+}
+
+.delete-field-button {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 1.2rem;
+  margin-left: 0.5rem;
+  transition: transform 0.15s ease;
+}
+
+.delete-field-button:hover {
+  transform: scale(1.2);
+}

@@ -1039,7 +1039,7 @@ useEffect(() => {
   const handleRobotSimulationSubmit = async (e, simulation) => {
     e.preventDefault();
     setRobotSimulationIsLoading(true);
-    
+    setPagePath(prev => [...prev.slice(0, -1)]);  
     let url = "";
     const robotsToSend = robots
         .slice(0, selectedRobotNumber)
@@ -1679,6 +1679,7 @@ useEffect(() => {
           toggleRos={toggleRos}
           setSelectedRobotNumber={setSelectedRobotNumber}
           setRobotSimulationMode={setRobotSimulationMode}
+          setRobots={setRobots}
         />
       )}
     </div>

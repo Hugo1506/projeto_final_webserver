@@ -1,0 +1,14 @@
+.content-container {
+  display: flex;
+  flex-direction: row; 
+  gap: 20px;
+  align-items: flex-start; 
+}
+.gif-description-robot-gaden {
+  flex: 1;
+  text-align: center;
+}
+
+.robot-simulation-form-container-gaden {
+  flex: 1;
+}

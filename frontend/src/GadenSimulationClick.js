@@ -1,6 +1,7 @@
-import React from 'react';
-import GifWithGrid from './GifWithGrid';
+import React, { useState } from 'react';import GifWithGrid from './GifWithGrid';
 import HoverComponent from './HoverComponent';
+import "./GadenSimulationClick.css"
+import AddLabelInput from './Fields'
 
 const GadenSimulationClick = ({
   clickedGif,
@@ -44,8 +45,10 @@ const GadenSimulationClick = ({
   useRos,
   toggleRos,
   setSelectedRobotNumber,
-  setRobotSimulationMode
+  setRobotSimulationMode,
+  setRobots
 }) => {
+  const [robotLabels, setRobotLabels] = useState([{ label: "New Label" }]);
   return (
     <>
         <div className="gaden-simulation-click">
@@ -59,7 +62,7 @@ const GadenSimulationClick = ({
             Go Back
           </button>
           <div className="content-container">
-            <div className="gif-description-robot">
+            <div className="gif-description-robot-gaden">
               {relatedGifs
                 .filter(gifObj => gifObj.iteration === currentIteration)
                 .map((gifObj, index) => (
@@ -197,7 +200,7 @@ const GadenSimulationClick = ({
                   </div>
                 ))}
             </div>
-            <div className="robot-simulation-form-container">
+            <div className="robot-simulation-form-container-gaden">
               <form onSubmit={(e) => handleRobotSimulationSubmit(e, clickedGif.simulation)} className="robot-simulation-form">              <div className="robot-simulation-inputs">
                 <div className="robot-simulation-inputs">
                   <label>Number of robots</label>
@@ -233,10 +236,19 @@ const GadenSimulationClick = ({
                       >
                         Particle swarm optimization
                       </button>
+                       <button
+                        type="button"
+                        className={`simulation-mode-button ${robotSimulationMode === 'new' ? 'selected' : ''}`}
+                        onClick={() => setRobotSimulationMode('new')}
+                      >
+                        New Type Of Simulation
+                      </button>
                     </div>
                   </div>
                   <br />
-                  <label>
+                  {robotSimulationMode != "new" &&(
+                    <>
+                      <label>
                     Starting ambient Iteration
                     <HoverComponent text="Iteration of the plume simulation that the robot will start Default: 0" />  
                   </label>
@@ -273,7 +285,8 @@ const GadenSimulationClick = ({
                       value={deviationSet}
                       onChange={e => handleDeviationSetChange(e.target.value)}
                     />
-                   {['pso'].includes(robotSimulationMode) && (
+                    
+                    {['pso'].includes(robotSimulationMode) && (
                         <>
                           <label>
                             Final iteration
@@ -295,103 +308,148 @@ const GadenSimulationClick = ({
                           </div>
                         </>
                       )}
+                  
+                  </>
+                  )}
+
+                   
                   {[...Array(selectedRobotNumber)].map((_, idx) => (
                     <div key={idx} className="robot-params-input">
                       <h4>Robot {idx + 1}</h4>
-
-                      <label>
-                        Robot Speed
-                        <HoverComponent text="Speed of the robot in m/s" />
-                      </label>
-                      <input
-                        type="number"
-                        value={robots[idx].robotSpeed}
-                        step="0.1"
-                        onChange={e => handleRobotInputChange(idx, 'robotSpeed', e.target.value)}
-                      />
-                      <label>
-                        Initial robot X coordinate, range: {simulationBounds.xMin} : {simulationBounds.xMax}
-                        <HoverComponent text="X coordinate where the robot begins the simulation" />
-                      </label>
-                      <input
-                        type="number"
-                        value={robots[idx].robotXlocation}
-                        step="0.1"
-                        min = {simulationBounds.xMin}
-                        max = {simulationBounds.xMax}
-                        onChange={e => handleRobotInputChange(idx, 'robotXlocation', e.target.value)}
-                      />
-                      <label>
-                        Initial robot Y coordinate, range: {simulationBounds.yMin} : {simulationBounds.yMax}
-                        <HoverComponent text="Y coordinate where the robot begins the simulation" />
-                      </label>
-                      <input
-                        type="number"
-                        value={robots[idx].robotYlocation}
-                        step="0.1"
-                        min = {simulationBounds.yMin}
-                        max = {simulationBounds.yMax}
-                        onChange={e => handleRobotInputChange(idx, 'robotYlocation', e.target.value)}
-                      />
-                      
-                      {robotSimulationMode === 'linear' && (
-                        <>
+                        {robotSimulationMode === 'new' && (
+                          <AddLabelInput
+                            labels={robotLabels}
+                            values={robots[idx].customFields || robotLabels.map(() => "")}
+                            onLabelChange={(i, newLabel) => {
+                              const updatedLabels = [...robotLabels];
+                              updatedLabels[i].label = newLabel;
+                              setRobotLabels(updatedLabels);
+                            }}
+                            onValueChange={(i, newValue) => {
+                              const updatedRobots = [...robots];
+                              if (!updatedRobots[idx].customFields) updatedRobots[idx].customFields = robotLabels.map(() => "");
+                              updatedRobots[idx].customFields[i] = newValue;
+                              setRobots(updatedRobots);
+                            }}
+                            onAddLabel={() => {
+                              setRobotLabels([...robotLabels, { label: "New Label" }]);
+                            }}
+                            onRemoveLabel={(i) => {
+                              const updatedLabels = robotLabels.filter((_, idx) => idx !== i);
+                              setRobotLabels(updatedLabels);
+                              const updatedRobots = robots.map(r => {
+                                if (r.customFields) r.customFields = r.customFields.filter((_, idx2) => idx2 !== i);
+                                return r;
+                              });
+                              setRobots(updatedRobots);
+                            }}
+                          />
+                        )}
+                        {robotSimulationMode != 'new' &&(
+                          <>
                           <label>
-                            Final robot X coordinate, range: {simulationBounds.xMin} : {simulationBounds.xMax}
-                            <HoverComponent text="X coordinate where the robot ends the simulation" />
+                            Robot Speed
+                            <HoverComponent text="Speed of the robot in m/s" />
                           </label>
                           <input
                             type="number"
-                            value={robots[idx].finalRobotXlocation}
+                            value={robots[idx].robotSpeed}
+                            step="0.1"
+                            onChange={e => handleRobotInputChange(idx, 'robotSpeed', e.target.value)}
+                          />
+                          <label>
+                            Initial robot X coordinate, range: {simulationBounds.xMin} : {simulationBounds.xMax}
+                            <HoverComponent text="X coordinate where the robot begins the simulation" />
+                          </label>
+                          <input
+                            type="number"
+                            value={robots[idx].robotXlocation}
                             step="0.1"
                             min = {simulationBounds.xMin}
                             max = {simulationBounds.xMax}
-                            onChange={e => handleRobotInputChange(idx, 'finalRobotXlocation', e.target.value)}
+                            onChange={e => handleRobotInputChange(idx, 'robotXlocation', e.target.value)}
                           />
                           <label>
-                            Final robot Y coordinate, range: {simulationBounds.yMin} : {simulationBounds.yMax}
-                            <HoverComponent text="Y coordinate where the robot ends the simulation" />
+                            Initial robot Y coordinate, range: {simulationBounds.yMin} : {simulationBounds.yMax}
+                            <HoverComponent text="Y coordinate where the robot begins the simulation" />
                           </label>
                           <input
                             type="number"
-                            value={robots[idx].finalRobotYlocation}
+                            value={robots[idx].robotYlocation}
                             step="0.1"
                             min = {simulationBounds.yMin}
                             max = {simulationBounds.yMax}
-                            onChange={e => handleRobotInputChange(idx, 'finalRobotYlocation', e.target.value)}
+                            onChange={e => handleRobotInputChange(idx, 'robotYlocation', e.target.value)}
                           />
-                        </>
-                      )}
-                      {robotSimulationMode === 'moth' && (
-                        <>
-                          <label>
-                            Angle
-                            <HoverComponent text="Angle the robot will move in relation with the currrent vector in radians" />
-                          </label>
-                          <input
-                            type="number"
-                            value={robots[idx].angle}
-                            onChange={e => handleRobotInputChange(idx, 'angle', e.target.value)}
-                            min="0"
-                            max={2 * Math.PI}
-                            step="0.01"
-                          />
-                        </>
-                      )}
-                      {['moth'].includes(robotSimulationMode) && (
-                        <>
-                          <label>Final iteration</label>
-                          <input 
-                            type="integer"
-                            value={robots[idx].iterations}
-                            onChange={e => handleRobotInputChange(idx, 'iterations', e.target.value)}
-                            placeholder="Iteration when the robot will stop"
-                          />
-                        </>
-                      )}
+                          {robotSimulationMode === 'linear' && (
+                            <>
+                              <label>
+                                Final robot X coordinate, range: {simulationBounds.xMin} : {simulationBounds.xMax}
+                                <HoverComponent text="X coordinate where the robot ends the simulation" />
+                              </label>
+                              <input
+                                type="number"
+                                value={robots[idx].finalRobotXlocation}
+                                step="0.1"
+                                min = {simulationBounds.xMin}
+                                max = {simulationBounds.xMax}
+                                onChange={e => handleRobotInputChange(idx, 'finalRobotXlocation', e.target.value)}
+                              />
+                              <label>
+                                Final robot Y coordinate, range: {simulationBounds.yMin} : {simulationBounds.yMax}
+                                <HoverComponent text="Y coordinate where the robot ends the simulation" />
+                              </label>
+                              <input
+                                type="number"
+                                value={robots[idx].finalRobotYlocation}
+                                step="0.1"
+                                min = {simulationBounds.yMin}
+                                max = {simulationBounds.yMax}
+                                onChange={e => handleRobotInputChange(idx, 'finalRobotYlocation', e.target.value)}
+                              />
+                            </>
+                          )}
+                           {robotSimulationMode === 'moth' && (
+                            <>
+                              <label>
+                                Angle
+                                <HoverComponent text="Angle the robot will move in relation with the currrent vector in radians" />
+                              </label>
+                              <input
+                                type="number"
+                                value={robots[idx].angle}
+                                onChange={e => handleRobotInputChange(idx, 'angle', e.target.value)}
+                                min="0"
+                                max={2 * Math.PI}
+                                step="0.01"
+                              />
+                            </>
+                          )}
+                          {['moth'].includes(robotSimulationMode) && (
+                            <>
+                              <label>Final iteration</label>
+                              <input 
+                                type="integer"
+                                value={robots[idx].iterations}
+                                onChange={e => handleRobotInputChange(idx, 'iterations', e.target.value)}
+                                placeholder="Iteration when the robot will stop"
+                              />
+                            </>
+                          )}
+                          </>
+                        )}
+                      
+                      
+                      
+                     
+                      
                     </div>
                   ))}      
-                  <button type="submit" className={`submit-button ${fadeOut ? 'fade-out' : ''}`} >Submit</button>
+                  <button type="submit" 
+                  className={`submit-button ${fadeOut ? 'fade-out' : ''}`} 
+                  >
+                    Submit
+                  </button>
                 </div>
                 
                 

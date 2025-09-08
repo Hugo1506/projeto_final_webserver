@@ -6,6 +6,7 @@
   font-size: 1.25rem;
   cursor: pointer;
   transition: background 0.2s ease;
+  
 }
 
 .add-field-button:hover {
@@ -20,35 +21,40 @@
 .add-field-row {
   display: flex;
   flex-direction: column;
+  gap: 0.25rem;
 }
 
 .add-field-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start; 
+  margin: 0; 
+  padding: 0;
+  height: auto;
 }
 
 .add-field-label-input {
   border: none;
   background: transparent;
-  font-weight: bold;
-  font-size: 1rem;
   outline: none;
   width: 100%;
+  margin: 0; 
 }
 
 .add-field-input {
   border: 1px solid #d1d5db;
   border-radius: 0.25rem;
+   margin: 0; 
 }
-
 .delete-field-button {
   background: transparent;
   border: none;
   cursor: pointer;
-  font-size: 1.2rem;
-  margin-left: 0.5rem;
-  transition: transform 0.15s ease;
+  margin: 0;
+  padding: 0;
+  line-height: 1;
+  display: flex;
+  align-items: center;
 }
 
 .delete-field-button:hover {

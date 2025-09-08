@@ -5,6 +5,10 @@
   justify-content: center;
 }
 
+h4{
+  margin-bottom: 5px;
+}
+
 .welcome-banner {
   display: flex;
   align-items: center;

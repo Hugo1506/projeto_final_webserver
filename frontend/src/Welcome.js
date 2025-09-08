@@ -103,12 +103,13 @@ const Welcome = ({ username, onLogout }) => {
   const [plumeOrExperienciesVisible, setPlumeOrExperienciesVisible] = useState(false);
   const [showRobotSimulationsSet, setShowRobotSimulationSet] = useState(false);
   const [activeRobotButton, setActiveRobotButton] = useState("visual");
+  const [simulationCode, setSimulationCode] = useState("");
 
   const [robots, setRobots] = useState([
-    { robotSpeed: '', robotXlocation: '', robotYlocation: '', finalRobotXlocation: '', finalRobotYlocation: '' },
-    { robotSpeed: '', robotXlocation: '', robotYlocation: '', finalRobotXlocation: '', finalRobotYlocation: '' },
-    { robotSpeed: '', robotXlocation: '', robotYlocation: '', finalRobotXlocation: '', finalRobotYlocation: '' },
-    { robotSpeed: '', robotXlocation: '', robotYlocation: '', finalRobotXlocation: '', finalRobotYlocation: '' },
+    { robotSpeed: '', robotXlocation: '', robotYlocation: '' },
+    { robotSpeed: '', robotXlocation: '', robotYlocation: '' },
+    { robotSpeed: '', robotXlocation: '', robotYlocation: '' },
+    { robotSpeed: '', robotXlocation: '', robotYlocation: ''},
   ]);
 
 
@@ -1053,9 +1054,12 @@ useEffect(() => {
                 return robot.robotSpeed && robot.robotXlocation && robot.robotYlocation &&
                     robot.angle && robot.iterations;
             } else if (robotSimulationMode === "pso") {
-                url = "http://localhost:3000/pso_simmulation";
+                url = "http://localhost:3000/pso_simulation";
                 return robot.robotSpeed && robot.robotXlocation && robot.robotYlocation &&
                     psoSimulationIterations;
+            }else if (robotSimulationMode === "new"){
+                url = "http://localhost:3000/new_simulation";
+                return robot.robotSpeed && robot.robotXlocation && robot.robotYlocation;
             }
         })
         .map(robot => ({
@@ -1101,7 +1105,8 @@ useEffect(() => {
         simulationMode: robotSimulationMode,
         startingIteration: startingIterationToSend,
         deviation: parseFloat(deviationSet),
-        useRos
+        useRos,
+        simulationCode
     };
 
     try {
@@ -1126,6 +1131,11 @@ useEffect(() => {
         handleToggleButton('robot');   
         setSimulationDetail(true);
         await handleSimulationClick(simulation); 
+        const resetRobots = robots.map(r => ({
+          ...r,
+          customFields: {},
+        }));
+        setRobots(resetRobots);
         
         setPagePath(prev => [...prev.slice(0, -1)]);  
          
@@ -1680,6 +1690,8 @@ useEffect(() => {
           setSelectedRobotNumber={setSelectedRobotNumber}
           setRobotSimulationMode={setRobotSimulationMode}
           setRobots={setRobots}
+          setSimulationCode={setSimulationCode}
+          simulationCode={simulationCode}
         />
       )}
     </div>

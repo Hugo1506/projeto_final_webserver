@@ -479,7 +479,7 @@ app.post('/silkworm_moth_simulation', async (req, res) => {
 );
 
 
-app.post('/pso_simmulation', async (req, res) => {
+app.post('/pso_simulation', async (req, res) => {
   const { username, simulation, height, robots, startingIteration, nameOfSet, numOfSim, deviation, useRos } = req.body;
 
   const numberOfRobots = robots.length;
@@ -616,6 +616,79 @@ app.post('/robotSimulation', async (req, res) => {
         } catch (error) {
           console.error('Background robotSimulation error:', error);
         }
+      }
+    })();
+  }
+);
+
+
+
+app.post('/new_simulation', async (req, res) => {
+  const { username, simulation, height, robots, startingIteration, nameOfSet, numOfSim,simulationCode, deviation} = req.body;
+  const numberOfRobots = robots.length;
+  const simulationNumber = simulation.split('_')[1];
+  console.log(robots)
+  res.status(202).json({ message: 'Simulation started. Processing in background.' });
+    (async () => {
+      
+      for (let currentSimulationNumber  = 1; currentSimulationNumber< Number(numOfSim)+1; currentSimulationNumber++){
+        var startTime = performance.now()
+        const simulationSet = nameOfSet + "/" + currentSimulationNumber+"/"+numOfSim;
+        console.log(`Running simulation number: ${currentSimulationNumber} / ${numOfSim}`);
+        try {
+          const response = await axios.get('http://simulation:8000/new_simulation', {
+            params: {
+              username,
+              simulationNumber,
+              height,
+              numberOfRobots,
+              startingIteration,
+              deviation,
+              code: simulationCode,
+              robots: JSON.stringify(robots)
+            }
+          });
+
+          const message = response.data;
+          const frames = message.frames;
+          const robotSim_id = message.robotSim_id;
+
+          const framesByIteration = {};
+          frames.forEach(frame => {
+            if (!framesByIteration[frame.iteration]) {
+              framesByIteration[frame.iteration] = [];
+            }
+            framesByIteration[frame.iteration].push(frame);
+          });
+
+          const queries = Object.entries(framesByIteration).map(([iteration, framesArray]) => {
+            const robotPath = JSON.stringify(framesArray);
+            return new Promise((resolve, reject) => {
+              pool.query(
+                `UPDATE simulation_results 
+                SET robot_path = ?, simulation_set = ?
+                WHERE simulation = ? 
+                AND type = 'robot'
+                AND robotSim_id = ?
+                AND iteration = ?`,
+                [robotPath, simulationSet, simulation, robotSim_id, iteration],
+                (error, results) => {
+                  if (error) reject(error);
+                  else resolve(results);
+                }
+              );
+            });
+          });
+
+          await Promise.all(queries);
+          var endTime = performance.now()
+
+          console.log(`Robot simulation for ${simulation} completed.`);
+          console.log(`took ${endTime - startTime} milliseconds`)
+        } catch (error) {
+          console.error('Background robotSimulation error:', error);
+        }
+         
       }
     })();
   }

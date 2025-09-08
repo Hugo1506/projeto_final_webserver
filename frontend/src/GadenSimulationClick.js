@@ -46,7 +46,9 @@ const GadenSimulationClick = ({
   toggleRos,
   setSelectedRobotNumber,
   setRobotSimulationMode,
-  setRobots
+  setRobots,
+  setSimulationCode,
+  simulationCode
 }) => {
   const [robotLabels, setRobotLabels] = useState([{ label: "New Label" }]);
   return (
@@ -246,8 +248,33 @@ const GadenSimulationClick = ({
                     </div>
                   </div>
                   <br />
-                  {robotSimulationMode != "new" &&(
-                    <>
+                  {robotSimulationMode === "new" && (
+                    <div className="simulation-code-container">
+                      <div className="simulation-code-header">
+                        <label>Code of the simulation</label>
+                        <input
+                          type="file"
+                          onChange={(e) => {
+                            const file = e.target.files[0];
+                            if (file) {
+                              const reader = new FileReader();
+                              reader.onload = (event) => {
+                                setSimulationCode(event.target.result); 
+                              };
+                              reader.readAsText(file);
+                            }
+                          }}
+                          className="file-upload-button"
+                        />
+                      </div>
+
+                      <textarea
+                        value={simulationCode}
+                        onChange={(e) => setSimulationCode(e.target.value)}
+                        className="simulation-code-textarea"
+                      />
+                    </div>
+                  )}
                       <label>
                     Starting ambient Iteration
                     <HoverComponent text="Iteration of the plume simulation that the robot will start Default: 0" />  
@@ -308,9 +335,7 @@ const GadenSimulationClick = ({
                           </div>
                         </>
                       )}
-                  
-                  </>
-                  )}
+                
 
                    
                   {[...Array(selectedRobotNumber)].map((_, idx) => (
@@ -321,32 +346,48 @@ const GadenSimulationClick = ({
                             labels={robotLabels}
                             values={robots[idx].customFields || robotLabels.map(() => "")}
                             onLabelChange={(i, newLabel) => {
+                              const oldLabel = robotLabels[i].label;
                               const updatedLabels = [...robotLabels];
                               updatedLabels[i].label = newLabel;
                               setRobotLabels(updatedLabels);
-                            }}
-                            onValueChange={(i, newValue) => {
-                              const updatedRobots = [...robots];
-                              if (!updatedRobots[idx].customFields) updatedRobots[idx].customFields = robotLabels.map(() => "");
-                              updatedRobots[idx].customFields[i] = newValue;
+
+                              const updatedRobots = robots.map(r => {
+                                if (r.customFields && oldLabel in r.customFields) {
+                                  r.customFields[newLabel] = r.customFields[oldLabel];
+                                  delete r.customFields[oldLabel];
+                                }
+                                return r;
+                              });
                               setRobots(updatedRobots);
                             }}
+
+                            onValueChange={(i, newValue) => {
+                              const updatedRobots = [...robots];
+                              const labelName = robotLabels[i].label;
+                              if (!updatedRobots[idx].customFields) updatedRobots[idx].customFields = {};
+                              updatedRobots[idx].customFields[labelName] = newValue;
+                              setRobots(updatedRobots);
+                            }}
+
                             onAddLabel={() => {
                               setRobotLabels([...robotLabels, { label: "New Label" }]);
                             }}
                             onRemoveLabel={(i) => {
+                              const labelName = robotLabels[i].label;
                               const updatedLabels = robotLabels.filter((_, idx) => idx !== i);
                               setRobotLabels(updatedLabels);
+
                               const updatedRobots = robots.map(r => {
-                                if (r.customFields) r.customFields = r.customFields.filter((_, idx2) => idx2 !== i);
+                                if (r.customFields) {
+                                  const { [labelName]: _, ...rest } = r.customFields;
+                                  r.customFields = rest;
+                                }
                                 return r;
                               });
                               setRobots(updatedRobots);
                             }}
                           />
                         )}
-                        {robotSimulationMode != 'new' &&(
-                          <>
                           <label>
                             Robot Speed
                             <HoverComponent text="Speed of the robot in m/s" />
@@ -381,6 +422,8 @@ const GadenSimulationClick = ({
                             max = {simulationBounds.yMax}
                             onChange={e => handleRobotInputChange(idx, 'robotYlocation', e.target.value)}
                           />
+                          {robotSimulationMode != 'new' &&(
+                          <>
                           {robotSimulationMode === 'linear' && (
                             <>
                               <label>

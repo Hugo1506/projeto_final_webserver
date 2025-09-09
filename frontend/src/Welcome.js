@@ -104,6 +104,7 @@ const Welcome = ({ username, onLogout }) => {
   const [showRobotSimulationsSet, setShowRobotSimulationSet] = useState(false);
   const [activeRobotButton, setActiveRobotButton] = useState("visual");
   const [simulationCode, setSimulationCode] = useState("");
+  const [waitForFinish, setWaitForFinish] = useState(false);
 
   const [robots, setRobots] = useState([
     { robotSpeed: '', robotXlocation: '', robotYlocation: '' },
@@ -1040,7 +1041,7 @@ useEffect(() => {
   const handleRobotSimulationSubmit = async (e, simulation) => {
     e.preventDefault();
     setRobotSimulationIsLoading(true);
-    setPagePath(prev => [...prev.slice(0, -1)]);  
+    setPagePath(prev => [...prev.slice(0, -1)]); 
     let url = "";
     const robotsToSend = robots
         .slice(0, selectedRobotNumber)
@@ -1105,6 +1106,7 @@ useEffect(() => {
         simulationMode: robotSimulationMode,
         startingIteration: startingIterationToSend,
         deviation: parseFloat(deviationSet),
+        waitForFinish,
         useRos,
         simulationCode
     };
@@ -1526,6 +1528,7 @@ useEffect(() => {
         )}
         {simulationDetail && showRobotSimulationsSet && (
           <SimulationDetail
+            username={username}
             simulationDetail={simulationDetail}
             fadeOut={fadeOut}
             activeButton={activeButton}
@@ -1553,6 +1556,8 @@ useEffect(() => {
             handleGifClick={handleGifClick}
             handleImageLoaded={handleImageLoaded}
             handleToggleButton={handleToggleButton}
+            waitForFinish={waitForFinish}
+            setWaitForFinish={setWaitForFinish}
           />
         )}
       {showRobotSetDetail && (

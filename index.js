@@ -406,7 +406,7 @@ app.get('/getRobotSimulationID', (req, res) => {
 
 
 app.post('/silkworm_moth_simulation', async (req, res) => {
-    const { username, simulation, height, robots, startingIteration, nameOfSet, numOfSim, deviation} = req.body;
+    const { username, simulation, height, robots, startingIteration, waitForFinish, nameOfSet, numOfSim, deviation} = req.body;
 
     // Validate required parameters
     if (!username || !simulation || !robots) {
@@ -424,6 +424,10 @@ app.post('/silkworm_moth_simulation', async (req, res) => {
       const simulationSet = nameOfSet + "/" + currentSimulationNumber+"/"+numOfSim;
       console.log(`Running simulation number: ${currentSimulationNumber} / ${numOfSim}`);
       try {
+        await axios.post('http://localhost:3000/setSimulationWait', {
+          username,
+          waitStatus: waitForFinish
+        });
         const response = await axios.get('http://simulation:8000/silkworm_moth_simulation', {
           params: {
             username,
@@ -431,6 +435,7 @@ app.post('/silkworm_moth_simulation', async (req, res) => {
             height,
             numberOfRobots,
             startingIteration,
+            simulationSet,
             deviation,
             robots: JSON.stringify(robots)
           }
@@ -480,8 +485,7 @@ app.post('/silkworm_moth_simulation', async (req, res) => {
 
 
 app.post('/pso_simulation', async (req, res) => {
-  const { username, simulation, height, robots, startingIteration, nameOfSet, numOfSim, deviation, useRos } = req.body;
-
+  const { username, simulation, height, robots, startingIteration, waitForFinish, nameOfSet, numOfSim, deviation, useRos } = req.body;
   const numberOfRobots = robots.length;
   const simulationNumber = simulation.split('_')[1];
   res.status(202).json({ message: 'Simulation started. Processing in background.' });
@@ -491,6 +495,10 @@ app.post('/pso_simulation', async (req, res) => {
     const simulationSet = nameOfSet + "/" + currentSimulationNumber+"/"+numOfSim;
     console.log(`Running simulation number: ${currentSimulationNumber} / ${numOfSim}`);
     try {
+      await axios.post('http://localhost:3000/setSimulationWait', {
+          username,
+          waitStatus: waitForFinish
+      });
       const response = await axios.get('http://simulation:8000/pso_simmulation', {
         params: {
           username,
@@ -498,6 +506,7 @@ app.post('/pso_simulation', async (req, res) => {
           height,
           numberOfRobots,
           startingIteration,
+          simulationSet,
           deviation,
           useRos,
           robots: JSON.stringify(robots)
@@ -551,7 +560,7 @@ app.post('/pso_simulation', async (req, res) => {
 
 
 app.post('/robotSimulation', async (req, res) => {
-  const { username, simulation, height, robots, startingIteration, nameOfSet, numOfSim, deviation} = req.body;
+  const { username, simulation, height, robots, startingIteration, waitForFinish, nameOfSet, numOfSim, deviation} = req.body;
   const numberOfRobots = robots.length;
   const simulationNumber = simulation.split('_')[1];
   
@@ -565,6 +574,10 @@ app.post('/robotSimulation', async (req, res) => {
         const simulationSet = nameOfSet + "/" + currentSimulationNumber+"/"+numOfSim;
         console.log(`Running simulation number: ${currentSimulationNumber} / ${numOfSim}`);
         try {
+          await axios.post('http://localhost:3000/setSimulationWait', {
+            username,
+            waitStatus: waitForFinish
+          });
           const response = await axios.get('http://simulation:8000/robot_simulation', {
             params: {
               username,
@@ -572,6 +585,7 @@ app.post('/robotSimulation', async (req, res) => {
               height,
               numberOfRobots,
               startingIteration,
+              simulationSet,
               deviation,
               robots: JSON.stringify(robots)
             }
@@ -621,6 +635,50 @@ app.post('/robotSimulation', async (req, res) => {
   }
 );
 
+app.post('/saveIteration', async (req, res) => {
+  const { simulation, robotSim_id, frames, simulation_set } = req.body;
+
+  if (!simulation || !robotSim_id || !frames || !Array.isArray(frames)) {
+    return res.status(400).json({ error: 'Missing or invalid fields in request body.' });
+  }
+
+  try {
+    const framesByIteration = {};
+
+    frames.forEach(frame => {
+      if (!framesByIteration[frame.iteration]) {
+        framesByIteration[frame.iteration] = [];
+      }
+      framesByIteration[frame.iteration].push(frame);
+    });
+
+    const queries = Object.entries(framesByIteration).map(([iteration, framesArray]) => {
+      const robotPath = JSON.stringify(framesArray);
+      return new Promise((resolve, reject) => {
+        pool.query(
+          `UPDATE simulation_results 
+           SET robot_path = ?, simulation_set = ?
+           WHERE simulation = ? 
+           AND type = 'robot'
+           AND robotSim_id = ?
+           AND iteration = ?`,
+          [robotPath, simulation_set, simulation, robotSim_id, iteration],
+          (error, results) => {
+            if (error) reject(error);
+            else resolve(results);
+          }
+        );
+      });
+    });
+
+    await Promise.all(queries);
+
+    res.status(200).json({ message: 'Frames saved successfully.' });
+  } catch (error) {
+    console.error('Error saving frames:', error);
+    res.status(500).json({ error: 'Internal server error.' });
+  }
+});
 
 
 app.post('/new_simulation', async (req, res) => {
@@ -693,6 +751,27 @@ app.post('/new_simulation', async (req, res) => {
     })();
   }
 );
+
+app.post ('/setSimulationWait', (req, res) => {
+  const{username, waitStatus} = req.body;
+  axios.get('http://simulation:8000/set_wait_for_simulation_end', {
+    params: {
+      username,
+      wait: waitStatus
+    }
+
+  })
+  .then(response => {
+
+   return res.status(200).json({ message: 'Status changed'});
+
+  })
+  .catch(error => {
+    console.error('Error calling simulation service:', error.message);
+    return res.status(500).json({ error: 'Failed to change status' });
+  });
+});
+
 
 
 app.post ('/uploadPlumeLocation', (req, res) => {

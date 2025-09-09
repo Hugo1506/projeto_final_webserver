@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import ConfirmationModal from './ConfirmationModal';
+import './SimulationDetails.css'
 
 const SimulationDetail = ({
+  username,
   fadeOut,
   activeButton,
   robotSetData,
@@ -26,8 +28,38 @@ const SimulationDetail = ({
   handleCheckboxChange,
   handleGifClick,
   handleImageLoaded,
-  handleToggleButton
+  handleToggleButton,
+  waitForFinish,
+  setWaitForFinish
 }) => {
+  
+
+
+  const handleWaitToggle = async () => {
+    const newWaitStatus = !waitForFinish;
+    setWaitForFinish(newWaitStatus);
+
+    try {
+      const response = await fetch('http://localhost:3000/setSimulationWait', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          username: username,
+          waitStatus: newWaitStatus
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update wait status');
+      }
+
+      const data = await response.json();
+    } catch (error) {
+      console.error('Error sending wait status:', error.message);
+    }
+  };
   return (
       <>
         <div className="control-simulation-details">
@@ -53,6 +85,16 @@ const SimulationDetail = ({
             >
               Robot Simulations
             </button>
+            <label className="toggle-label">
+            <input
+              type="checkbox"
+              checked={waitForFinish}
+              onChange={handleWaitToggle}
+            />
+            <span className="slider"></span>
+            Wait for experience finish
+          </label>
+
           </div>
           {activeButton === 'robot' && robotSetData && robotSetData.length > 0 && (
             <div className={`saved-simulations-list ${fadeOut ? 'fade-out' : ''}`}>

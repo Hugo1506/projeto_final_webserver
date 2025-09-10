@@ -148,12 +148,15 @@ const RobotSetDetail = ({
                         </select>
                       </label>
                     </div>
-                    
-                    <h3>Height: {gifObj.height ?? 'Unknown'}</h3>
-                    <h3>Average time per iteration: {medianTime}</h3>
+                    {activeRobotButton != 'path' &&(
+                      <h3>Height: {gifObj.height ?? 'Unknown'}</h3>
+                    )}
+                    {activeRobotButton == 'stats' &&(
+                      <h3>Average time per iteration: {medianTime}</h3>
+                    )}
                     {activeRobotButton == "visual" &&(
                       <>
-                    <h3>Iteration: {gifObj.iteration} - took: {gifObj.time} s</h3>
+                    <h3>Iteration: {gifObj.iteration}</h3>
                     
                     <GifWithGrid
                       gifObj={gifObj}

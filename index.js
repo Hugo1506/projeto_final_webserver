@@ -682,10 +682,9 @@ app.post('/saveIteration', async (req, res) => {
 
 
 app.post('/new_simulation', async (req, res) => {
-  const { username, simulation, height, robots, startingIteration, nameOfSet, numOfSim,simulationCode, deviation} = req.body;
+  const { username, simulation, height, robots, startingIteration, nameOfSet, numOfSim,simulationCode,waitForFinish, deviation} = req.body;
   const numberOfRobots = robots.length;
   const simulationNumber = simulation.split('_')[1];
-  console.log(robots)
   res.status(202).json({ message: 'Simulation started. Processing in background.' });
     (async () => {
       
@@ -693,7 +692,12 @@ app.post('/new_simulation', async (req, res) => {
         var startTime = performance.now()
         const simulationSet = nameOfSet + "/" + currentSimulationNumber+"/"+numOfSim;
         console.log(`Running simulation number: ${currentSimulationNumber} / ${numOfSim}`);
+        console.log(simulationSet)
         try {
+          await axios.post('http://localhost:3000/setSimulationWait', {
+            username,
+            waitStatus: waitForFinish
+          });
           const response = await axios.get('http://simulation:8000/new_simulation', {
             params: {
               username,
@@ -703,6 +707,7 @@ app.post('/new_simulation', async (req, res) => {
               startingIteration,
               deviation,
               code: simulationCode,
+              simulationSet,
               robots: JSON.stringify(robots)
             }
           });
@@ -1120,7 +1125,6 @@ app.post('/uploadFiles', upload.fields([
   const outerCadFilePaths = req.files.outerCadFiles.map(file => file.path);
   const windFilePaths = req.files.windFiles.map(file => file.path);
 
-  // envia os dados da simulação para o volume
   const sentToVolume = sendToVolume(username, simulationNumber, innerCadFilePaths, outerCadFilePaths, windFilePaths);
   let querryError = 0;
    pool.query(queryInsertSimulation, [username, simulationNumber, simulationField, simulationName], async (error, results) => {
@@ -1129,9 +1133,7 @@ app.post('/uploadFiles', upload.fields([
       console.error('Database Insert Error:', error);
     }
 
-    // Now, if the insert is successful, proceed with the rest of the logic (preprocessing)
     try {
-      // Call the preprocessing step
       const response = await axios.get('http://simulation:8000/start_preprocessing', {
         params: {
           simulation: simulation
@@ -1141,7 +1143,6 @@ app.post('/uploadFiles', upload.fields([
       if (querryError !== 0){
         res.status(200).send(querryError)
       }else{
-         // Successfully triggered preprocessing, send success response
         res.status(200).send('Files uploaded and preprocessing started successfully.');
       }
     } catch (error) {
@@ -1176,7 +1177,6 @@ app.get('/getSimulationStatus', (req, res) => {
   });
 });
 
-// rota que dá o novo número de simulação 
 app.get('/getSimulationNumber', (req, res) => {
   const username = req.query.username;
 

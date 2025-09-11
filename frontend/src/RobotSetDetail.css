@@ -24,3 +24,60 @@
 .stats-graph-container h3 {
   margin: 0.2em 0;
 }
+.bar-chart-container {
+  flex: 3;
+  padding: 20px;
+  background-color: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  justify-content: flex-start;
+  overflow-y: auto;
+  max-height: 600px;
+}
+
+.bar-row {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  width: 100%;
+}
+
+.bar-row .robot-label {
+  width: 70px;
+  text-align: right;
+  font-size: 1rem;
+  font-weight: bold;
+}
+
+.bar-row .bar {
+  height: 25px;
+  border-radius: 12px;
+  background-color: #FF6347;
+  transition: width 0.3s ease;
+  flex-grow: 1;
+}
+
+.bar-row .concentration-label {
+  font-size: 0.75rem;
+  text-align: center;
+  width: 60px;
+}
+
+.visual-container {
+  display: flex;
+  gap: 30px;
+  align-items: flex-start;
+  justify-content: flex-start;
+  width: 100%;
+}
+
+.gif-control-container {
+  flex: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  justify-content: flex-start;
+}

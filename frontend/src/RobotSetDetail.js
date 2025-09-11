@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState,useEffect } from 'react';
 import GifWithGrid from './GifWithGrid'; 
 import InfoModal from './InfoModal';  
 import './RobotSetDetail.css'
-import { Line } from 'react-chartjs-2';
+import { Line , Bar} from 'react-chartjs-2';
+import SimpleBarChart from './SimpleBarChart';
 import { Chart, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend } from 'chart.js';
 Chart.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 
@@ -45,6 +46,7 @@ const RobotSetDetail = ({
   handleRobotToggleButton
 }) => {
 
+
   const simGifs = gifsInSet.filter(gifObj => gifObj.robotSim_id !== undefined && gifObj.robotSim_id !== null);
 
   const totalTime = simGifs.reduce((acc, gif) => acc + (gif.time ?? 0), 0);
@@ -62,6 +64,15 @@ const RobotSetDetail = ({
   const simGifsForSelected = gifsInSet
   .filter(gifObj => gifObj.robotSim_id === selectedSetSimId)
   .sort((a, b) => a.iteration - b.iteration);
+
+  const robotConcentrationData = simGifsForSelected.flatMap(gifObj =>
+    (gifObj.robot_path)
+      .filter(point => gifObj.iteration === currentIteration && (selectedRobotFilter === 'all' || String(point.robot) === String(selectedRobotFilter)))
+      .map(point => ({
+        robot: point.robot,
+        concentration: Number(point.concentration)
+      }))
+  );
 
   const robotDistances = {};
   if (simGifsForSelected.length > 0) {
@@ -157,18 +168,22 @@ const RobotSetDetail = ({
                     {activeRobotButton == "visual" &&(
                       <>
                     <h3>Iteration: {gifObj.iteration}</h3>
-                    
-                    <GifWithGrid
-                      gifObj={gifObj}
-                      simulationBounds={simulationBounds}
-                      robots={robots}
-                      selectedRobotIdx={selectedRobotIdx}
-                      grid={showGrid}
-                      deviation={deviationSet}
-                      numberOfRobots={selectedRobotNumber}
-                      type={robotSimulationMode}
-                      onSetRobotCoords={() => {}}
-                    />
+                    <div className="visual-container">
+                      
+                                     
+                    <div className="gif-control-container">
+                      <GifWithGrid
+                        gifObj={gifObj}
+                        simulationBounds={simulationBounds}
+                        robots={robots}
+                        selectedRobotIdx={selectedRobotIdx}
+                        grid={showGrid}
+                        deviation={deviationSet}
+                        numberOfRobots={selectedRobotNumber}
+                        type={robotSimulationMode}
+                        onSetRobotCoords={() => {}}
+                      />
+                      
                     <div className="button-container-gaden-gif">
                       <div>
                         <button onClick={handleIterationBackGaden}>
@@ -190,9 +205,14 @@ const RobotSetDetail = ({
                         </button>
                       </div>
                     </div>
+                    </div>
+                    <div className="bar-chart-container">
+                      <SimpleBarChart data={robotConcentrationData} />
+                    </div> 
+                    </div>               
                     </>
                     )}
-                  </div>
+                  </div> 
                 ))}
             </div>   
             {activeRobotButton == "path" && (

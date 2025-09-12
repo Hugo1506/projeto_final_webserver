@@ -1,8 +1,11 @@
-import React from 'react';
+import React, { useState}from 'react';
 import GifWithGrid from './GifWithGrid';
+import './GadenSimulationClickNoRobot.css'
 
 const GadenSimulationClickNoRobot = ({
-  clickedGif,
+  selectedHeight,
+  setSelectedHeight,
+  availableHeights,
   fadeOut,
   handleGoBackSimulationDetails,
   pagePath,
@@ -28,6 +31,7 @@ const GadenSimulationClickNoRobot = ({
   handleChangeSimulationSpeedGaden,
   setCurrentIteration,
 }) => {
+
   return (
     <>
         <div className="gaden-simulation-click">
@@ -44,9 +48,26 @@ const GadenSimulationClickNoRobot = ({
             <div className="gif-description-robot">
               {relatedGifs
                 .filter(gifObj => gifObj.iteration === currentIteration)
+                .filter(gifObj => gifObj.height === Number(selectedHeight))
                 .map((gifObj, index) => (
                   <div key={index} className="gif-description">
-                    <h3>Height: {gifObj.height ?? 'Unknown'}</h3>
+                    <span>Height: </span>
+                     <select
+                        value={selectedHeight ?? ""}
+                        onChange={(e) =>
+                          setSelectedHeight(e.target.value === "" ? null : Number(e.target.value))
+                       }
+                      >
+                      {availableHeights
+                        .map((height) => parseFloat(height))
+                        .sort((a, b) => a - b)
+                        .map((height, idx) => (
+                          <option key={idx} value={height}>
+                            {height ?? 'Unknown'}
+                          </option>
+                        ))}
+                    </select>
+                
                     <h3>Iteration: {gifObj.iteration}</h3>
                     <div className="grid-toggle-div">
                       <label>

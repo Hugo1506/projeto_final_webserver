@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import ConfirmationModal from './ConfirmationModal';
-import './SimulationDetails.css'
+import './SimulationDetail.css'
 
 const SimulationDetail = ({
   username,
@@ -180,19 +180,6 @@ const SimulationDetail = ({
                 />
                 Show contour
               </label>
-              <select
-                value={selectedHeight}
-                onChange={(e) => setSelectedHeight(e.target.value)}
-              >
-                {availableHeights
-                  .map((height) => parseFloat(height))
-                  .sort((a, b) => a - b)
-                  .map((height, idx) => (
-                    <option key={idx} value={height}>
-                      {height ?? 'Unknown'}
-                    </option>
-                  ))}
-              </select>
             </div>
           )}
         </div>

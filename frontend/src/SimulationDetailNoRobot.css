@@ -1,0 +1,32 @@
+.toggle-button-no-robot{
+    margin-bottom: 10%;
+    padding: 10px 20px;
+    font-size: 16px;
+    display: inline;
+    cursor: pointer;
+    border: 2px solid #333;
+    border-radius: 5px;
+    background-color: #f0f0f0;
+    transition: background-color 0.3s ease;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.toggle-button-no-robot.active {
+  background-color: #4CAF50;
+  color: white;
+}
+
+.toggle-button-no-robot.inactive {
+  background-color: #f0f0f0;
+  color: #333;
+}
+
+.toggle-button-no-robot.active:hover {
+  background-color: #4CAF50;
+  color: white;
+}
+
+.toggle-button-no-robot:hover{
+  transform: scale(1.05);
+  background-color: white;
+}

@@ -4,6 +4,9 @@ import "./GadenSimulationClick.css"
 import AddLabelInput from './Fields'
 
 const GadenSimulationClick = ({
+  selectedHeight,
+  setSelectedHeight,
+  availableHeights,
   clickedGif,
   fadeOut,
   handleGoBackSimulationDetails,
@@ -67,9 +70,25 @@ const GadenSimulationClick = ({
             <div className="gif-description-robot-gaden">
               {relatedGifs
                 .filter(gifObj => gifObj.iteration === currentIteration)
+                .filter(gifObj => gifObj.height === Number(selectedHeight))
                 .map((gifObj, index) => (
                   <div key={index} className="gif-description">
-                    <h3>Height: {gifObj.height ?? 'Unknown'}</h3>
+                    <span>Height: </span>
+                     <select
+                        value={selectedHeight ?? ""}
+                        onChange={(e) =>
+                          setSelectedHeight(e.target.value === "" ? null : Number(e.target.value))
+                       }
+                      >
+                      {availableHeights
+                        .map((height) => parseFloat(height))
+                        .sort((a, b) => a - b)
+                        .map((height, idx) => (
+                          <option key={idx} value={height}>
+                            {height ?? 'Unknown'}
+                          </option>
+                        ))}
+                    </select>
                     <h3>Iteration: {gifObj.iteration}</h3>
                     <div className="grid-toggle-div">
                       <label>

@@ -13,6 +13,7 @@ import RobotSetDetail from './RobotSetDetail';
 import GadenSimulationClick from './GadenSimulationClick';
 import SimulationDetailNoRobot from './SimulationDetailNoRobot'
 import GadenSimulationClickNoRobot from './GadenSimulationClickNoRobot';
+import NewOrSavedExperiences from './NewOrSavedExperiences';
 
 const Welcome = ({ username, onLogout }) => {
   const [dropdownVisible, setDropdownVisible] = useState(false);
@@ -101,6 +102,7 @@ const Welcome = ({ username, onLogout }) => {
   const [medianTime, setMedianTime] = useState(null);
   const [pagePath, setPagePath] = useState(["Home"]);
   const [plumeOrExperienciesVisible, setPlumeOrExperienciesVisible] = useState(false);
+  const [newOrSavedExperiencesVisible, setNewOrSavedExperiencesVisible] = useState(false)
   const [showRobotSimulationsSet, setShowRobotSimulationSet] = useState(false);
   const [activeRobotButton, setActiveRobotButton] = useState("visual");
   const [simulationCode, setSimulationCode] = useState("");
@@ -144,7 +146,6 @@ const Welcome = ({ username, onLogout }) => {
 useEffect(() => {
   let sourceGifs = [];
   if (showRobotSetDetail && gifsInSet && gifsInSet.length > 0) {
-    // Use only gifs from the selected set
     sourceGifs = gifsInSet.filter(gifObj => gifObj.robotSim_id === selectedSetSimId);
   } else if (relatedGifs && relatedGifs.length > 0) {
     sourceGifs = relatedGifs;
@@ -375,6 +376,7 @@ useEffect(() => {
       const uniqueHeights = [...new Set(gifs.map(gif => gif.height))];
       const minHeight = Math.min(...uniqueHeights);
       setSelectedHeight(minHeight);
+      console.log(selectedHeight)
 
 
       setAvailableHeights(uniqueHeights);
@@ -780,8 +782,8 @@ useEffect(() => {
 
   const handleGoBackGadenChoise = () => {
     if(pagePath.includes("Experiences")){
-      setPlumeOrExperienciesVisible(true);   
-      setPagePath(prev => [...prev.slice(0, -2)]);
+      setNewOrSavedExperiencesVisible(true);   
+      setPagePath(prev => [...prev.slice(0, -1)]);
     }else{
       setGadenChoiseVisible(true);
     }
@@ -796,7 +798,6 @@ useEffect(() => {
 
   const handleSavedSimulationsClick = async () => {
     await fetchSavedSimulations();
-    setPagePath(prev => [...prev, "Saved Simulations"]);
     setFadeOut(true); 
     setTimeout(() => {
       setGadenChoiseVisible(false); 
@@ -823,15 +824,28 @@ useEffect(() => {
 
   const handleExperiencesClick = async () => {
     setPagePath(prev => [...prev, "Experiences"]);
-    await fetchSavedSimulations();
-    setShowRobotSimulationSet(true);
+    setNewOrSavedExperiencesVisible(true);
     setFadeOut(true); 
     setTimeout(() => {
       setIsNewSimulation(false); 
+      setFadeOut(false)
+    }, 500);
+  }
+
+  const handleSavedExperiencesClick = async () => {
+    setPagePath(prev => [...prev, "Saved Experiences"]);
+    await fetchSavedSimulations();
+    setShowRobotSimulationSet(true);
+    setNewOrSavedExperiencesVisible(false);
+    setFadeOut(true); 
+    setTimeout(() => {
       handleSavedSimulationsClick();
       setFadeOut(false)
     }, 500);
   }
+
+
+
   const handleSetClick = async (set) => {
     setGifs([]);
     setGifsInSet([]); 
@@ -921,16 +935,15 @@ useEffect(() => {
   
 
   const handleGifClick = async (clickedGif) => {
-    const { type, height, robotSim_id } = clickedGif;
+    const { type, robotSim_id } = clickedGif;
 
-    const filteredRelatedGifs = filteredGifs.filter(gifObj => gifObj.type === type && gifObj.height === height && gifObj.robotSim_id === robotSim_id);
+    const filteredRelatedGifs = filteredGifs.filter(gifObj => gifObj.type === type && gifObj.robotSim_id === robotSim_id);
 
     setRelatedGifs(filteredRelatedGifs);
     const maxIter = Math.max(...filteredRelatedGifs.map(g => g.iteration));
     setMaxIteration(maxIter);
     const minIter = Math.min(...filteredRelatedGifs.map(g => g.iteration));
     setMinIteration(minIter);
-
 
     const bounds = await fetchBoundsStatus(clickedGif.simulation);
       if (bounds) setSimulationBounds(bounds);
@@ -1395,7 +1408,7 @@ useEffect(() => {
         />
       </div>
       <div className="main-content">
-        {!plumeOrExperienciesVisible && !showRobotSetDetail && !gadenSimulationClickVisible && !fileInputVisible && !GadenChoiseVisible && !isNewSimulation && !savedSimulationsVisible && !simulationDetail? (
+        {!newOrSavedExperiencesVisible && !plumeOrExperienciesVisible && !showRobotSetDetail && !gadenSimulationClickVisible && !fileInputVisible && !GadenChoiseVisible && !isNewSimulation && !savedSimulationsVisible && !simulationDetail? (
           <button
             className={`gaden-button ${fadeOut ? 'fade-out' : ''}`}
             onClick={handleGadenClick}
@@ -1403,7 +1416,7 @@ useEffect(() => {
             Gaden <br /> version: 2.5.0
           </button>
         ) : null}
-        {plumeOrExperienciesVisible && (
+        {plumeOrExperienciesVisible && !newOrSavedExperiencesVisible && (
           <PlumeOrExperiences
             ambientSimulator={ambientSimulator}
             fadeOut={fadeOut}
@@ -1414,6 +1427,19 @@ useEffect(() => {
             setPagePath={setPagePath}
             setShowRobotSimulationSet={setShowRobotSimulationSet}
           />
+        )}
+        {newOrSavedExperiencesVisible && (
+          <NewOrSavedExperiences
+            ambientSimulator={ambientSimulator}
+            fadeOut={fadeOut}
+            handlePlumeClick={handlePlumeClick}
+            handleSavedExperiencesClick={handleSavedExperiencesClick}
+            pagePath={pagePath}
+            setPagePath={setPagePath}
+            setNewOrSavedExperiencesVisible={setNewOrSavedExperiencesVisible}
+            setPlumeOrExperienciesVisible={setPlumeOrExperienciesVisible}
+          />
+
         )}
        {GadenChoiseVisible && (
         <GadenChoiseButtons 
@@ -1605,6 +1631,9 @@ useEffect(() => {
           gadenSimulationClickVisible={gadenSimulationClickVisible}
           clickedGif={clickedGif}
           robotSimulation={robotSimulation}
+          selectedHeight={selectedHeight}
+          setSelectedHeight={setSelectedHeight}
+          availableHeights={availableHeights}
           fadeOut={fadeOut}
           handleGoBackSimulationDetails={handleGoBackSimulationDetails}
           pagePath={pagePath}
@@ -1648,8 +1677,12 @@ useEffect(() => {
           setRobotSimulationMode={setRobotSimulationMode}
         />
       )}
+      {}
        {gadenSimulationClickVisible && clickedGif && robotSimulation && showRobotSimulationsSet &&(
         <GadenSimulationClick
+          selectedHeight={selectedHeight}
+          setSelectedHeight={setSelectedHeight}
+          availableHeights={availableHeights}
           gadenSimulationClickVisible={gadenSimulationClickVisible}
           clickedGif={clickedGif}
           robotSimulation={robotSimulation}

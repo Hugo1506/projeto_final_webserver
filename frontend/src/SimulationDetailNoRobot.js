@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import ConfirmationModal from './ConfirmationModal';
-
+import './SimulationDetailNoRobot.css'
 const SimulationDetail = ({
   fadeOut,
   activeButton,
@@ -33,7 +33,7 @@ const SimulationDetail = ({
           </button>
           <div className="toggle-buttons">
             <button
-              className={`toggle-button ${activeButton === 'gaden' ? 'active' : 'inactive'}`}
+              className={`toggle-button-no-robot ${activeButton === 'gaden' ? 'active' : 'inactive'}`}
               onClick={() => handleToggleButton('gaden')}
             >
               Gaden Simulations
@@ -77,19 +77,6 @@ const SimulationDetail = ({
                 />
                 Show contour
               </label>
-              <select
-                value={selectedHeight}
-                onChange={(e) => setSelectedHeight(e.target.value)}
-              >
-                {availableHeights
-                  .map((height) => parseFloat(height))
-                  .sort((a, b) => a - b)
-                  .map((height, idx) => (
-                    <option key={idx} value={height}>
-                      {height ?? 'Unknown'}
-                    </option>
-                  ))}
-              </select>
             </div>
           )}
         </div>

@@ -5,6 +5,7 @@ import './RobotSetDetail.css'
 import { Line , Bar} from 'react-chartjs-2';
 import SimpleBarChart from './SimpleBarChart';
 import { Chart, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend } from 'chart.js';
+import Trajectory from './Trajectory'
 Chart.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 
 
@@ -46,7 +47,6 @@ const RobotSetDetail = ({
   handleRobotToggleButton
 }) => {
 
-
   const simGifs = gifsInSet.filter(gifObj => gifObj.robotSim_id !== undefined && gifObj.robotSim_id !== null);
 
   const totalTime = simGifs.reduce((acc, gif) => acc + (gif.time ?? 0), 0);
@@ -74,6 +74,20 @@ const RobotSetDetail = ({
       }))
   );
 
+  const robotPathsMap = {};
+  simGifsForSelected.forEach(gifObj => {
+    (gifObj.robot_path || []).forEach(point => {
+      if (
+        selectedRobotFilter === 'all' ||
+        String(point.robot) === String(selectedRobotFilter)
+      ) {
+        if (!robotPathsMap[point.robot]) robotPathsMap[point.robot] = [];
+        robotPathsMap[point.robot].push(point);
+      }
+    });
+  });
+  const robotPaths = Object.values(robotPathsMap);
+
   const robotDistances = {};
   if (simGifsForSelected.length > 0) {
     const firstIteration = simGifsForSelected[0].robot_path || [];
@@ -90,6 +104,7 @@ const RobotSetDetail = ({
       }
     });
   }
+
 
   return (
     <>
@@ -216,29 +231,39 @@ const RobotSetDetail = ({
                 ))}
             </div>   
             {activeRobotButton == "path" && (
-            <div className="robot-path-list-container">
-              <h4>Robot Path:</h4>
-              <div className="checkbox-filters">
-                <label>
-                  <input
-                    type="checkbox"
-                    checked={showTotalStatsRobotSim}
-                    onChange={() => setShowTotalStatsRobotSim(prev => !prev)}
-                  />
-                  show total stats
-                </label>
-                <select
-                  value={selectedRobotFilter}
-                  onChange={e => setSelectedRobotFilter(e.target.value)}
-                >
-                  <option value="all">All Robots</option>
-                  {robotNumbers.map(robotNum => (
-                    <option key={robotNum} value={robotNum}>
-                      Robot {robotNum}
-                    </option>
+              <>
+              <Trajectory
+                robotPaths={robotPaths}
+                simulationBounds={simulationBounds}
+                width={600}
+                height={600}
+                currentIteration={currentIteration}
+              />
+              <div className="robot-path-list-container">
+                <h4>Robot Path:</h4>
+                <div className="checkbox-filters">
+                  <label>
+                    <input
+                      type="checkbox"
+                      checked={showTotalStatsRobotSim}
+                      onChange={() => setShowTotalStatsRobotSim(prev => !prev)}
+                    />
+                    show total stats
+                  </label>
+                  <select
+                    value={selectedRobotFilter}
+                    onChange={e => setSelectedRobotFilter(e.target.value)}
+                  >
+                    <option value="all">All Robots</option>
+                    {robotNumbers.map(robotNum => (
+                      <option key={robotNum} value={robotNum}>
+                        Robot {robotNum}
+                      </option>
+                    
                   ))}
                 </select>
               </div>
+              
               <ul className="robot-path-list">
                 {(() => {
                   const seen = new Set();
@@ -273,6 +298,7 @@ const RobotSetDetail = ({
                 })()}
               </ul>
             </div>
+            </>
             )}
             {activeRobotButton === 'stats' && (
               <div className="stats-graph-container">

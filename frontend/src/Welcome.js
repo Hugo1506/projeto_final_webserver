@@ -107,6 +107,7 @@ const Welcome = ({ username, onLogout }) => {
   const [activeRobotButton, setActiveRobotButton] = useState("visual");
   const [simulationCode, setSimulationCode] = useState("");
   const [waitForFinish, setWaitForFinish] = useState(false);
+  const [isSavedExperiences, setIsSavedExperiences] = useState(false);
 
   const [robots, setRobots] = useState([
     { robotSpeed: '', robotXlocation: '', robotYlocation: '' },
@@ -316,7 +317,6 @@ useEffect(() => {
   const fetchBoundsStatus = async (simulation) => {
     try {
       const response = await fetch(`http://localhost:3000/getBoundsValues?simulation=${(simulation)}`);
-      
       if (!response.ok) {
         if (response.status === 404) {
           console.warn('Simulation not found');
@@ -835,11 +835,25 @@ useEffect(() => {
   const handleSavedExperiencesClick = async () => {
     setPagePath(prev => [...prev, "Saved Experiences"]);
     await fetchSavedSimulations();
-    setShowRobotSimulationSet(true);
-    setNewOrSavedExperiencesVisible(false);
-    setFadeOut(true); 
     setTimeout(() => {
+      setShowRobotSimulationSet(true);
+      setFadeOut(true);
+      setIsSavedExperiences(true); 
       handleSavedSimulationsClick();
+      setNewOrSavedExperiencesVisible(false);
+      setFadeOut(false)
+    }, 500);
+  }
+
+  const handleNewExperienceClick = async () => {
+    setPagePath(prev => [...prev, "New Experience"]);
+    await fetchSavedSimulations();
+    setTimeout(() => {
+      setShowRobotSimulationSet(true);   
+      setFadeOut(true);
+      setIsSavedExperiences(false); 
+      handleSavedSimulationsClick();
+      setNewOrSavedExperiencesVisible(false);
       setFadeOut(false)
     }, 500);
   }
@@ -863,11 +877,14 @@ useEffect(() => {
     if (newGifs.length > 0) {
       setSelectedSetSimId(newGifs[0].robotSim_id);
       setGifs(newGifs.filter(g => g.robotSim_id === newGifs[0].robotSim_id));
+      const bounds = await fetchBoundsStatus(newGifs[0].simulation);
+      if (bounds) setSimulationBounds(bounds);
     }
   };
 
   const handleGoBackRobotSetDetail = async () => {
     setShowRobotSetDetail(false);
+
     setGifsInSet([]);
     setGifs([]);
     setSelectedSetSimId(null);
@@ -947,7 +964,6 @@ useEffect(() => {
 
     const bounds = await fetchBoundsStatus(clickedGif.simulation);
       if (bounds) setSimulationBounds(bounds);
-
       setClickedGif(clickedGif);
       setHeight(clickedGif.height);
       
@@ -1166,11 +1182,15 @@ useEffect(() => {
       setRobotSimulation(true);
       setPagePath(prevPath => [...prevPath.slice(0, -1), "Enviroment Simulation"]);
     } else {
+      if (activeButton != 'robot'){
+        fetchRobotSetData(filteredGifs?.simulation || (filteredGifs[0] && filteredGifs[0].simulation));
+        setPagePath(prevPath => [...prevPath.slice(0, -1), "Robot Simulations"]);
+      }
+      
       setActiveButton('robot');
       setShowCheckboxes(false);
       setRobotSimulation(false);
-      fetchRobotSetData(clickedGif?.simulation || (filteredGifs[0] && filteredGifs[0].simulation));
-      setPagePath(prevPath => [...prevPath.slice(0, -1), "Robot Simulations"]);
+      
     }
   }
 
@@ -1334,7 +1354,7 @@ useEffect(() => {
         intervalRef.current = null;
       }
     };
-  }, [activeButton, simulationDetail, clickedGif, filteredGifs]);
+  }, [ simulationDetail, clickedGif, filteredGifs]);
   
 
   const toggleRos = () =>{
@@ -1432,7 +1452,7 @@ useEffect(() => {
           <NewOrSavedExperiences
             ambientSimulator={ambientSimulator}
             fadeOut={fadeOut}
-            handlePlumeClick={handlePlumeClick}
+            handleNewExperienceClick={handleNewExperienceClick}
             handleSavedExperiencesClick={handleSavedExperiencesClick}
             pagePath={pagePath}
             setPagePath={setPagePath}
@@ -1584,6 +1604,7 @@ useEffect(() => {
             handleToggleButton={handleToggleButton}
             waitForFinish={waitForFinish}
             setWaitForFinish={setWaitForFinish}
+            isSavedExperiences={isSavedExperiences}
           />
         )}
       {showRobotSetDetail && (

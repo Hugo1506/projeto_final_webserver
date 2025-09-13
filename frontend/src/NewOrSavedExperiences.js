@@ -3,7 +3,7 @@ import React from 'react';
 const NewOrSavedExperiences = ({
   ambientSimulator,  
   fadeOut,
-  handlePlumeClick,
+  handleNewExperienceClick,
   handleSavedExperiencesClick,
   setNewOrSavedExperiencesVisible,
   pagePath,
@@ -15,7 +15,7 @@ const NewOrSavedExperiences = ({
     <h1 className={'info-header'}>{ambientSimulator}</h1>
       <button
         className={`New-experience-button ${fadeOut ? 'fade-out' : ''}`}
-        onClick={handlePlumeClick}
+        onClick={handleNewExperienceClick}
       >
         New Experience
       </button>

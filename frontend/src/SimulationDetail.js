@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import ConfirmationModal from './ConfirmationModal';
 import './SimulationDetail.css'
 
@@ -30,10 +30,17 @@ const SimulationDetail = ({
   handleImageLoaded,
   handleToggleButton,
   waitForFinish,
-  setWaitForFinish
+  setWaitForFinish,
+  isSavedExperiences
 }) => {
   
-
+  useEffect(() => {
+    if (!isSavedExperiences) {
+      handleToggleButton('gaden');
+    } else {
+      handleToggleButton('robot');
+    }
+  }, [isSavedExperiences]);
 
   const handleWaitToggle = async () => {
     const newWaitStatus = !waitForFinish;
@@ -73,28 +80,39 @@ const SimulationDetail = ({
             Go Back
           </button>
           <div className="toggle-buttons">
+          {!isSavedExperiences &&(
+            <>
             <button
               className={`toggle-button ${activeButton === 'gaden' ? 'active' : 'inactive'}`}
               onClick={() => handleToggleButton('gaden')}
             >
               Gaden Simulations
             </button>
-            <button
-              className={`toggle-button ${activeButton === 'robot' ? 'active' : 'inactive'}`}
-              onClick={() => handleToggleButton('robot')}
-            >
-              Robot Simulations
-            </button>
-            <label className="toggle-label">
-            <input
-              type="checkbox"
-              checked={waitForFinish}
-              onChange={handleWaitToggle}
-            />
-            <span className="slider"></span>
-            Wait for experience finish
-          </label>
-
+            </>
+            )}
+            {isSavedExperiences &&(
+              <>
+              <button
+                className={`toggle-button ${activeButton === 'robot' ? 'active' : 'inactive'}`}
+                onClick={() => handleToggleButton('robot')}
+              >
+                Robot Simulations
+              </button>
+             </>
+            )}  
+            {!isSavedExperiences &&(
+              <>
+              <label className="toggle-label">
+              <input
+                type="checkbox"
+                checked={waitForFinish}
+                onChange={handleWaitToggle}
+              />
+              <span className="slider"></span>
+              Wait for experience finish
+            </label>
+              </>
+            )}  
           </div>
           {activeButton === 'robot' && robotSetData && robotSetData.length > 0 && (
             <div className={`saved-simulations-list ${fadeOut ? 'fade-out' : ''}`}>

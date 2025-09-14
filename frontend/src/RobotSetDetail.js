@@ -5,7 +5,9 @@ import './RobotSetDetail.css'
 import { Line , Bar} from 'react-chartjs-2';
 import SimpleBarChart from './SimpleBarChart';
 import { Chart, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend } from 'chart.js';
-import Trajectory from './Trajectory'
+import Trajectory from './Trajectory';
+import PositionConcentrationChart from './PositionConcentrationChart';
+import CollapsibleSection from './CollapseSection';
 Chart.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 
 
@@ -87,23 +89,40 @@ const RobotSetDetail = ({
     });
   });
   const robotPaths = Object.values(robotPathsMap);
+const robotDistances = {};
+const robotRealDistances = {};
 
-  const robotDistances = {};
-  if (simGifsForSelected.length > 0) {
-    const firstIteration = simGifsForSelected[0].robot_path || [];
-    const lastIteration = simGifsForSelected[simGifsForSelected.length - 1].robot_path || [];
+if (simGifsForSelected.length > 0) {
+  const allIterations = simGifsForSelected.map(gif => gif.robot_path || []);
 
-    firstIteration.forEach(startPoint => {
-      const endPoint = lastIteration.find(p => p.robot === startPoint.robot);
-      if (endPoint) {
-        const dx = endPoint.robot_position.x - startPoint.robot_position.x;
-        const dy = endPoint.robot_position.y - startPoint.robot_position.y;
-        const dz = endPoint.robot_position.z - startPoint.robot_position.z;
-        const distance = Math.sqrt(dx*dx + dy*dy + dz*dz);
-        robotDistances[startPoint.robot] = distance.toFixed(2);
+  const firstIteration = allIterations[0];
+  const lastIteration = allIterations[allIterations.length - 1];
+
+  firstIteration.forEach(startPoint => {
+    const endPoint = lastIteration.find(p => p.robot === startPoint.robot);
+    if (endPoint) {
+      const dx = endPoint.robot_position.x - startPoint.robot_position.x;
+      const dy = endPoint.robot_position.y - startPoint.robot_position.y;
+      const dz = endPoint.robot_position.z - startPoint.robot_position.z;
+      const distance = Math.sqrt(dx*dx + dy*dy + dz*dz);
+      robotDistances[startPoint.robot] = distance.toFixed(2);
+    }
+
+    let traveled = 0;
+    for (let i = 1; i < allIterations.length; i++) {
+      const prev = allIterations[i - 1].find(p => p.robot === startPoint.robot);
+      const curr = allIterations[i].find(p => p.robot === startPoint.robot);
+      if (prev && curr) {
+        const dx = curr.robot_position.x - prev.robot_position.x;
+        const dy = curr.robot_position.y - prev.robot_position.y;
+        const dz = curr.robot_position.z - prev.robot_position.z;
+        traveled += Math.sqrt(dx*dx + dy*dy + dz*dz);
       }
-    });
-  }
+    }
+    robotRealDistances[startPoint.robot] = traveled.toFixed(2);
+  });
+}
+
 
 
   return (
@@ -153,6 +172,7 @@ const RobotSetDetail = ({
                           <h3>Average Iterations per Simulation: {avgIterationsPerSim}</h3>
                         </>
                       )}
+                      <div className="Simulation-set-select-container">
                       <label>
                         Select Simulation in Set:&nbsp;
                         <select
@@ -173,6 +193,7 @@ const RobotSetDetail = ({
                             ))}
                         </select>
                       </label>
+                      </div>
                     </div>
                     {activeRobotButton != 'path' &&(
                       <h3>Height: {gifObj.height ?? 'Unknown'}</h3>
@@ -230,15 +251,41 @@ const RobotSetDetail = ({
                   </div> 
                 ))}
             </div>   
+            </div>
             {activeRobotButton == "path" && (
-              <>
-              <Trajectory
-                robotPaths={robotPaths}
-                simulationBounds={simulationBounds}
-                width={600}
-                height={600}
+          
+              <div className="path-visualization-container">
+             <div className="chart-with-buttons">
+              <PositionConcentrationChart
+                gifsInSet={gifsInSet}
+                selectedSetSimId={selectedSetSimId}
                 currentIteration={currentIteration}
+                selectedRobotFilter={selectedRobotFilter}
+                showTotalStatsRobotSim={showTotalStatsRobotSim}
+                simulationBounds={simulationBounds}
               />
+              <div className="button-container-gaden-gif">
+                <div>
+                  <button onClick={handleIterationBackGaden}>
+                    {currentIteration > minIteration && isPausedGaden ? '⏮️' : '🚫'}
+                  </button>
+                  <button onClick={handlePauseResume}>
+                    {isPausedGaden ? '▶️' : '⏸️'}
+                  </button>
+                  <button onClick={handleIterationForwardGaden}>
+                    {currentIteration < maxIteration && isPausedGaden ? '⏭️' : '🚫'}
+                  </button>
+                </div>
+                <div>
+                  <button onClick={handleChangeSimulationSpeedGaden}>
+                    {gadenSimulationSpeed}x
+                  </button>
+                  <button onClick={() => setCurrentIteration(minIteration)}>
+                    ↻
+                  </button>
+                </div>
+              </div>
+            </div>
               <div className="robot-path-list-container">
                 <h4>Robot Path:</h4>
                 <div className="checkbox-filters">
@@ -298,14 +345,18 @@ const RobotSetDetail = ({
                 })()}
               </ul>
             </div>
-            </>
+            
+            </div>
             )}
             {activeRobotButton === 'stats' && (
+              <CollapsibleSection buttonLabel="Iteration Time Stats">
               <div className="stats-graph-container">
-                <h3>Robot Distances (first → last iteration):</h3>
+                <h3>Robot Distances:</h3>
                 <ul>
                   {Object.entries(robotDistances).map(([robot, distance]) => (
-                    <li key={robot}>Robot {robot}: {distance} m</li>
+                    <li key={robot}>
+                      Robot {robot}: Straight-line = {distance} m, Traveled = {robotRealDistances[robot]} m
+                    </li>
                   ))}
                 </ul>
                 <Line
@@ -347,8 +398,9 @@ const RobotSetDetail = ({
                   }}
                 />
               </div>
+              </CollapsibleSection>
             )}
-          </div>
+          
           {showInfoModal && (
             <InfoModal
               message="Loading Set"

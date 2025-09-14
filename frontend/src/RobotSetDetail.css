@@ -4,10 +4,14 @@
   gap: 1rem; 
 }
 
+.toggle-buttons{
+  margin-bottom: 10px;
+}
 
 .gif-description-robot,
 .robot-path-list-container,
-.stats-graph-container {
+.stats-graph-container,
+.chart-with-buttons {
   width: 100%;              
   max-width: 900px;         
   display: flex;
@@ -80,4 +84,42 @@
   flex-direction: column;
   gap: 10px;
   justify-content: flex-start;
+}
+
+.path-visualization-container {
+  display: flex;
+  flex-direction: row;
+  gap: 20px;
+  justify-content: center; 
+  align-items: flex-start;
+  width: 100%;
+}
+
+.Simulation-set-select-container {
+  display: flex;
+  flex-direction: column; 
+  width: 100%;
+  margin-bottom: 1rem; 
+}
+
+.path-visualization-container > * {
+  flex: none;           
+  max-width: 600px;     
+}
+
+.path-visualization-container {
+  display: flex;
+  flex-direction: row;
+  gap: 20px;
+  justify-content: center;
+  width: 100%;
+}
+
+
+.robot-path-list-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  max-width: 400px;
+  gap: 10px;
 }

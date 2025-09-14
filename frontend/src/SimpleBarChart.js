@@ -5,6 +5,7 @@ import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Toolti
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
 const SimpleBarChart = ({ data }) => {
+  const maxConcentration = Math.max(...data.map(d => d.concentration), 1);
   const chartData = {
     labels: data.map(d => `R${d.robot}`),  
     datasets: [
@@ -28,6 +29,7 @@ const SimpleBarChart = ({ data }) => {
       },
       y: {
         beginAtZero: true,
+        max: maxConcentration,
         ticks: {
           callback: function (value) {
             return value.toFixed(6);

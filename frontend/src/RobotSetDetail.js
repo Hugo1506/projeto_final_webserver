@@ -8,6 +8,7 @@ import { Chart, CategoryScale, LinearScale, PointElement, LineElement, Title, To
 import Trajectory from './Trajectory';
 import PositionConcentrationChart from './PositionConcentrationChart';
 import CollapsibleSection from './CollapseSection';
+import RobotDensityHeatmap from './RobotDensityHeatmap';
 Chart.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 
 
@@ -66,7 +67,6 @@ const RobotSetDetail = ({
   const simGifsForSelected = gifsInSet
   .filter(gifObj => gifObj.robotSim_id === selectedSetSimId)
   .sort((a, b) => a.iteration - b.iteration);
-
   const robotConcentrationData = simGifsForSelected.flatMap(gifObj =>
     (gifObj.robot_path)
       .filter(point => gifObj.iteration === currentIteration && (selectedRobotFilter === 'all' || String(point.robot) === String(selectedRobotFilter)))
@@ -349,6 +349,7 @@ if (simGifsForSelected.length > 0) {
             </div>
             )}
             {activeRobotButton === 'stats' && (
+              <>
               <CollapsibleSection buttonLabel="Iteration Time Stats">
               <div className="stats-graph-container">
                 <h3>Robot Distances:</h3>
@@ -399,6 +400,14 @@ if (simGifsForSelected.length > 0) {
                 />
               </div>
               </CollapsibleSection>
+              <CollapsibleSection buttonLabel="Density Map">
+                <RobotDensityHeatmap
+                    gifsInSet={gifsInSet}
+                    selectedSetSimId={selectedSetSimId}
+                    simulationBounds={simulationBounds}
+                />
+              </CollapsibleSection>
+              </>
             )}
           
           {showInfoModal && (

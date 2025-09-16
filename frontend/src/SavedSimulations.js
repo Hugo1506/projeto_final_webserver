@@ -14,7 +14,7 @@ const SavedSimulationsPage = ({
   showModal,
   confirmDelete,
   closeModal,
-  showInfoModal
+  showInfoModal,
 }) => {
   return (
       <div className="saved-simulations-list">

@@ -89,7 +89,7 @@ const Welcome = ({ username, onLogout }) => {
   const [filamentNoise, setFilamentNoise] = useState("");
   const [nameSimulationSet, setNameSimulationSet] = useState("");
   const [numRobotSimulations, setNumRobotSimulations] = useState("");
-  const [robotSetData, setRobotSetData] = useState("");
+  const [robotSetData, setRobotSetData] = useState([]);
   const [robotSetSearch, setRobotSetSearch] = useState('');
   const [setToDelete, setSetToDelete] = useState('');
   const [filteredRobotSets, setFilteredRobotSets] = useState([]);
@@ -108,16 +108,14 @@ const Welcome = ({ username, onLogout }) => {
   const [simulationCode, setSimulationCode] = useState("");
   const [waitForFinish, setWaitForFinish] = useState(false);
   const [isSavedExperiences, setIsSavedExperiences] = useState(false);
-
+  const [clickedSimulation, setClickedSimulation] = useState("");
   const [robots, setRobots] = useState([
     { robotSpeed: '', robotXlocation: '', robotYlocation: '' },
     { robotSpeed: '', robotXlocation: '', robotYlocation: '' },
     { robotSpeed: '', robotXlocation: '', robotYlocation: '' },
     { robotSpeed: '', robotXlocation: '', robotYlocation: ''},
   ]);
-
-
-
+  
   const [checkedOptions, setCheckedOptions] = useState({
     all: false,
     heatmap: false,
@@ -863,6 +861,8 @@ useEffect(() => {
   const handleSetClick = async (set) => {
     setGifs([]);
     setGifsInSet([]); 
+    setRobotSetData([]);
+    setFilteredRobotSets([]); 
     setSelectedSetSimId(null);
     setShowRobotSetDetail(true); 
     setSimulationDetail(false);
@@ -894,9 +894,12 @@ useEffect(() => {
 
   const handleSimulationClick = async (simulation) => {
     setGifs([]);
+    setRobotSetData([]); 
+    setFilteredRobotSets([]); 
 
     setShowInfoModal(true);
     await fetchGifsFromResults(simulation);
+    setClickedSimulation(simulation)
     setShowInfoModal(false);
     setFadeOut(true);
     setPagePath(prev => [...prev, "Enviroment Simulation"]);
@@ -1174,25 +1177,19 @@ useEffect(() => {
     
 }
 
-  const handleToggleButton = (button) => {
-    setActiveButton(button);
-    if (button === 'gaden') {
-      setActiveButton('gaden');
-      setShowCheckboxes(true);
-      setRobotSimulation(true);
-      setPagePath(prevPath => [...prevPath.slice(0, -1), "Enviroment Simulation"]);
-    } else {
-      if (activeButton != 'robot'){
-        fetchRobotSetData(filteredGifs?.simulation || (filteredGifs[0] && filteredGifs[0].simulation));
-        setPagePath(prevPath => [...prevPath.slice(0, -1), "Robot Simulations"]);
-      }
-      
-      setActiveButton('robot');
-      setShowCheckboxes(false);
-      setRobotSimulation(false);
-      
-    }
+  const handleToggleButton = (button, simName = null) => {
+  setActiveButton(button);
+  if (button === 'gaden') {
+    setShowCheckboxes(true);
+    setRobotSimulation(true);
+    setPagePath(prevPath => [...prevPath.slice(0, -1), "Enviroment Simulation"]);
+  } else if (button === 'robot') {
+    fetchRobotSetData(clickedSimulation);
+    setPagePath(prevPath => [...prevPath.slice(0, -1), "Robot Simulations"]);
+    setShowCheckboxes(false);
+    setRobotSimulation(false);
   }
+}
 
   const handleRobotToggleButton = (button) => {
     setActiveRobotButton(button);
@@ -1605,6 +1602,7 @@ useEffect(() => {
             waitForFinish={waitForFinish}
             setWaitForFinish={setWaitForFinish}
             isSavedExperiences={isSavedExperiences}
+            
           />
         )}
       {showRobotSetDetail && (

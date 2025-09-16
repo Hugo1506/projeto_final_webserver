@@ -9,6 +9,7 @@ import Trajectory from './Trajectory';
 import PositionConcentrationChart from './PositionConcentrationChart';
 import CollapsibleSection from './CollapseSection';
 import RobotDensityHeatmap from './RobotDensityHeatmap';
+import CompassRose from './CompassRose';
 Chart.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 
 
@@ -92,38 +93,84 @@ const RobotSetDetail = ({
 const robotDistances = {};
 const robotRealDistances = {};
 
-if (simGifsForSelected.length > 0) {
-  const allIterations = simGifsForSelected.map(gif => gif.robot_path || []);
+if (simGifsForSelected.length > 0 || selectedSetSimId === -1) {
+  const relevantGifs = selectedSetSimId === -1
+    ? gifsInSet.filter(g => g.robotSim_id !== undefined && g.robotSim_id !== null)
+    : simGifsForSelected;
 
-  const firstIteration = allIterations[0];
-  const lastIteration = allIterations[allIterations.length - 1];
+  const groupedBySim = {};
 
-  firstIteration.forEach(startPoint => {
-    const endPoint = lastIteration.find(p => p.robot === startPoint.robot);
-    if (endPoint) {
+  relevantGifs.forEach(gif => {
+    const simId = gif.robotSim_id;
+    if (!groupedBySim[simId]) groupedBySim[simId] = [];
+    groupedBySim[simId].push(gif);
+  });
+
+  const allRobotDistances = {};
+  const allRobotTraveled = {};
+
+  Object.entries(groupedBySim).forEach(([simId, simGifs]) => {
+    const simIterations = simGifs.sort((a, b) => a.iteration - b.iteration);
+    const allIterations = simIterations.map(gif => gif.robot_path || []);
+    const firstIteration = allIterations[0];
+    const lastIteration = allIterations[allIterations.length - 1];
+
+    if (!firstIteration || !lastIteration) return;
+
+    firstIteration.forEach(startPoint => {
+      const robotId = startPoint.robot;
+      const endPoint = lastIteration.find(p => p.robot === robotId);
+      if (!endPoint) return;
+
       const dx = endPoint.robot_position.x - startPoint.robot_position.x;
       const dy = endPoint.robot_position.y - startPoint.robot_position.y;
       const dz = endPoint.robot_position.z - startPoint.robot_position.z;
-      const distance = Math.sqrt(dx*dx + dy*dy + dz*dz);
-      robotDistances[startPoint.robot] = distance.toFixed(2);
-    }
+      const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
 
-    let traveled = 0;
-    for (let i = 1; i < allIterations.length; i++) {
-      const prev = allIterations[i - 1].find(p => p.robot === startPoint.robot);
-      const curr = allIterations[i].find(p => p.robot === startPoint.robot);
-      if (prev && curr) {
-        const dx = curr.robot_position.x - prev.robot_position.x;
-        const dy = curr.robot_position.y - prev.robot_position.y;
-        const dz = curr.robot_position.z - prev.robot_position.z;
-        traveled += Math.sqrt(dx*dx + dy*dy + dz*dz);
+      if (!allRobotDistances[robotId]) allRobotDistances[robotId] = [];
+      allRobotDistances[robotId].push(dist);
+
+      let traveled = 0;
+      for (let i = 1; i < allIterations.length; i++) {
+        const prev = allIterations[i - 1].find(p => p.robot === robotId);
+        const curr = allIterations[i].find(p => p.robot === robotId);
+        if (prev && curr) {
+          const dx = curr.robot_position.x - prev.robot_position.x;
+          const dy = curr.robot_position.y - prev.robot_position.y;
+          const dz = curr.robot_position.z - prev.robot_position.z;
+          traveled += Math.sqrt(dx * dx + dy * dy + dz * dz);
+        }
       }
-    }
-    robotRealDistances[startPoint.robot] = traveled.toFixed(2);
+
+      if (!allRobotTraveled[robotId]) allRobotTraveled[robotId] = [];
+      allRobotTraveled[robotId].push(traveled);
+    });
+  });
+
+  Object.entries(allRobotDistances).forEach(([robot, distances]) => {
+    const avg = distances.reduce((a, b) => a + b, 0) / distances.length;
+    robotDistances[robot] = avg.toFixed(2);
+  });
+
+  Object.entries(allRobotTraveled).forEach(([robot, distances]) => {
+    const avg = distances.reduce((a, b) => a + b, 0) / distances.length;
+    robotRealDistances[robot] = avg.toFixed(2);
   });
 }
 
-
+  useEffect(() => {
+    if (activeRobotButton !== "stats" && selectedSetSimId === -1) {
+      const validSimIds = Array.from(
+        new Set(gifsInSet.map(g => g.robotSim_id).filter(id => id !== undefined && id !== null))
+      );
+      if (validSimIds.length > 0) {
+        const firstSimId = validSimIds[0];
+        setSelectedSetSimId(firstSimId);
+        setCurrentIteration(0);
+        setGifs(gifsInSet.filter(g => g.robotSim_id === firstSimId));
+      }
+    }
+  }, [activeRobotButton, selectedSetSimId, gifsInSet]);
 
   return (
     <>
@@ -161,6 +208,29 @@ if (simGifsForSelected.length > 0) {
           <div className="content-container">
             
             <div className="gif-description-robot">
+              {activeRobotButton === "stats" && (
+                      <label>
+                      Select Simulation in Set:&nbsp;
+                      <select
+                        value={selectedSetSimId}
+                        onChange={e => {
+                          const simId = Number(e.target.value);
+                          setSelectedSetSimId(simId);
+                          setCurrentIteration(0);
+                          setGifs(gifsInSet.filter(g => simId === -1 || g.robotSim_id === simId));
+                        }}
+                      >
+                         <option value={-1}>All Experiences</option>
+                        {Array.from(new Set(gifsInSet.map(g => g.robotSim_id)))
+                          .filter(id => id !== undefined && id !== null)
+                          .map((id, index) => (
+                            <option key={id} value={id}>
+                              Simulation {index + 1}
+                            </option>
+                          ))}
+                      </select>
+                    </label>      
+                        )}
               {gifsInSet
                 .filter(gifObj => gifObj.robotSim_id === selectedSetSimId && gifObj.iteration === currentIteration)
                 .map((gifObj, index) => (
@@ -173,26 +243,30 @@ if (simGifsForSelected.length > 0) {
                         </>
                       )}
                       <div className="Simulation-set-select-container">
+                    {activeRobotButton != "stats" &&(
                       <label>
-                        Select Simulation in Set:&nbsp;
-                        <select
-                          value={selectedSetSimId}
-                          onChange={e => {
-                            const simId = Number(e.target.value);
-                            setSelectedSetSimId(simId);
-                            setCurrentIteration(0);
-                            setGifs(gifsInSet.filter(g => g.robotSim_id === simId));
-                          }}
-                        >
-                          {Array.from(new Set(gifsInSet.map(g => g.robotSim_id)))
-                            .filter(id => id !== undefined && id !== null)
-                            .map((id, index, array) => (
-                              <option key={id} value={id}>
-                                Simulation {index + 1}
-                              </option>
-                            ))}
-                        </select>
-                      </label>
+                      Select Simulation in Set:&nbsp;
+                      <select
+                        value={selectedSetSimId}
+                        onChange={e => {
+                          const simId = Number(e.target.value);
+                          setSelectedSetSimId(simId);
+                          setCurrentIteration(0);
+                          setGifs(gifsInSet.filter(g => simId === -1 || g.robotSim_id === simId));
+                        }}
+                      >
+
+                        {Array.from(new Set(gifsInSet.map(g => g.robotSim_id)))
+                          .filter(id => id !== undefined && id !== null)
+                          .map((id, index) => (
+                            <option key={id} value={id}>
+                              Simulation {index + 1}
+                            </option>
+                          ))}
+                      </select>
+                    </label>
+                    )}
+                    
                       </div>
                     </div>
                     {activeRobotButton != 'path' &&(
@@ -248,8 +322,10 @@ if (simGifsForSelected.length > 0) {
                     </div>               
                     </>
                     )}
+
                   </div> 
                 ))}
+                 
             </div>   
             </div>
             {activeRobotButton == "path" && (
@@ -362,50 +438,82 @@ if (simGifsForSelected.length > 0) {
                 </ul>
                 <Line
                   data={{
-                    labels: gifsInSet
-                      .filter(gifObj => gifObj.robotSim_id === selectedSetSimId)
-                      .sort((a, b) => a.iteration - b.iteration)
-                      .map(gifObj => gifObj.iteration),
+                    labels: selectedSetSimId === -1
+                      ? Array.from(
+                          new Set(gifsInSet.map(g => g.robotSim_id))
+                        ).map((simId, idx) => `Simulation ${idx + 1}`)
+                      : gifsInSet
+                          .filter(gifObj => gifObj.robotSim_id === selectedSetSimId)
+                          .sort((a, b) => a.iteration - b.iteration)
+                          .map(gifObj => gifObj.iteration),
                     datasets: [
                       {
-                        label: 'Time (s)',
-                        data: gifsInSet
-                          .filter(gifObj => gifObj.robotSim_id === selectedSetSimId)
-                          .map(gifObj => gifObj.time),
+                        label: selectedSetSimId === -1 ? 'Total Time per Simulation' : 'Time per Iteration',
+                        data: selectedSetSimId === -1
+                          ? Array.from(new Set(gifsInSet.map(g => g.robotSim_id)))
+                              .map(simId =>
+                                gifsInSet
+                                  .filter(g => g.robotSim_id === simId)
+                                  .reduce((sum, g) => sum + (g.time ?? 0), 0)
+                              )
+                          : gifsInSet
+                              .filter(gifObj => gifObj.robotSim_id === selectedSetSimId)
+                              .map(gifObj => gifObj.time),
                         borderColor: 'rgba(190, 11, 11, 1)',
                         backgroundColor: 'rgba(75,192,192,0.2)',
                         fill: true,
                         tension: 0.1,
-                      },
-                    ],
+                      }
+                    ]
                   }}
                   options={{
                     responsive: true,
                     plugins: {
                       legend: { display: true },
-                      title: { display: true, text: 'Time per iteration' },
+                      title: {
+                        display: true,
+                        text: selectedSetSimId === -1
+                          ? 'Total Time per Simulation'
+                          : 'Time per Iteration'
+                      },
                     },
-                   scales: {
+                    scales: {
                       x: {
-                        title: { display: true, text: 'Iteration' },
+                        title: {
+                          display: true,
+                          text: selectedSetSimId === -1 ? 'Simulation' : 'Iteration',
+                        },
                       },
                       y: {
-                        title: { display: true, text: 'Time (s)' },
-                        ticks: {
-                          autoSkip: false,   
+                        title: {
+                          display: true,
+                          text: 'Time (s)',
                         },
                       },
                     },
                   }}
                 />
+
+
               </div>
               </CollapsibleSection>
               <CollapsibleSection buttonLabel="Density Map">
-                <RobotDensityHeatmap
+               <RobotDensityHeatmap
+                  gifsInSet={
+                    selectedSetSimId === -1
+                      ? gifsInSet.filter(g => g.robotSim_id !== undefined && g.robotSim_id !== null)
+                      : gifsInSet.filter(g => g.robotSim_id === selectedSetSimId)
+                  }
+                  selectedSetSimId={selectedSetSimId}
+                  simulationBounds={simulationBounds}
+                />
+              </CollapsibleSection>
+              <CollapsibleSection buttonLabel="Average Robot Direction">
+                  <CompassRose
                     gifsInSet={gifsInSet}
                     selectedSetSimId={selectedSetSimId}
-                    simulationBounds={simulationBounds}
-                />
+                    selectedRobotFilter={'all'}
+                  />
               </CollapsibleSection>
               </>
             )}

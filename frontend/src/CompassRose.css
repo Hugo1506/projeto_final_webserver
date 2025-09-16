@@ -1,0 +1,28 @@
+.compass-rose-container {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 24px;
+  padding: 20px;
+}
+
+.single-compass {
+  margin: 20px;
+  text-align: center;
+}
+
+.compass-svg {
+  border: 1px solid #ccc;
+  border-radius: 50%;
+  background: #f9f9f9;
+}
+
+.robot-label {
+  margin-top: 8px;
+  font-weight: bold;
+}
+
+.angle-label {
+  font-size: 0.9em;
+  color: #555;
+}

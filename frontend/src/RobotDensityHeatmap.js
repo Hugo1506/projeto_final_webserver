@@ -11,19 +11,23 @@ const RobotDensityHeatmap = ({ gifsInSet, selectedSetSimId, simulationBounds }) 
   const [canvasSize, setCanvasSize] = useState({ width: 500, height: 500 });
 
   const filteredPositions = gifsInSet
-    .filter(gif => gif.robotSim_id === selectedSetSimId)
-    .flatMap(gif =>
-      gif.robot_path
-        .map(r => r.robot_position)
-        .filter(
-          pos =>
-            pos &&
-            typeof pos.x === 'number' &&
-            typeof pos.y === 'number' &&
-            !isNaN(pos.x) &&
-            !isNaN(pos.y)
-        )
-    );
+  .filter(gif =>
+    selectedSetSimId === -1
+      ? gif.robotSim_id !== undefined && gif.robotSim_id !== null
+      : gif.robotSim_id === selectedSetSimId
+  )
+  .flatMap(gif =>
+    (gif.robot_path || [])
+      .map(r => r.robot_position)
+      .filter(
+        pos =>
+          pos &&
+          typeof pos.x === 'number' &&
+          typeof pos.y === 'number' &&
+          !isNaN(pos.x) &&
+          !isNaN(pos.y)
+      )
+  );
 
   const xValues = filteredPositions.map(p => p.x);
   const yValues = filteredPositions.map(p => p.y);

@@ -31,9 +31,9 @@ const SimulationDetail = ({
   handleToggleButton,
   waitForFinish,
   setWaitForFinish,
-  isSavedExperiences
+  isSavedExperiences,
 }) => {
-  
+
   useEffect(() => {
     if (!isSavedExperiences) {
       handleToggleButton('gaden');

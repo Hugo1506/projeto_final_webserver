@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import './CollapseSection.css'
 const CollapsibleSection = ({ buttonLabel, children }) => {
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(true);
 
   return (
     <div style={{ width: '100%' }}>

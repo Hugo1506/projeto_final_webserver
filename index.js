@@ -274,7 +274,6 @@ app.post('/uploadSimulationResults', (req, res) => {
   const iteration = req.body.iteration;
   const time = req.body.time;
   const robotSim_id = req.body.robotSim_id !== undefined ? req.body.robotSim_id : -1;
-
   const queryInsertSimulationResult = 'INSERT INTO simulation_results (simulation,type,gif,height,iteration, time, robotSim_id) VALUES (?, ?, ?, ?, ?, ?, ?)';
 
   pool.query(queryInsertSimulationResult, [simulation, simulationResultType, compressedGif,height, iteration, time, robotSim_id], (error, results) => {
@@ -777,10 +776,41 @@ app.post ('/setSimulationWait', (req, res) => {
   });
 });
 
+  app.get('/getPlumeLocation', (req, res) => {
+    const { simulation } = req.query; 
+
+    if (!simulation) {
+      return res.status(400).json({ error: 'Simulation ID is required' });
+    }
+
+    const queryGetPlumeLocation = `
+      SELECT plume_location
+      FROM simulation_results
+      WHERE simulation = ? AND plume_location is NOT NULL
+      LIMIT 1
+    `;
+
+    pool.query(queryGetPlumeLocation, [simulation], (error, results) => {
+      if (error) {
+        console.error('Error fetching plume location:', error.message);
+        return res.status(500).json({ error: 'Internal Server Error' });
+      }
+
+      if (results.length === 0) {
+        return res.status(404).json({ message: 'Simulation not found' });
+      }
+
+      return res.status(200).json({
+        simulation,
+        plume_location: results[0].plume_location
+      });
+    });
+  });
 
 
-app.post ('/uploadPlumeLocation', (req, res) => {
-  const{username,
+app.post('/uploadPlumeLocation', (req, res) => {
+  const {
+    username,
     simulationNumber,
     plumeXlocation,
     plumeYlocation,
@@ -790,34 +820,54 @@ app.post ('/uploadPlumeLocation', (req, res) => {
     numFilamentsSec,
     filamentInitialStd,
     filamentGrowth,
-    filamentNoise} = req.body;
+    filamentNoise
+  } = req.body;
 
-  axios.get('http://simulation:8000/set_plume_location', {
-    params: {
-      username,
-      simulationNumber,
-      plumeXlocation,
-      plumeYlocation,
-      plumeZlocation,
-      temperatureInK,
-      ppmCenter,
-      numFilamentsSec,
-      filamentInitialStd,
-      filamentGrowth,
-      filamentNoise
+  const simulationId = `${username}_${simulationNumber}`;
+
+  const plumeLocation = `${plumeXlocation}/${plumeYlocation}/${plumeZlocation}`;
+  console.log(plumeLocation)
+  const queryUpdatePlumeLocation = `
+    UPDATE simulation_results
+    SET plume_location = ?
+    WHERE simulation = ?
+  `;
+
+  pool.query(queryUpdatePlumeLocation, [plumeLocation, simulationId], (error, results) => {
+    if (error) {
+      console.error('Error updating plume location:', error.message);
+      return res.status(500).json({ error: 'Failed to update plume location' });
     }
 
-  })
-  .then(response => {
+    if (results.affectedRows === 0) {
+      return res.status(404).json({ message: 'No matching simulation found to update' });
+    }
 
-   return res.status(200).json({ message: 'Plume location saved'});
-
-  })
-  .catch(error => {
-    console.error('Error calling simulation service:', error.message);
-    return res.status(500).json({ error: 'Failed to call simulation backend' });
+    axios.get('http://simulation:8000/set_plume_location', {
+      params: {
+        username,
+        simulationNumber,
+        plumeXlocation,
+        plumeYlocation,
+        plumeZlocation,
+        temperatureInK,
+        ppmCenter,
+        numFilamentsSec,
+        filamentInitialStd,
+        filamentGrowth,
+        filamentNoise
+      }
+    })
+    .then(response => {
+      return res.status(200).json({ message: 'Plume location saved and simulation updated' });
+    })
+    .catch(error => {
+      console.error('Error calling simulation service:', error.message);
+      return res.status(500).json({ error: 'Failed to call simulation backend' });
+    });
   });
 });
+
 
 
 

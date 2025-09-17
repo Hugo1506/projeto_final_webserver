@@ -10,6 +10,7 @@ import PositionConcentrationChart from './PositionConcentrationChart';
 import CollapsibleSection from './CollapseSection';
 import RobotDensityHeatmap from './RobotDensityHeatmap';
 import CompassRose from './CompassRose';
+import axios from 'axios';
 Chart.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 
 
@@ -50,6 +51,9 @@ const RobotSetDetail = ({
   activeRobotButton,
   handleRobotToggleButton
 }) => {
+  const [distanceFromSource, setDistanceFromSource] = useState(0);
+  const [plumeLocation, setPlumeLocation] = useState(null);
+  const [robotCloseToSourceStats, setRobotCloseToSourceStats] = useState({});
 
   const simGifs = gifsInSet.filter(gifObj => gifObj.robotSim_id !== undefined && gifObj.robotSim_id !== null);
 
@@ -157,6 +161,63 @@ const RobotSetDetail = ({
       robotRealDistances[robot] = avg.toFixed(2);
     });
   }
+
+  useEffect(() => {
+    if (selectedSetSimId === -1 && plumeLocation && distanceFromSource) {
+      const [plumeX, plumeY, plumeZ] = plumeLocation.split('/').map(Number);
+
+      const newRobotStats = {};
+
+      gifsInSet.forEach((gif) => {
+        const { robotSim_id, iteration, robot_path } = gif;
+
+        if (iteration === Math.max(...gifsInSet.filter(g => g.robotSim_id === robotSim_id).map(g => g.iteration))) {
+          
+          robot_path.forEach((point) => {
+            const { robot, robot_position } = point;
+
+            const dx = robot_position.x - plumeX;
+            const dy = robot_position.y - plumeY;
+            const dz = robot_position.z - plumeZ;
+            const distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
+
+            if (!newRobotStats[robot]) {
+              newRobotStats[robot] = { closeCount: 0, totalCount: 0 };
+            }
+
+            newRobotStats[robot].totalCount++;
+
+            if (distance <= distanceFromSource) {
+              newRobotStats[robot].closeCount++;
+            }
+          });
+        }
+      });
+
+      const updatedStats = Object.entries(newRobotStats).reduce((acc, [robotId, { closeCount, totalCount }]) => {
+        const percentage = totalCount > 0 ? ((closeCount / totalCount) * 100).toFixed(2) : 0;
+        acc[robotId] = { closeCount, totalCount, percentage };
+        return acc;
+      }, {});
+
+      setRobotCloseToSourceStats(updatedStats);
+    }
+  }, [gifsInSet, selectedSetSimId, plumeLocation, distanceFromSource]);
+
+   useEffect(() => {
+    if (gifsInSet.length > 0 && selectedSetSimId === -1) {
+      const simulationId = gifsInSet[0]?.simulation;
+      axios
+        .get(`http://localhost:3000/getPlumeLocation?simulation=${simulationId}`)
+        .then(response => {
+          setPlumeLocation(response.data.plume_location);
+        })
+        .catch(error => {
+          console.error('Error fetching plume location:', error);
+          setPlumeLocation(null);
+        });
+    }
+  }, [gifsInSet, selectedSetSimId]);
 
   useEffect(() => {
     if (activeRobotButton !== "stats" && selectedSetSimId === -1) {
@@ -542,7 +603,7 @@ const RobotSetDetail = ({
                     selectedRobotFilter={'all'}
                   />
               </CollapsibleSection>
-              <CollapsibleSection buttonLabel="Distances Stats">
+              <CollapsibleSection buttonLabel="Distance Stats">
               <div className="distance-stats-container">
                 <h3>Robot Distances:</h3>
                 <ul>
@@ -567,6 +628,33 @@ const RobotSetDetail = ({
                   </ul>
                 </div>
               </CollapsibleSection>
+                {selectedSetSimId === -1 && plumeLocation && (
+                  <CollapsibleSection buttonLabel="Experience Success Rate">
+                    <div className="success-rate-container">
+                      <div>
+                        <label htmlFor="distance-from-source">Maximum distance to be considered a successful experience</label>
+                        <input
+                          type="number"
+                          id="distance-from-source"
+                          value={distanceFromSource}
+                          onChange={(e) => setDistanceFromSource(e.target.value)}
+                          placeholder="Enter distance"
+                        />
+                      </div>
+                      <div className="robot-close-to-source-stats">
+                        <h3>Robot Success Rate (Percentage of Successful Experiences):</h3>
+                        <ul>
+                          {Object.entries(robotCloseToSourceStats).map(([robotSimId, { closeCount, totalCount, percentage }]) => (
+                            <li key={robotSimId}>
+                              Robot {robotSimId}: {closeCount}/{totalCount} successful experiences ({percentage}%) 
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+                  </CollapsibleSection>
+                )}
+      
               </>
             )}
           

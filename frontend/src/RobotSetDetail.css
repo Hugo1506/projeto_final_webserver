@@ -13,6 +13,7 @@
 .stats-graph-container,
 .distance-stats-container,
 .concentration-stats-container,
+.success-rate-container,
 .chart-with-buttons {
   width: 100%;              
   max-width: 900px;         

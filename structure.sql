@@ -32,7 +32,7 @@ CREATE TABLE `simulation_queue` (
   `simulation_bounds` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `idx_simulation` (`simulation`)
-) ENGINE=InnoDB AUTO_INCREMENT=735 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=751 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -53,10 +53,11 @@ CREATE TABLE `simulation_results` (
   `robotSim_id` int DEFAULT NULL,
   `simulation_set` varchar(255) DEFAULT NULL,
   `time` float DEFAULT NULL,
+  `plume_location` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `simulation` (`simulation`),
   CONSTRAINT `simulation_results_ibfk_1` FOREIGN KEY (`simulation`) REFERENCES `simulation_queue` (`simulation`)
-) ENGINE=InnoDB AUTO_INCREMENT=69607 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=127024 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -72,7 +73,7 @@ CREATE TABLE `utilizadores` (
   `password` varchar(100) NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `username` (`username`)
-) ENGINE=InnoDB AUTO_INCREMENT=38 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=39 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
@@ -84,4 +85,4 @@ CREATE TABLE `utilizadores` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-08-28 12:53:58
+-- Dump completed on 2025-09-17 15:27:45

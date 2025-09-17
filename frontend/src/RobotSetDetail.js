@@ -90,73 +90,73 @@ const RobotSetDetail = ({
     });
   });
   const robotPaths = Object.values(robotPathsMap);
-const robotDistances = {};
-const robotRealDistances = {};
+  const robotDistances = {};
+  const robotRealDistances = {};
 
-if (simGifsForSelected.length > 0 || selectedSetSimId === -1) {
-  const relevantGifs = selectedSetSimId === -1
-    ? gifsInSet.filter(g => g.robotSim_id !== undefined && g.robotSim_id !== null)
-    : simGifsForSelected;
+  if (simGifsForSelected.length > 0 || selectedSetSimId === -1) {
+    const relevantGifs = selectedSetSimId === -1
+      ? gifsInSet.filter(g => g.robotSim_id !== undefined && g.robotSim_id !== null)
+      : simGifsForSelected;
 
-  const groupedBySim = {};
+    const groupedBySim = {};
 
-  relevantGifs.forEach(gif => {
-    const simId = gif.robotSim_id;
-    if (!groupedBySim[simId]) groupedBySim[simId] = [];
-    groupedBySim[simId].push(gif);
-  });
-
-  const allRobotDistances = {};
-  const allRobotTraveled = {};
-
-  Object.entries(groupedBySim).forEach(([simId, simGifs]) => {
-    const simIterations = simGifs.sort((a, b) => a.iteration - b.iteration);
-    const allIterations = simIterations.map(gif => gif.robot_path || []);
-    const firstIteration = allIterations[0];
-    const lastIteration = allIterations[allIterations.length - 1];
-
-    if (!firstIteration || !lastIteration) return;
-
-    firstIteration.forEach(startPoint => {
-      const robotId = startPoint.robot;
-      const endPoint = lastIteration.find(p => p.robot === robotId);
-      if (!endPoint) return;
-
-      const dx = endPoint.robot_position.x - startPoint.robot_position.x;
-      const dy = endPoint.robot_position.y - startPoint.robot_position.y;
-      const dz = endPoint.robot_position.z - startPoint.robot_position.z;
-      const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
-
-      if (!allRobotDistances[robotId]) allRobotDistances[robotId] = [];
-      allRobotDistances[robotId].push(dist);
-
-      let traveled = 0;
-      for (let i = 1; i < allIterations.length; i++) {
-        const prev = allIterations[i - 1].find(p => p.robot === robotId);
-        const curr = allIterations[i].find(p => p.robot === robotId);
-        if (prev && curr) {
-          const dx = curr.robot_position.x - prev.robot_position.x;
-          const dy = curr.robot_position.y - prev.robot_position.y;
-          const dz = curr.robot_position.z - prev.robot_position.z;
-          traveled += Math.sqrt(dx * dx + dy * dy + dz * dz);
-        }
-      }
-
-      if (!allRobotTraveled[robotId]) allRobotTraveled[robotId] = [];
-      allRobotTraveled[robotId].push(traveled);
+    relevantGifs.forEach(gif => {
+      const simId = gif.robotSim_id;
+      if (!groupedBySim[simId]) groupedBySim[simId] = [];
+      groupedBySim[simId].push(gif);
     });
-  });
 
-  Object.entries(allRobotDistances).forEach(([robot, distances]) => {
-    const avg = distances.reduce((a, b) => a + b, 0) / distances.length;
-    robotDistances[robot] = avg.toFixed(2);
-  });
+    const allRobotDistances = {};
+    const allRobotTraveled = {};
 
-  Object.entries(allRobotTraveled).forEach(([robot, distances]) => {
-    const avg = distances.reduce((a, b) => a + b, 0) / distances.length;
-    robotRealDistances[robot] = avg.toFixed(2);
-  });
-}
+    Object.entries(groupedBySim).forEach(([simId, simGifs]) => {
+      const simIterations = simGifs.sort((a, b) => a.iteration - b.iteration);
+      const allIterations = simIterations.map(gif => gif.robot_path || []);
+      const firstIteration = allIterations[0];
+      const lastIteration = allIterations[allIterations.length - 1];
+
+      if (!firstIteration || !lastIteration) return;
+
+      firstIteration.forEach(startPoint => {
+        const robotId = startPoint.robot;
+        const endPoint = lastIteration.find(p => p.robot === robotId);
+        if (!endPoint) return;
+
+        const dx = endPoint.robot_position.x - startPoint.robot_position.x;
+        const dy = endPoint.robot_position.y - startPoint.robot_position.y;
+        const dz = endPoint.robot_position.z - startPoint.robot_position.z;
+        const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+
+        if (!allRobotDistances[robotId]) allRobotDistances[robotId] = [];
+        allRobotDistances[robotId].push(dist);
+
+        let traveled = 0;
+        for (let i = 1; i < allIterations.length; i++) {
+          const prev = allIterations[i - 1].find(p => p.robot === robotId);
+          const curr = allIterations[i].find(p => p.robot === robotId);
+          if (prev && curr) {
+            const dx = curr.robot_position.x - prev.robot_position.x;
+            const dy = curr.robot_position.y - prev.robot_position.y;
+            const dz = curr.robot_position.z - prev.robot_position.z;
+            traveled += Math.sqrt(dx * dx + dy * dy + dz * dz);
+          }
+        }
+
+        if (!allRobotTraveled[robotId]) allRobotTraveled[robotId] = [];
+        allRobotTraveled[robotId].push(traveled);
+      });
+    });
+
+    Object.entries(allRobotDistances).forEach(([robot, distances]) => {
+      const avg = distances.reduce((a, b) => a + b, 0) / distances.length;
+      robotDistances[robot] = avg.toFixed(2);
+    });
+
+    Object.entries(allRobotTraveled).forEach(([robot, distances]) => {
+      const avg = distances.reduce((a, b) => a + b, 0) / distances.length;
+      robotRealDistances[robot] = avg.toFixed(2);
+    });
+  }
 
   useEffect(() => {
     if (activeRobotButton !== "stats" && selectedSetSimId === -1) {
@@ -172,6 +172,42 @@ if (simGifsForSelected.length > 0 || selectedSetSimId === -1) {
     }
   }, [activeRobotButton, selectedSetSimId, gifsInSet]);
 
+
+
+  const calculateConcentrationPercentage = (simGifs) => {
+    const robotConcentrationPercentages = {};
+
+    simGifs.forEach(gifObj => {
+      if (gifObj.robot_path) {
+        gifObj.robot_path.forEach(point => {
+          const robotId = point.robot;
+          const concentrationAboveZero = point.concentration > 0;
+
+          if (!robotConcentrationPercentages[robotId]) {
+            robotConcentrationPercentages[robotId] = { total: 0, withConcentration: 0 };
+          }
+
+          robotConcentrationPercentages[robotId].total += 1;
+          if (concentrationAboveZero) {
+            robotConcentrationPercentages[robotId].withConcentration += 1;
+          }
+        });
+      }
+    });
+
+    Object.entries(robotConcentrationPercentages).forEach(([robotId, data]) => {
+      const { total, withConcentration } = data;
+      const percentage = total > 0 ? ((withConcentration / total) * 100).toFixed(2) : 0;
+      robotConcentrationPercentages[robotId].percentage = percentage;
+    });
+
+    return robotConcentrationPercentages;
+  };
+
+
+  const concentrationPercentages = selectedSetSimId === -1
+    ? calculateConcentrationPercentage(gifsInSet)
+    : calculateConcentrationPercentage(simGifsForSelected);
   return (
     <>
       {showRobotSetDetail && (
@@ -231,17 +267,16 @@ if (simGifsForSelected.length > 0 || selectedSetSimId === -1) {
                       </select>
                     </label>      
                         )}
-              {gifsInSet
-                .filter(gifObj => gifObj.robotSim_id === selectedSetSimId && gifObj.iteration === currentIteration)
-                .map((gifObj, index) => (
-                  <div key={index} className="gif-description">
-                    <div className="Simulation-set-select-container">
-                      {activeRobotButton == "stats" && (
+                        {activeRobotButton == "stats" && (
                         <>
-                          <h3>Average Time per Iteration: {avgTime} s</h3>
                           <h3>Average Iterations per Simulation: {avgIterationsPerSim}</h3>
                         </>
                       )}
+              {gifsInSet
+                
+                .filter(gifObj => gifObj.robotSim_id === selectedSetSimId && gifObj.iteration === currentIteration)
+                .map((gifObj, index) => (
+                  <div key={index} className="gif-description">                      
                       <div className="Simulation-set-select-container">
                     {activeRobotButton != "stats" &&(
                       <label>
@@ -266,10 +301,9 @@ if (simGifsForSelected.length > 0 || selectedSetSimId === -1) {
                       </select>
                     </label>
                     )}
-                    
-                      </div>
+ 
                     </div>
-                    {activeRobotButton != 'path' &&(
+                    {activeRobotButton == 'visual' && (
                       <h3>Height: {gifObj.height ?? 'Unknown'}</h3>
                     )}
                     {activeRobotButton == 'stats' &&(
@@ -428,14 +462,7 @@ if (simGifsForSelected.length > 0 || selectedSetSimId === -1) {
               <>
               <CollapsibleSection buttonLabel="Iteration Time Stats">
               <div className="stats-graph-container">
-                <h3>Robot Distances:</h3>
-                <ul>
-                  {Object.entries(robotDistances).map(([robot, distance]) => (
-                    <li key={robot}>
-                      Robot {robot}: Straight-line = {distance} m, Traveled = {robotRealDistances[robot]} m
-                    </li>
-                  ))}
-                </ul>
+                
                 <Line
                   data={{
                     labels: selectedSetSimId === -1
@@ -514,6 +541,31 @@ if (simGifsForSelected.length > 0 || selectedSetSimId === -1) {
                     selectedSetSimId={selectedSetSimId}
                     selectedRobotFilter={'all'}
                   />
+              </CollapsibleSection>
+              <CollapsibleSection buttonLabel="Distances Stats">
+              <div className="distance-stats-container">
+                <h3>Robot Distances:</h3>
+                <ul>
+                  {Object.entries(robotDistances).map(([robot, distance]) => (
+                    <li key={robot}>
+                      Robot {robot}: Straight-line = {distance} m, Traveled = {robotRealDistances[robot]} m
+                    </li>
+                  ))}
+                </ul>
+              </div>
+             
+              </CollapsibleSection>
+              <CollapsibleSection buttonLabel="Plume Detection Stats">
+                <div className="concentration-stats-container">
+                  <h3>Robot Concentration Stats:</h3>
+                  <ul>
+                    {Object.entries(concentrationPercentages).map(([robot, data]) => (
+                      <li key={robot}>
+                        Robot {robot}: {data.withConcentration}/{data.total} iterations had concentration &gt; 0 ({data.percentage}%)
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               </CollapsibleSection>
               </>
             )}

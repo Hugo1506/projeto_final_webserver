@@ -11,6 +11,8 @@
 .gif-description-robot,
 .robot-path-list-container,
 .stats-graph-container,
+.distance-stats-container,
+.concentration-stats-container,
 .chart-with-buttons {
   width: 100%;              
   max-width: 900px;         

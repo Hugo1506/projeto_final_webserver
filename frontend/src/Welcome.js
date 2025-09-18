@@ -833,27 +833,21 @@ useEffect(() => {
   const handleSavedExperiencesClick = async () => {
     setPagePath(prev => [...prev, "Saved Experiences"]);
     await fetchSavedSimulations();
-    setTimeout(() => {
+      setNewOrSavedExperiencesVisible(false);
       setShowRobotSimulationSet(true);
       setFadeOut(true);
       setIsSavedExperiences(true); 
       handleSavedSimulationsClick();
-      setNewOrSavedExperiencesVisible(false);
-      setFadeOut(false)
-    }, 500);
   }
 
   const handleNewExperienceClick = async () => {
     setPagePath(prev => [...prev, "New Experience"]);
     await fetchSavedSimulations();
-    setTimeout(() => {
-      setShowRobotSimulationSet(true);   
-      setFadeOut(true);
-      setIsSavedExperiences(false); 
-      handleSavedSimulationsClick();
-      setNewOrSavedExperiencesVisible(false);
-      setFadeOut(false)
-    }, 500);
+    setNewOrSavedExperiencesVisible(false);
+    setShowRobotSimulationSet(true);   
+    setFadeOut(true);
+    setIsSavedExperiences(false); 
+    handleSavedSimulationsClick();
   }
 
 

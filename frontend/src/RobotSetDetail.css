@@ -126,3 +126,47 @@
   max-width: 400px;
   gap: 10px;
 }
+
+.distance-stats-container ul,
+.concentration-stats-container ul,
+.success-rate-container ul {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+}
+
+.distance-stats-container li,
+.concentration-stats-container li,
+.success-rate-container li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid #e0e0e0;
+  color: #444;
+}
+
+.distance-stats-container li:last-child,
+.concentration-stats-container li:last-child,
+.success-rate-container li:last-child {
+  border-bottom: none;
+}
+
+.distance-stats-container li span,
+.concentration-stats-container li span ,
+.success-rate-container li span{
+  font-weight: bold;
+  color: #0073e6;
+}
+
+.distance-stats-container li span:first-child,
+.concentration-stats-container li span:first-child,
+.success-rate-container li span:first-child {
+  margin-right: 5px;
+}
+
+.distance-stats-container li span:last-child,
+.concentration-stats-container li span:last-child,
+.success-rate-container li span:last-child {
+  color: #555;
+}

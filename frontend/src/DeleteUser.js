@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import './DeleteUser.css'; // Import the CSS file
+import './DeleteUser.css'; 
 
 const DeleteUser = ({ onLogout }) => {
   const navigate = useNavigate();
@@ -21,9 +21,9 @@ const DeleteUser = ({ onLogout }) => {
       });
 
       if (response.status === 200) {
-        localStorage.removeItem('authToken'); // Remove token from localStorage
-        onLogout(); // Perform logout
-        navigate('/login'); // Navigate to login page
+        localStorage.removeItem('authToken'); 
+        onLogout(); 
+        navigate('/login'); 
       } else {
         console.error('Failed to delete user');
       }

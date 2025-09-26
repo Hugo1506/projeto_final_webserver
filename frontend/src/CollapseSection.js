@@ -1,16 +1,25 @@
-import React, { useState } from 'react';
-import './CollapseSection.css'
-const CollapsibleSection = ({ buttonLabel, children }) => {
-  const [collapsed, setCollapsed] = useState(true);
+import React from 'react';
+import './CollapseSection.css';
 
+const CollapseSectionGroup = ({ sections, activeSection, setActiveSection }) => {
   return (
-    <div style={{ width: '100%' }}>
-        <button className="collapse-button" onClick={() => setCollapsed(prev => !prev)}>
-            {collapsed ? `Show ${buttonLabel} ▼` : `Hide ${buttonLabel} ▲`}
-        </button>
-        {!collapsed && <div className="collapsible-content">{children}</div>}
+    <div className="collapse-section-group">
+      <div className="collapse-section-buttons">
+        {sections.map(({ buttonLabel }, idx) => (
+          <button
+            key={buttonLabel}
+            className={`collapse-tab-button${activeSection === idx ? ' active' : ''}`}
+            onClick={() => setActiveSection(idx)}
+          >
+            {buttonLabel}
+          </button>
+        ))}
+      </div>
+      <div className="collapse-section-content">
+        {sections[activeSection]?.children}
+      </div>
     </div>
   );
 };
 
-export default CollapsibleSection;
+export default CollapseSectionGroup;

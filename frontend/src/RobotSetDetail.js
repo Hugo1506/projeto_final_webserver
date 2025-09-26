@@ -7,7 +7,7 @@ import SimpleBarChart from './SimpleBarChart';
 import { Chart, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend } from 'chart.js';
 import Trajectory from './Trajectory';
 import PositionConcentrationChart from './PositionConcentrationChart';
-import CollapsibleSection from './CollapseSection';
+import CollapseSectionGroup from './CollapseSection';
 import RobotDensityHeatmap from './RobotDensityHeatmap';
 import CompassRose from './CompassRose';
 import axios from 'axios';
@@ -54,6 +54,8 @@ const RobotSetDetail = ({
   const [distanceFromSource, setDistanceFromSource] = useState(0);
   const [plumeLocation, setPlumeLocation] = useState(null);
   const [robotCloseToSourceStats, setRobotCloseToSourceStats] = useState({});
+  const [activeStatsSection, setActiveStatsSection] = useState(0);
+
 
   const simGifs = gifsInSet.filter(gifObj => gifObj.robotSim_id !== undefined && gifObj.robotSim_id !== null);
 
@@ -519,104 +521,117 @@ const RobotSetDetail = ({
             
             </div>
             )}
-            {activeRobotButton === 'stats' && (
-              <>
-              <CollapsibleSection buttonLabel="Iteration Time Stats">
-              <div className="stats-graph-container">
-                
-                <Line
-                  data={{
-                    labels: selectedSetSimId === -1
-                      ? Array.from(
-                          new Set(gifsInSet.map(g => g.robotSim_id))
-                        ).map((simId, idx) => `Simulation ${idx + 1}`)
-                      : gifsInSet
-                          .filter(gifObj => gifObj.robotSim_id === selectedSetSimId)
-                          .sort((a, b) => a.iteration - b.iteration)
-                          .map(gifObj => gifObj.iteration),
-                    datasets: [
-                      {
-                        label: selectedSetSimId === -1 ? 'Total Time per Simulation' : 'Time per Iteration',
-                        data: selectedSetSimId === -1
-                          ? Array.from(new Set(gifsInSet.map(g => g.robotSim_id)))
-                              .map(simId =>
-                                gifsInSet
-                                  .filter(g => g.robotSim_id === simId)
-                                  .reduce((sum, g) => sum + (g.time ?? 0), 0)
-                              )
-                          : gifsInSet
-                              .filter(gifObj => gifObj.robotSim_id === selectedSetSimId)
-                              .map(gifObj => gifObj.time),
-                        borderColor: 'rgba(190, 11, 11, 1)',
-                        backgroundColor: 'rgba(75,192,192,0.2)',
-                        fill: true,
-                        tension: 0.1,
-                      }
-                    ]
-                  }}
-                  options={{
-                    responsive: true,
-                    plugins: {
-                      legend: { display: true },
-                      title: {
-                        display: true,
-                        text: selectedSetSimId === -1
-                          ? 'Total Time per Simulation'
-                          : 'Time per Iteration'
-                      },
-                    },
-                    scales: {
-                      x: {
+         {activeRobotButton === 'stats' && (
+        <CollapseSectionGroup
+          sections={[
+            {
+              buttonLabel: "Iteration Time Stats",
+              children: (
+                <div className="stats-graph-container">
+                  <Line
+                    data={{
+                      labels: selectedSetSimId === -1
+                        ? Array.from(
+                            new Set(gifsInSet.map(g => g.robotSim_id))
+                          ).map((simId, idx) => `Simulation ${idx + 1}`)
+                        : gifsInSet
+                            .filter(gifObj => gifObj.robotSim_id === selectedSetSimId)
+                            .sort((a, b) => a.iteration - b.iteration)
+                            .map(gifObj => gifObj.iteration),
+                      datasets: [
+                        {
+                          label: selectedSetSimId === -1 ? 'Total Time per Simulation' : 'Time per Iteration',
+                          data: selectedSetSimId === -1
+                            ? Array.from(new Set(gifsInSet.map(g => g.robotSim_id)))
+                                .map(simId =>
+                                  gifsInSet
+                                    .filter(g => g.robotSim_id === simId)
+                                    .reduce((sum, g) => sum + (g.time ?? 0), 0)
+                                )
+                            : gifsInSet
+                                .filter(gifObj => gifObj.robotSim_id === selectedSetSimId)
+                                .map(gifObj => gifObj.time),
+                          borderColor: 'rgba(190, 11, 11, 1)',
+                          backgroundColor: 'rgba(75,192,192,0.2)',
+                          fill: true,
+                          tension: 0.1,
+                        }
+                      ]
+                    }}
+                    options={{
+                      responsive: true,
+                      plugins: {
+                        legend: { display: true },
                         title: {
                           display: true,
-                          text: selectedSetSimId === -1 ? 'Simulation' : 'Iteration',
+                          text: selectedSetSimId === -1
+                            ? 'Total Time per Simulation'
+                            : 'Time per Iteration'
                         },
                       },
-                      y: {
-                        title: {
-                          display: true,
-                          text: 'Time (s)',
+                      scales: {
+                        x: {
+                          title: {
+                            display: true,
+                            text: selectedSetSimId === -1 ? 'Simulation' : 'Iteration',
+                          },
+                        },
+                        y: {
+                          title: {
+                            display: true,
+                            text: 'Time (s)',
+                          },
                         },
                       },
-                    },
-                  }}
-                />
-
-
-              </div>
-              </CollapsibleSection>
-              <CollapsibleSection buttonLabel="Density Map">
-               <RobotDensityHeatmap
-                  gifsInSet={
-                    selectedSetSimId === -1
-                      ? gifsInSet.filter(g => g.robotSim_id !== undefined && g.robotSim_id !== null)
-                      : gifsInSet.filter(g => g.robotSim_id === selectedSetSimId)
-                  }
-                  selectedSetSimId={selectedSetSimId}
-                  simulationBounds={simulationBounds}
-                />
-              </CollapsibleSection>
-              <CollapsibleSection buttonLabel="Average Robot Direction">
-                  <CompassRose
-                    gifsInSet={gifsInSet}
-                    selectedSetSimId={selectedSetSimId}
-                    selectedRobotFilter={'all'}
+                    }}
                   />
-              </CollapsibleSection>
-              <CollapsibleSection buttonLabel="Distance Stats">
-              <div className="distance-stats-container">
-                <h3>Robot Distances:</h3>
-                <ul>
-                  {Object.entries(robotDistances).map(([robot, distance]) => (
-                    <li key={robot}>
-                      Robot {robot}: Straight-line = {distance} m, Traveled = {robotRealDistances[robot]} m
-                    </li>
-                  ))}
-                </ul>
-              </div>
-             
-              </CollapsibleSection>
-              <CollapsibleSection buttonLabel="Plume Detection Stats">
+                </div>
+              ),
+            },
+            {
+              buttonLabel: "Density Map",
+              children: (
+                <div className='density-container'>
+                  <RobotDensityHeatmap
+                    gifsInSet={
+                      selectedSetSimId === -1
+                        ? gifsInSet.filter(g => g.robotSim_id !== undefined && g.robotSim_id !== null)
+                        : gifsInSet.filter(g => g.robotSim_id === selectedSetSimId)
+                    }
+                    selectedSetSimId={selectedSetSimId}
+                    simulationBounds={simulationBounds}
+                  />
+                </div>
+              ),
+            },
+            {
+              buttonLabel: "Average Robot Direction",
+              children: (
+                <CompassRose
+                  gifsInSet={gifsInSet}
+                  selectedSetSimId={selectedSetSimId}
+                  selectedRobotFilter={'all'}
+                />
+              ),
+            },
+            {
+              buttonLabel: "Distance Stats",
+              children: (
+                <div className="distance-stats-container">
+                  <h3>Robot Distances:</h3>
+                  <ul>
+                    {Object.entries(robotDistances).map(([robot, distance]) => (
+                      <li key={robot}>
+                        Robot {robot}: Straight-line = {distance} m, Traveled = {robotRealDistances[robot]} m
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ),
+            },
+            {
+              buttonLabel: "Plume Detection Stats",
+              children: (
                 <div className="concentration-stats-container">
                   <h3>Robot Concentration Stats:</h3>
                   <ul>
@@ -627,9 +642,12 @@ const RobotSetDetail = ({
                     ))}
                   </ul>
                 </div>
-              </CollapsibleSection>
-                {selectedSetSimId === -1 && plumeLocation && (
-                  <CollapsibleSection buttonLabel="Experience Success Rate">
+              ),
+            },
+            ...(selectedSetSimId === -1 && plumeLocation
+              ? [{
+                  buttonLabel: "Experience Success Rate",
+                  children: (
                     <div className="success-rate-container">
                       <div>
                         <label htmlFor="distance-from-source">Maximum distance to be considered a successful experience</label>
@@ -652,17 +670,21 @@ const RobotSetDetail = ({
                         </ul>
                       </div>
                     </div>
-                  </CollapsibleSection>
-                )}
-      
-              </>
-            )}
-          
-          {showInfoModal && (
-            <InfoModal
-              message="Loading Set"
-            />
-          )}
+                  ),
+                }]
+              : []
+            ),
+          ]}
+          activeSection={activeStatsSection}
+          setActiveSection={setActiveStatsSection}
+        />
+      )}
+
+      {showInfoModal && (
+        <InfoModal
+          message="Loading Set"
+        />
+      )}
         </div>
       )}
     </>

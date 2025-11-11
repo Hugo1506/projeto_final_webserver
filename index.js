@@ -929,7 +929,6 @@ app.post('/deleteSimulation', (req, res) => {
 
 app.get('/getEnviromentFrames', (req, res) => {
   const simulation = req.query.simulation;
-
   const query = `
     SELECT id, gif, height, type, iteration
     FROM simulation_results
@@ -1066,6 +1065,68 @@ app.get('/getGifsFromSimulation', (req, res) => {
           res.write(']');
           res.end();
           finished = true;
+        }
+      });
+    });
+  });
+});
+
+app.get('/getSimulationResultsGifs', (req, res) => {
+  const simulation = req.query.simulation;
+  const queryGetSimulationResults = `
+      SELECT 
+        id,
+        gif, height, type, iteration, robotSim_id, robot_path
+      FROM simulation_results
+      WHERE simulation = ? AND type != 'robot'`;
+
+  pool.query(queryGetSimulationResults, [simulation,simulation], (error, results) => {
+    if (error) {
+      console.error(error);
+      return res.status(500).send('Internal Server Error');
+    }
+
+    if (results.length === 0) {
+      return res.status(404).send('Simulation not found');
+    }
+
+    const gifs = [];
+    let processedCount = 0;
+
+    results.forEach((result, index) => {
+      const compressedGifBase64 = result.gif;
+      const compressedGifBuffer = Buffer.from(compressedGifBase64, 'base64');
+
+
+      zlib.unzip(compressedGifBuffer, (err, decompressedBuffer) => {
+        if (err) {
+          console.error(`Error decompressing GIF at index ${index}:`, err);
+          return res.status(500).send('Failed to decompress GIF');
+        }
+
+       var robotSim_id_to_send; 
+       if (result.robotSim_id === null || result.robotSim_id === undefined) {
+          robotSim_id_to_send = -1;
+       }else{
+          robotSim_id_to_send = result.robotSim_id;
+       }
+
+        gifs.push({
+          gif: decompressedBuffer.toString('base64'),
+          height: result.height,
+          type: result.type,
+          iteration: result.iteration,
+          robotSim_id: robotSim_id_to_send,
+          robot_path: result.robot_path
+        });
+
+
+
+        processedCount++;
+
+        if (processedCount === results.length) {
+          res.set('Content-Type', 'application/json'); 
+          res.json(gifs); 
         }
       });
     });
